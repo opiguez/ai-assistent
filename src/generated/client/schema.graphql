@@ -1,0 +1,4493 @@
+""""""
+enum ActionEnum {
+  CREATE
+  CREATE_FROM_TEMPLATE
+  EDIT
+  EMBED
+  NAVIGATE
+  OTHER
+  RESPOND
+}
+
+""""""
+enum AllowedActionsEnum {
+  CHANGE_OWNER
+  CHANGE_STATE
+  CREATE_VERSION
+  DELETE
+  DOWNLOAD
+  EDIT
+  MANAGE_FAVORITES
+  MANAGE_PERMISSIONS
+  MANAGE_TEMPLATES
+  MOVE
+  OPEN_MARKUP
+  PUBLISH
+  RESPOND
+  RESTORE_VERSION
+  SEE_HISTORY
+  SEE_VERSIONS
+}
+
+""""""
+type ApiSpec implements MetadataObject {
+  authMethod: AuthMethod!
+  basicAuthLogin: String
+  basicAuthPassword: String
+  clientCredFlowClientId: String
+  clientCredFlowClientSecret: String
+  clientCredFlowTokenUrl: String
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  moduleDtoJson: String
+  name: String!
+  openApiJson: String!
+  parentId: String!
+  serviceUrl: String!
+  status: MetadataObjectStatusEnum!
+  version: String
+}
+
+""""""
+type ApiSpecsGroup implements MetadataObject {
+  apiSpecs: [ApiSpec!]!
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  status: MetadataObjectStatusEnum!
+}
+
+""""""
+type Application implements MetadataObject {
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  htmlWidgetGroups(type: HtmlWidgetGroupTypeEnum): [HtmlWidgetGroup!]!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  modules: [Module!]!
+  name: String!
+  notificationJson: String
+  parentId: String!
+  roles: [Role!]!
+  status: MetadataObjectStatusEnum!
+  toolbarJson: String
+  workbenches: [Workbench!]!
+}
+
+""""""
+input AssetDropboxInput {
+  fileId: String!
+  fileName: String!
+  targetFolderId: String!
+}
+
+""""""
+type AssetUpload {
+  batchFileIndex: Int
+  batchId: String
+  chunks: Int
+  creationDate: Date!
+  fileName: String!
+  hash: String!
+  id: String!
+  loadedChunks: Int
+  loadedSize: Long!
+  mimeType: String!
+  previewUrl: String
+  size: Long!
+  status: AssetUploadStatus!
+  targetDocumentId: String
+  targetDocumentRoute: String
+  targetFolderId: String!
+}
+
+""""""
+input AssetUploadInput {
+  chunks: Int
+  dataObjectId: String
+  fileName: String!
+  hash: String!
+  mimeType: String!
+  previewUrl: String
+  size: Long!
+}
+
+""""""
+type AssetUploadList {
+  items: [AssetUpload!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+type AssetUploadStatus {
+  displayName: String!
+  status: AssetUploadStatusEnum!
+}
+
+""""""
+enum AssetUploadStatusEnum {
+  COMPLETED
+  FAILED
+  IN_PROGRESS
+}
+
+""""""
+type Attribute {
+  attribute: String!
+  attributeType: PropertyType!
+  label: String!
+  referenceDataTypeId: String
+}
+
+""""""
+type AttributeValue {
+  attribute: Attribute!
+  value: DataPropertyAttributesValueUnion
+}
+
+""""""
+input AttributeValueInput {
+  attribute: String!
+  booleanValueInput: DataPropertyBooleanValueInput
+  dateTimeValueInput: DataPropertyDateTimeValueInput
+  dateValueInput: DataPropertyDateValueInput
+  decimalValueInput: DataPropertyDecimalValueInput
+  integerValueInput: DataPropertyIntegerValueInput
+  multiSelectionValueInput: DataPropertyMultiSelectionValueInput
+  selectionValueInput: DataPropertySelectionValueInput
+  stringValueInput: DataPropertyStringValueInput
+  textValueInput: DataPropertyTextValueInput
+  timeValueInput: DataPropertyTimeValueInput
+}
+
+""""""
+type AuditCategory {
+  displayName: String!
+  value: AuditCategoryEnum!
+}
+
+""""""
+enum AuditCategoryEnum {
+  rabisAuthCategory
+  rabisDataObjects
+  rabisSettingsCategory
+}
+
+""""""
+type AuditEvent {
+  displayName: String!
+  value: AuditEventEnum!
+}
+
+""""""
+enum AuditEventEnum {
+  rabisAuthException
+  rabisAuthTokenExpired
+  rabisAuthUserSynced
+  rabisAuthUserSyncedAndLoggedIn
+  rabisDataObjectCreated
+  rabisDataObjectDeleted
+  rabisDataObjectDownloaded
+  rabisDataObjectModified
+  rabisDataObjectMoved
+  rabisDataObjectOwnerChanged
+  rabisDataObjectPublished
+  rabisDataObjectRepublished
+  rabisDataObjectRestored
+  rabisDataObjectStatusChanged
+  rabisDataObjectUnpublished
+  rabisDataObjectVersionCreated
+  rabisDataObjectVersionRestored
+  rabisForcedLogout
+  rabisLogout
+  rabisNuxeoLoginFailed
+  rabisNuxeoLoginSuccess
+  rabisReadMembers
+  rabisReadUserProfile
+  rabisRefreshToken
+  rabisResourceDownloaded
+  rabisSecuritySettingsChanged
+  rabisSetMembers
+}
+
+""""""
+type AuditLogEntriesList {
+  items: [AuditLogEntry!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+type AuditLogEntry {
+  category: AuditCategory!
+  event: AuditEvent!
+  eventDate: Date!
+  id: Int!
+  info: ObjectScalar
+  user: User
+}
+
+""""""
+enum AuthMethod {
+  BASIC_AUTH
+  CLIENT_CREDENTIALS_FLOW
+  NO_AUTH
+  RABIS_AUTH
+}
+
+"""An arbitrary precision signed decimal"""
+scalar BigDecimal
+
+""""""
+type BooleanDisplayFormat {
+  displayFormatEnum: BooleanDisplayFormatEnum!
+  displayName: String!
+}
+
+""""""
+enum BooleanDisplayFormatEnum {
+  ICON
+  TEXT
+}
+
+""""""
+type BpmnMessage implements MetadataObject {
+  creationDate: Date!
+  dataJson: String!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  status: MetadataObjectStatusEnum!
+}
+
+""""""
+type BpmnMessageGroup {
+  description: String
+  displayName: String!
+  id: String!
+  name: String!
+  properties: [BpmnMessage]!
+  status: MetadataObjectStatusEnum
+}
+
+""""""
+type BpmnProcessType implements MetadataObject {
+  bpmnXml: String!
+  creationDate: Date!
+  decorJson: String!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  lifecycleJson: String!
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  processDefinitionId: String!
+  processDefinitionKey: String!
+  processDefinitionVersionTag: String!
+  status: MetadataObjectStatusEnum!
+}
+
+""""""
+type Collection implements MetadataObject {
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  id: String!
+  isHidden: Boolean
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  status: MetadataObjectStatusEnum!
+  uid: String
+}
+
+""""""
+input CreateApiSpecInput {
+  authMethod: AuthMethod!
+  basicAuthLogin: String
+  basicAuthPassword: String
+  clientCredFlowClientId: String
+  clientCredFlowClientSecret: String
+  clientCredFlowTokenUrl: String
+  displayName: String
+  name: String
+  openApiJson: String!
+  parentId: String!
+  serviceUrl: String!
+}
+
+""""""
+input CreateApiSpecsGroupInput {
+  description: String
+  displayName: String!
+  name: String!
+  parentId: String!
+}
+
+""""""
+input CreateBpmnMessageInput {
+  dataJson: String
+  description: String
+  displayName: String
+  name: String
+  parentId: String!
+}
+
+""""""
+input CreateBpmnProcessDataTypeInput {
+  baseType: String
+  brandingJson: String
+  canHaveChildren: Boolean
+  canHaveDiscussion: Boolean
+  description: String
+  displayName: String!
+  inheritBpmnScheme: Boolean
+  name: String!
+  parentId: String!
+  rootVersionable: Boolean
+}
+
+""""""
+input CreateDataObjectFromTemplateInput {
+  parentId: ID!
+  properties: [DataObjectPropertyInput!]
+  templateId: ID!
+}
+
+""""""
+input CreateDataObjectInput {
+  parentId: ID!
+  properties: [DataObjectPropertyInput!]
+  typeId: String!
+}
+
+""""""
+input CreateDataObjectVersionInput {
+  dataObjectId: ID!
+  versionIncrementEnum: VersionIncrementEnum!
+}
+
+""""""
+input CreateDataPropertyAttributesInput {
+  customizationRef: String
+  dateDataPropertyKey: String
+  description: String
+  displayName: String!
+  helpText: String
+  name: String!
+  parentId: String!
+  parentSelection: String
+  readonly: Boolean
+  referenceDataTypeId: String
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyBooleanInput {
+  customizationRef: String
+  defaultValue: DataPropertyBooleanValueInput
+  description: String
+  displayFalseAs: String
+  displayFalseColor: String
+  displayFormat: BooleanDisplayFormatEnum
+  displayName: String!
+  displayTrueAs: String
+  displayTrueColor: String
+  helpText: String
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyDateInput {
+  customizationRef: String
+  defaultValue: DataPropertyDateValueInput
+  description: String
+  displayFormat: DateDisplayFormatEnum
+  displayName: String!
+  helpText: String
+  maxValue: DataPropertyDateValueInput
+  minValue: DataPropertyDateValueInput
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyDateTimeInput {
+  customizationRef: String
+  defaultValue: DataPropertyDateTimeValueInput
+  description: String
+  displayFormat: DateDisplayFormatEnum
+  displayName: String!
+  helpText: String
+  maxValue: DataPropertyDateTimeValueInput
+  minValue: DataPropertyDateTimeValueInput
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+  useTimeZone: Boolean
+}
+
+""""""
+input CreateDataPropertyDecimalInput {
+  customizationRef: String
+  defaultValue: DataPropertyDecimalValueInput
+  description: String
+  displayName: String!
+  formula: String
+  helpText: String
+  maxValue: DataPropertyDecimalValueInput
+  minValue: DataPropertyDecimalValueInput
+  name: String!
+  parentId: String!
+  precision: Int
+  prefix: String
+  readonly: Boolean
+  required: Boolean
+  suffix: String
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyFileInput {
+  customizationRef: String
+  description: String
+  displayName: String!
+  downloadable: Boolean
+  helpText: String
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyFilesInput {
+  customizationRef: String
+  description: String
+  displayName: String!
+  downloadable: Boolean
+  helpText: String
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyIntegerInput {
+  customizationRef: String
+  defaultValue: DataPropertyIntegerValueInput
+  description: String
+  displayName: String!
+  helpText: String
+  maxValue: DataPropertyIntegerValueInput
+  minValue: DataPropertyIntegerValueInput
+  name: String!
+  parentId: String!
+  prefix: String
+  readonly: Boolean
+  required: Boolean
+  suffix: String
+  unique: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyMultiSelectionInput {
+  customizationRef: String
+  dateDataPropertyKey: String
+  description: String
+  displayName: String!
+  helpText: String
+  name: String!
+  parentId: String!
+  parentSelection: String
+  readonly: Boolean
+  referenceDataTypeId: String
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyObjectFilterInput {
+  customizationRef: String
+  description: String
+  displayName: String!
+  filterId: String
+  helpText: String
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  relationModuleId: String
+  relationObjectProperty: String
+  relationTypes: [String]
+  required: Boolean
+  useInSearchOrSort: Boolean
+  viewJson: String
+}
+
+""""""
+input CreateDataPropertyObjectInput {
+  customizationRef: String
+  description: String
+  displayName: String!
+  helpText: String
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  relationModuleId: String
+  relationObjectProperty: String
+  relationTypes: [String]
+  required: Boolean
+  useInSearchOrSort: Boolean
+  viewJson: String
+}
+
+""""""
+input CreateDataPropertyObjectsInput {
+  customizationRef: String
+  description: String
+  displayName: String!
+  helpText: String
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  relationModuleId: String
+  relationObjectProperty: String
+  relationTypes: [String]
+  required: Boolean
+  useInSearchOrSort: Boolean
+  viewJson: String
+}
+
+""""""
+input CreateDataPropertySelectionInput {
+  customizationRef: String
+  dateDataPropertyKey: String
+  description: String
+  displayName: String!
+  formula: String
+  helpText: String
+  name: String!
+  parentId: String!
+  parentSelection: String
+  readonly: Boolean
+  referenceDataTypeId: String
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertySequenceInput {
+  customizationRef: String
+  description: String
+  displayName: String!
+  helpText: String
+  initialValue: Int!
+  name: String!
+  parentId: String!
+  prefix: String
+  readonly: Boolean
+  required: Boolean
+  restartInterval: SequenceRestartInterval!
+  suffix: String
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyStringInput {
+  customizationRef: String
+  defaultValue: DataPropertyStringValueInput
+  description: String
+  displayName: String!
+  formula: String
+  helpText: String
+  icon: String
+  maxLength: Int
+  minLength: Int
+  multilanguage: Boolean
+  name: String!
+  parentId: String!
+  pattern: String
+  prefix: String
+  readonly: Boolean
+  required: Boolean
+  suffix: String
+  unique: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyTextInput {
+  customizationRef: String
+  defaultValue: DataPropertyTextValueInput
+  description: String
+  displayName: String!
+  formatType: TextFormatTypeEnum!
+  helpText: String
+  maxLength: Int
+  minLength: Int
+  multilanguage: Boolean
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyTimeInput {
+  customizationRef: String
+  defaultValue: DataPropertyTimeValueInput
+  description: String
+  displayFormat: DateDisplayFormatEnum
+  displayName: String!
+  helpText: String
+  maxValue: DataPropertyTimeValueInput
+  minValue: DataPropertyTimeValueInput
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyUserInput {
+  customizationRef: String
+  description: String
+  displayName: String!
+  filterByDataObjectPermissions: Boolean
+  filterByDataTypePrivileges: Boolean
+  filterByRoles: [String!]
+  helpText: String
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  required: Boolean
+  sortingFullName: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataPropertyUsersInput {
+  customizationRef: String
+  description: String
+  displayName: String!
+  filterByDataObjectPermissions: Boolean
+  filterByDataTypePrivileges: Boolean
+  filterByRoles: [String!]
+  helpText: String
+  name: String!
+  parentId: String!
+  readonly: Boolean
+  required: Boolean
+  sortingFullName: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input CreateDataTypeInput {
+  baseType: String
+  brandingJson: String
+  canHaveChildren: Boolean
+  canHaveDiscussion: Boolean
+  description: String
+  displayName: String!
+  inheritBpmnScheme: Boolean
+  lifecycle: String!
+  name: String!
+  parentId: String!
+  rootVersionable: Boolean
+}
+
+""""""
+input CreateDiscussionDirectMessagesRoomInput {
+  participant: String!
+}
+
+""""""
+input CreateDiscussionMessageInput {
+  attachmentsValueInput: FilesInput
+  message: String
+  parentId: String!
+  replyId: String
+}
+
+""""""
+input CreateDiscussionRoomInput {
+  description: String
+  hidden: Boolean
+  iconBatchId: String
+  name: String!
+  participants: [String!]!
+  private: Boolean!
+}
+
+""""""
+input CreateDiscussionThreadInput {
+  color: String
+  initMessage: String!
+  name: String!
+  roomId: String!
+}
+
+""""""
+input CreateGroupInput {
+  description: String
+  displayName: String!
+  name: String!
+}
+
+""""""
+input CreateHtmlWidgetGroupInput {
+  description: String
+  name: String!
+  type: HtmlWidgetGroupTypeEnum!
+}
+
+""""""
+input CreateHtmlWidgetInput {
+  css: String
+  html: String
+  js: String
+  name: String!
+  parentId: String!
+  widgetJson: String
+}
+
+""""""
+input CreateLifecycleInput {
+  description: String
+  displayName: String!
+  name: String!
+  parentId: String!
+}
+
+""""""
+input CreateModuleInput {
+  brandingJson: String
+  description: String
+  displayName: String!
+  iconBatchId: String
+  name: String!
+}
+
+""""""
+input CreateOrUpdateBpmnProcessTypeInput {
+  bpmn: String
+  decor: String
+  parentId: String!
+}
+
+""""""
+input CreateOrUpdateExternalGroupInput {
+  externalGroupDescription: String
+  externalGroupDisplayName: String!
+  externalGroupName: String!
+}
+
+""""""
+input CreatePostTemplateInput {
+  bodyTemplate: String!
+  description: String
+  displayName: String
+  name: String
+  parentId: String!
+  subjectTemplate: String!
+}
+
+""""""
+input CreateReferenceDataGroupInput {
+  description: String
+  displayName: String!
+  name: String!
+  parentGroupId: String!
+}
+
+""""""
+input CreateReferenceDataTypeInput {
+  dataFileBatchId: String
+  description: String
+  displayName: String!
+  isDateSpecific: Boolean!
+  name: String!
+  parentGroupId: String!
+  parentReferenceDataTypeId: String
+}
+
+""""""
+input CreateRoleInput {
+  description: String
+  displayName: String!
+  name: String!
+}
+
+""""""
+input CreateSavedSearchInput {
+  displayName: String!
+  filterJson: String!
+  sortingJson: String!
+  viewJson: String!
+}
+
+""""""
+input CreateSystemFilterInput {
+  calendarView: String
+  childrenTypes: [String!]
+  collection: String
+  dataObjectContext: Boolean
+  defaultListView: FilterDefaultViewEnum
+  description: String
+  displayName: String!
+  hidden: Boolean
+  kanbanView: String
+  name: String!
+  navigateView: String
+  parentId: String!
+  tileView: String
+  workspace: String
+}
+
+""""""
+input CreateTypeFilterInput {
+  calendarView: String
+  childrenTypes: [String!]
+  dataObjectContext: Boolean
+  defaultListView: FilterDefaultViewEnum
+  description: String
+  displayName: String!
+  exactDataType: Boolean
+  filterJson: String
+  isPreconfigured: Boolean
+  isSystem: Boolean
+  kanbanView: String
+  name: String!
+  navigateView: String
+  parentId: String!
+  tileView: String
+}
+
+""""""
+input CreateUserInput {
+  email: String!
+  external: Boolean
+  firstName: String!
+  groups: [String!]
+  isSuperUser: Boolean
+  lastName: String!
+  name: String!
+  password: String!
+  roles: [String!]
+}
+
+""""""
+input CreateViewInput {
+  description: String
+  displayName: String!
+  fileProperty: String
+  group: String
+  managementMode: ViewManagementModeEnum
+  name: String!
+  parentId: String!
+  templateBatchId: String
+  viewMode: String
+  viewTypeEnum: ViewTypeEnum!
+}
+
+""""""
+input CreateWorkbenchInput {
+  description: String
+  displayName: String!
+  menuJson: String
+  name: String!
+  roles: [String]!
+}
+
+""""""
+input CreateWorkspaceInput {
+  brandingJson: String
+  description: String
+  displayName: String!
+  iconBatchId: String
+  name: String!
+  parentId: String!
+}
+
+""""""
+type CsvImportStatus {
+  filename: String!
+  importId: ID!
+  moduleName: String!
+  objectsCreatedCount: Int!
+  objectsUpdatedCount: Int!
+  rowsFailedCount: Int!
+  rowsProcessedCount: Int!
+  rowsSkippedCount: Int!
+  startDate: Date!
+  state: WorkStateEnum!
+  targetObjectId: ID
+  userId: String!
+}
+
+""""""
+type DataObject {
+  allowedActions: [AllowedActionsEnum!]!
+  discussion: DiscussionRoom
+  genericStatus: DataObjectGenericStatus!
+  hasAllRequiredProperties: Boolean!
+  hasChildren: Boolean
+  id: ID!
+  isTemplate: Boolean!
+  isVersion: Boolean!
+  parentId: String
+  parents: [DataObject!]!
+  properties(keys: [String!]): [DataObjectProperty!]!
+  publishInfo(serviceId: String!): DataObjectPublishInfo
+  rdmObject: Boolean!
+  route: String!
+  stateCustomJson: String
+  subscriptionType: String
+  type: PublishedDataType!
+}
+
+""""""
+type DataObjectChanges {
+  changes: [DataObjectProperty]
+  dataObjectValid: Boolean!
+}
+
+""""""
+enum DataObjectGenericStatus {
+  INACTIVE
+  TRANSIENT
+  USER_TASK
+  WORKLOG
+}
+
+""""""
+type DataObjectHierarchy {
+  allowCreation: Boolean!
+  id: ID!
+  name: String!
+}
+
+""""""
+type DataObjectList {
+  items: [DataObject!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+type DataObjectProperty {
+  key: String!
+  value: DataPropertyValue!
+}
+
+""""""
+input DataObjectPropertyInput {
+  attributesValueInput: DataPropertyAttributesValueInput
+  booleanValueInput: DataPropertyBooleanValueInput
+  dateTimeValueInput: DataPropertyDateTimeValueInput
+  dateValueInput: DataPropertyDateValueInput
+  decimalValueInput: DataPropertyDecimalValueInput
+  fileValueInput: DataPropertyFileValueInput
+  filesValueInput: DataPropertyFilesValueInput
+  integerValueInput: DataPropertyIntegerValueInput
+  key: String!
+  multiSelectionValueInput: DataPropertyMultiSelectionValueInput
+  objectValueInput: DataPropertyObjectValueInput
+  objectsValueInput: DataPropertyObjectsValueInput
+  selectionValueInput: DataPropertySelectionValueInput
+  stringValueInput: DataPropertyStringValueInput
+  textValueInput: DataPropertyTextValueInput
+  timeValueInput: DataPropertyTimeValueInput
+  userValueInput: DataPropertyUserValueInput
+  usersValueInput: DataPropertyUsersValueInput
+}
+
+""""""
+type DataObjectPublishInfo {
+  link: String
+  status: String!
+}
+
+""""""
+interface DataProperty {
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyAttributes implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  dateDataPropertyKey: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  parentSelection: String
+  properties: [DataProperty!]!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  referenceDataTypeId: String
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyAttributesValue {
+  attributesValue: [AttributeValue!]!
+  selectedDate: String
+}
+
+""""""
+input DataPropertyAttributesValueInput {
+  value: [AttributeValueInput!]
+}
+
+""""""
+union DataPropertyAttributesValueUnion = DataPropertyBooleanValue | DataPropertyDateTimeValue | DataPropertyDateValue | DataPropertyDecimalValue | DataPropertyIntegerValue | DataPropertyMultiSelectionValue | DataPropertySelectionValue | DataPropertyStringValue | DataPropertyTextValue | DataPropertyTimeValue
+
+""""""
+type DataPropertyBoolean implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  defaultValue: DataPropertyBooleanValue
+  description(multilanguage: Boolean = false): String
+  displayFalseAs: String!
+  displayFalseColor: String!
+  displayFormat: BooleanDisplayFormat!
+  displayName(multilanguage: Boolean = false): String!
+  displayTrueAs: String!
+  displayTrueColor: String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyBooleanValue {
+  booleanValue: Boolean
+}
+
+""""""
+input DataPropertyBooleanValueInput {
+  value: Boolean
+}
+
+""""""
+type DataPropertyDate implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  defaultValue: DataPropertyDateValue
+  description(multilanguage: Boolean = false): String
+  displayFormat: DateDisplayFormat!
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  maxValue: DataPropertyDateValue
+  minValue: DataPropertyDateValue
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyDateTime implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  defaultValue: DataPropertyDateTimeValue
+  description(multilanguage: Boolean = false): String
+  displayFormat: DateDisplayFormat!
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  maxValue: DataPropertyDateTimeValue
+  minValue: DataPropertyDateTimeValue
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+  useTimeZone: Boolean!
+}
+
+""""""
+type DataPropertyDateTimeValue {
+  dateTimeValue: Date
+}
+
+""""""
+input DataPropertyDateTimeValueInput {
+  value: Date
+}
+
+""""""
+type DataPropertyDateValue {
+  dateValue: LocalDate
+}
+
+""""""
+input DataPropertyDateValueInput {
+  value: LocalDate
+}
+
+""""""
+type DataPropertyDecimal implements DataProperty & MetadataObject {
+  JSON_SCHEMA: Map_String_StringScalar
+  creationDate: Date!
+  customizationRef: String
+  defaultValue: DataPropertyDecimalValue
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  formula: String
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  maxValue: DataPropertyDecimalValue
+  minValue: DataPropertyDecimalValue
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  precision: Int
+  prefix: String
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  suffix: String
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyDecimalValue {
+  decimalValue: BigDecimal
+}
+
+""""""
+input DataPropertyDecimalValueInput {
+  value: BigDecimal
+}
+
+""""""
+type DataPropertyFile implements DataProperty & MetadataObject {
+  JSON_SCHEMA: Map_String_StringScalar
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  downloadable: Boolean
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyFileValue {
+  fileValue: File
+}
+
+""""""
+input DataPropertyFileValueInput {
+  value: FileInput
+}
+
+""""""
+type DataPropertyFiles implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  downloadable: Boolean
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyFilesValue {
+  filesValue: [File!]!
+}
+
+""""""
+input DataPropertyFilesValueInput {
+  value: FilesInput
+}
+
+""""""
+type DataPropertyInteger implements DataProperty & MetadataObject {
+  JSON_INTEGER_SCHEMA: Map_String_StringScalar
+  creationDate: Date!
+  customizationRef: String
+  defaultValue: DataPropertyIntegerValue
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  maxValue: DataPropertyIntegerValue
+  minValue: DataPropertyIntegerValue
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  prefix: String
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  suffix: String
+  unique: Boolean!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyIntegerValue {
+  integerValue: Int
+}
+
+""""""
+input DataPropertyIntegerValueInput {
+  value: Int
+}
+
+""""""
+type DataPropertyMultiSelection implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  dateDataPropertyKey: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  parentSelection: String
+  propertyType: PropertyType!
+  readonly: Boolean!
+  referenceDataTypeId: String
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyMultiSelectionValue {
+  multiSelectionValue: [DataObject!]!
+  selectedDate: String
+}
+
+""""""
+input DataPropertyMultiSelectionValueInput {
+  value: [String!]
+}
+
+""""""
+type DataPropertyObject implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  relationModuleId: String
+  relationObjectProperty: String
+  relationTypes: [String]
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+  viewJson: String
+}
+
+""""""
+type DataPropertyObjectFilter implements DataProperty & MetadataObject {
+  bindingJson: String
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  filterId: String
+  filterJson: String
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  relationModuleId: String
+  relationObjectProperty: String
+  relationTypes: [String]
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+  viewJson: String
+}
+
+""""""
+type DataPropertyObjectFilterValue {
+  objectFilterValue: [DataObject!]!
+  rawValue: [String]
+}
+
+""""""
+type DataPropertyObjectValue {
+  objectValue: DataObject
+}
+
+""""""
+input DataPropertyObjectValueInput {
+  value: String
+}
+
+""""""
+type DataPropertyObjects implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  relationModuleId: String
+  relationObjectProperty: String
+  relationTypes: [String]
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+  viewJson: String
+}
+
+""""""
+type DataPropertyObjectsValue {
+  objectsValue: [DataObject!]!
+}
+
+""""""
+input DataPropertyObjectsValueInput {
+  value: [String!]
+}
+
+""""""
+type DataPropertySelection implements DataProperty & MetadataObject {
+  JSON_SCHEMA: Map_String_StringScalar
+  creationDate: Date!
+  customizationRef: String
+  dateDataPropertyKey: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  formula: String
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  parentSelection: String
+  propertyType: PropertyType!
+  readonly: Boolean!
+  referenceDataTypeId: String
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertySelectionValue {
+  selectedDate: String
+  selectionValue: DataObject
+}
+
+""""""
+input DataPropertySelectionValueInput {
+  value: String
+}
+
+""""""
+type DataPropertySequence implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  initialValue: Int
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  prefix: String
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  restartInterval: SequenceRestartInterval
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  suffix: String
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertySequenceValue {
+  sequenceValue: Int
+}
+
+""""""
+type DataPropertyStatus implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyStatusValue {
+  statusValue: LifecycleState
+}
+
+""""""
+type DataPropertyString implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  defaultValue: DataPropertyStringValue
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  formula: String
+  helpText(multilanguage: Boolean = false): String
+  icon: String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  maxLength: Int
+  minLength: Int
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  pattern: String
+  prefix: String
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  suffix: String
+  unique: Boolean!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyStringValue {
+  stringValue(multilanguage: Boolean = false): String
+}
+
+""""""
+input DataPropertyStringValueInput {
+  value: String
+}
+
+""""""
+type DataPropertyText implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  defaultValue: DataPropertyTextValue
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  formatType: TextFormatType!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  maxLength: Int
+  minLength: Int
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyTextValue {
+  textValue(multilanguage: Boolean = false): String
+}
+
+""""""
+input DataPropertyTextValueInput {
+  value: String
+}
+
+""""""
+type DataPropertyTime implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  defaultValue: DataPropertyTimeValue
+  description(multilanguage: Boolean = false): String
+  displayFormat: DateDisplayFormat!
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  maxValue: DataPropertyTimeValue
+  minValue: DataPropertyTimeValue
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyTimeValue {
+  timeValue: LocalTime
+}
+
+""""""
+input DataPropertyTimeValueInput {
+  value: LocalTime
+}
+
+""""""
+type DataPropertyUser implements DataProperty & MetadataObject {
+  JSON_SCHEMA: Map_String_StringScalar
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  filterByDataObjectPermissions: Boolean
+  filterByDataTypePrivileges: Boolean
+  filterByRoles: [String]
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  sortingFullName: Boolean
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyUserCommon implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  filterByDataObjectPermissions: Boolean
+  filterByDataTypePrivileges: Boolean
+  filterByRoles: [String]
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  sortingFullName: Boolean
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyUserValue {
+  userValue: User
+}
+
+"""User name (login name) should be used as a value."""
+input DataPropertyUserValueInput {
+  value: String
+}
+
+""""""
+type DataPropertyUsers implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  filterByDataObjectPermissions: Boolean
+  filterByDataTypePrivileges: Boolean
+  filterByRoles: [String]
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  sortingFullName: Boolean
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyUsersValue {
+  usersValue: [User!]!
+}
+
+"""User name (login name) should be used as a value."""
+input DataPropertyUsersValueInput {
+  value: [String!]
+}
+
+""""""
+union DataPropertyValue = DataPropertyAttributesValue | DataPropertyBooleanValue | DataPropertyDateTimeValue | DataPropertyDateValue | DataPropertyDecimalValue | DataPropertyFileValue | DataPropertyFilesValue | DataPropertyIntegerValue | DataPropertyMultiSelectionValue | DataPropertyObjectFilterValue | DataPropertyObjectValue | DataPropertyObjectsValue | DataPropertySelectionValue | DataPropertySequenceValue | DataPropertyStatusValue | DataPropertyStringValue | DataPropertyTextValue | DataPropertyTimeValue | DataPropertyUserValue | DataPropertyUsersValue | DataPropertyVersionValue
+
+""""""
+type DataPropertyVersion implements DataProperty & MetadataObject {
+  creationDate: Date!
+  customizationRef: String
+  description(multilanguage: Boolean = false): String
+  displayFormat: VersionDisplayFormat!
+  displayName(multilanguage: Boolean = false): String!
+  helpText(multilanguage: Boolean = false): String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  jsonSchema: String
+  key: String!
+  modificationDate: Date!
+  multilanguage: Boolean
+  name: String!
+  originalNuxeoDocument: Document
+  parentId: String!
+  propertyType: PropertyType!
+  readonly: Boolean!
+  required: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  skipNuxeoStore: Boolean
+  sortable: Boolean!
+  status: MetadataObjectStatusEnum!
+  useInSearchOrSort: Boolean!
+}
+
+""""""
+type DataPropertyVersionValue {
+  versionValue: Version
+}
+
+""""""
+type DataType implements MetadataObject {
+  baseType: DataType
+  bpmnMessages: [BpmnMessageGroup!]!
+  bpmnProcessType: XmlAndModelDecoration
+  brandingJson: String
+  calendarView: String
+  canBeUsedAsTemplate: Boolean!
+  canCreateAnother: Boolean!
+  canHaveChildren: Boolean!
+  canHaveDiscussion: Boolean!
+  cardView: String
+  childTableView: String
+  childVersionable: Boolean!
+  childrenTypes: [DataType]
+  createFromTemplateView: String
+  createView: String
+  creationDate: Date!
+  dataTypeComment: DataType
+  description(multilanguage: Boolean = false): String
+  discussionMembersId: String
+  displayName(multilanguage: Boolean = false): String!
+  downloadable: Boolean!
+  editView: String
+  embedView: String
+  filterJson: String
+  grantedPrivileges: [GrantedPrivileges]
+  id: String!
+  inheritBpmnScheme: Boolean
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  lifecycle: Lifecycle!
+  modificationDate: Date!
+  name: String!
+  navigateView: String
+  parentId: String!
+  postTemplates: [PostTemplate!]!
+  privilegesInherited: Boolean
+  properties: [PropertyGroup!]!
+  publishable: Boolean!
+  reportingView: String
+  rootVersionable: Boolean!
+  searchPanelProperties: [PropertyGroup!]!
+  stateMachine: String
+  status: MetadataObjectStatusEnum!
+  tileView: String
+  typeFilters: [TypeFilter!]!
+  uploadable: Boolean!
+  versionIncrement: [VersionIncrement!]!
+  versionable: Boolean!
+  views(includeArchived: Boolean, viewType: ViewTypeEnum): [View!]!
+}
+
+"""Built-in scalar representing an instant in time"""
+scalar Date
+
+""""""
+type DateDisplayFormat {
+  displayFormatEnum: DateDisplayFormatEnum!
+  displayName: String!
+}
+
+""""""
+enum DateDisplayFormatEnum {
+  FULL
+  LONG
+  SHORT
+}
+
+""""""
+type DefaultResources {
+  favicon: String!
+  logo: String!
+  module: String!
+  smallLogo: String!
+  workspace: String!
+}
+
+""""""
+type DiscussionDirectMessagesRoom {
+  hasUnreadMessages: Boolean!
+  hidden: Boolean!
+  id: String!
+  lastMessage: DiscussionMessage
+  participant: User!
+  type: String!
+}
+
+""""""
+type DiscussionDirectMessagesRoomList {
+  items: [DiscussionDirectMessagesRoom!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+type DiscussionMessage {
+  attachments: [File]
+  created: String!
+  from: User!
+  id: String!
+  info: DiscussionMessageInfo
+  message: String
+  modified: String!
+  parent: DiscussionMessageParent!
+  replyId: String
+  sent: Boolean!
+  system: Boolean!
+  whoRead: [User!]!
+}
+
+""""""
+type DiscussionMessageInfo {
+  key: String!
+  value: String!
+}
+
+""""""
+union DiscussionMessageParent = DiscussionDirectMessagesRoom | DiscussionRoom | DiscussionThread
+
+""""""
+type DiscussionMessageParentStatus {
+  displayName: String!
+  status: DiscussionMessageParentStatusEnum!
+}
+
+""""""
+enum DiscussionMessageParentStatusEnum {
+  ACTUAL
+  ARCHIVED
+}
+
+""""""
+type DiscussionRoom {
+  dataObject: DataObject
+  description: String
+  hasUnreadMessages: Boolean!
+  hasUnreadThreadsMessages: Boolean!
+  icon: File
+  id: String!
+  lastMessage: DiscussionMessage
+  name: String!
+  owner: User!
+  participants: [String]!
+  private: Boolean!
+  status: DiscussionMessageParentStatus!
+  type: String!
+}
+
+""""""
+type DiscussionRoomList {
+  items: [DiscussionRoom!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+type DiscussionThread {
+  color: String
+  hasUnreadMessages: Boolean!
+  id: String!
+  lastMessage: DiscussionMessage
+  name: String!
+  owner: User!
+  parentId: String!
+  status: DiscussionMessageParentStatus!
+  type: String!
+}
+
+""""""
+type DiscussionThreadList {
+  items: [DiscussionThread!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+type Document {
+  DEFAULT_FILE_CONTENT: String
+  changeToken: String
+  checkedOut: Boolean
+  contextParameters: Map_String_ObjectScalar
+  dirtyProperties: Map_String_ObjectScalar
+  facets: [String]
+  id: String
+  isCheckedOut: String
+  lastModified: String
+  lock: String
+  lockCreated: String
+  lockOwner: String
+  locked: Boolean!
+  name: String
+  parentRef: String
+  path: String
+  properties: Map_String_ObjectScalar
+  proxy: Boolean!
+  record: Boolean!
+  retainUntil: String
+  state: String
+  title: String
+  trashed: Boolean!
+  type: String
+  uid: String
+  underRetentionOrLegalHold: Boolean!
+  version: Boolean!
+  versionLabel: String
+  versionableId: String
+}
+
+""""""
+type ExternalGroup {
+  externalGroupDescription: String
+  externalGroupDisplayName: String!
+  externalGroupName: String!
+}
+
+""""""
+type ExternalGroupList {
+  items: [ExternalGroup!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+input ExternalGroupListParametersInput {
+  pagination: PaginationInput
+  search: String
+}
+
+""""""
+type ExternalGroupMapping {
+  externalGroup: Group
+  mappedRoles: [Role]
+}
+
+""""""
+type File {
+  defaultResource: Boolean
+  encoding: String
+  length: String
+  mimeType: String
+  name: String!
+  resourceId: String
+  thumbnailUrl: String
+  url: String!
+}
+
+""""""
+input FileInput {
+  batchId: String!
+}
+
+""""""
+input FileModifiedInput {
+  batchId: String!
+  index: Int!
+}
+
+""""""
+input FilePropertyKeyInput {
+  filePropertyKey: String!
+  objectPropertyKey: String
+}
+
+""""""
+input FilesInput {
+  added: [FileInput!]
+  defaultValueOnForm: Boolean
+  deleted: [Int!]
+  modified: [FileModifiedInput!]
+}
+
+""""""
+enum FilterDefaultViewEnum {
+  calendarView
+  kanbanView
+  navigateView
+  tileView
+}
+
+""""""
+input FilterViewParametersInput {
+  bindingJson: String
+  filterId: String!
+  route: String!
+}
+
+""""""
+type GenericValidationResult {
+  messages: [String]
+  severity: String!
+}
+
+""""""
+type GrantedPermissions {
+  permissions: [Permission!]!
+  role: Role!
+}
+
+""""""
+type GrantedPrivileges {
+  privileges: [Privilege!]!
+  role: Role!
+}
+
+""""""
+type Group {
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  groups: [Group!]!
+  isExternal: Boolean!
+  memberGroups: [String]
+  memberUsers: [String]
+  members: [Member!]!
+  name: String!
+  parents: [String]
+  roles: [Role!]!
+  trashed: Boolean!
+  type: MemberType!
+  uid: ID!
+}
+
+""""""
+type GroupList {
+  items: [Group!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+type HtmlWidget implements MetadataObject {
+  creationDate: Date!
+  css: String
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  html: String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  js: String
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  status: MetadataObjectStatusEnum!
+  widgetJson: String
+}
+
+""""""
+type HtmlWidgetGroup implements MetadataObject {
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  htmlWidgets: [HtmlWidget!]!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  status: MetadataObjectStatusEnum!
+  type: HtmlWidgetGroupTypeEnum!
+}
+
+""""""
+enum HtmlWidgetGroupTypeEnum {
+  APPLICATION
+  DATATYPE
+  MODULE
+  WORKSPACE
+}
+
+""""""
+input ImportToAssetsInput {
+  filePropertyKeys: [FilePropertyKeyInput!]
+  sourceId: String
+  targetId: String
+}
+
+""""""
+type Lifecycle implements MetadataObject {
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  lifecycleJson: String!
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  status: MetadataObjectStatusEnum!
+}
+
+""""""
+type LifecycleState {
+  allowedStateTransitions: [String!]!
+  backgroundColor: String
+  completed: Boolean
+  description: String
+  disallowedActions: [AllowedActionsEnum!]!
+  initial: Boolean!
+  name: String!
+  speculative: Boolean!
+  technicalState: Boolean!
+  textColor: String
+}
+
+""""""
+type LifecycleTransition {
+  customJson: String
+  description: String
+  destinationStateName: String
+  name: String
+  prohibitRecursiveTransition: Boolean
+  speculative: Boolean
+}
+
+""""""
+input ListParametersInput {
+  filterJson: String
+  hints: String
+  pagination: PaginationInput
+  search: String
+  sortingJson: String
+}
+
+"""Built-in scalar representing a local date"""
+scalar LocalDate
+
+"""Built-in scalar representing a local time"""
+scalar LocalTime
+
+""""""
+type LocaleOption {
+  key: String
+  label: String
+}
+
+"""A 64-bit signed integer"""
+scalar Long
+
+"""Built-in scalar for map-like structures"""
+scalar Map_String_ObjectScalar
+
+"""Built-in scalar for map-like structures"""
+scalar Map_String_StringScalar
+
+""""""
+type Member {
+  displayName(multilanguage: Boolean = false): String!
+  groups: [Group!]!
+  isExternal: Boolean!
+  name: String!
+  parents: [String]
+  roles: [Role!]!
+  trashed: Boolean!
+  type: MemberType!
+  uid: ID!
+}
+
+""""""
+input MemberInput {
+  name: String!
+  type: MemberTypeEnum!
+}
+
+""""""
+type MemberType {
+  displayName: String!
+  value: MemberTypeEnum!
+}
+
+""""""
+enum MemberTypeEnum {
+  GROUP
+  ROLE
+  USER
+}
+
+""""""
+interface MetadataObject {
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  status: MetadataObjectStatusEnum!
+}
+
+""""""
+enum MetadataObjectChangeStatusActionsEnum {
+  ARCHIVE
+  DELETE
+  UNARCHIVE
+}
+
+""""""
+enum MetadataObjectStatusEnum {
+  ACTUAL
+  ARCHIVED
+  MODIFIED
+  NOT_PUBLISHED
+}
+
+""""""
+type Module implements MetadataObject {
+  apiSpecsGroups: [ApiSpecsGroup!]!
+  brandingJson: String
+  calendarView: String
+  cardView: String
+  childTableView: String
+  createView: String
+  creationDate: Date!
+  dataTypes(includeArchived: Boolean): [DataType!]!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  editView: String
+  embedView: String
+  filters: [SystemFilter!]!
+  grantedPrivileges: [GrantedPrivileges]
+  icon: File!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  kanbanView: String
+  lifecycleStates(includeArchived: Boolean): [LifecycleState!]!
+  lifecycles(includeArchived: Boolean): [Lifecycle!]!
+  modificationDate: Date!
+  name: String!
+  navigateView: String
+  parentId: String!
+  publish: Boolean!
+  reportingView: String
+  searchPage: SystemPage!
+  searchPanelProperties: [PropertyGroup!]!
+  status: MetadataObjectStatusEnum!
+  templatesPage: SystemPage!
+  tileView: String
+  views(includeArchived: Boolean, viewType: ViewTypeEnum): [View!]!
+  workspaces: [Workspace!]!
+}
+
+""""""
+input MoveReferenceMetadataObjectInput {
+  metadataObjectId: String!
+  newParentId: String!
+}
+
+"""Mutation root"""
+type Mutation {
+  setMembersForGroup(members: [MemberInput!]!, name: String!): Boolean!
+  createDataPropertyFiles(dataProperty: CreateDataPropertyFilesInput!): DataProperty!
+  deleteOauth2ServiceTokens(ids: [ID!]!, serviceName: String!): Boolean!
+  updateWorkbench(workbench: UpdateWorkbenchInput!): Workbench!
+  createReferenceDataGroup(referenceDataGroup: CreateReferenceDataGroupInput!): ReferenceDataGroup!
+  createRole(role: CreateRoleInput!): Role!
+  deleteRoom(id: ID!): Boolean!
+  updateDataPropertyBoolean(dataProperty: UpdateDataPropertyBooleanInput!): DataProperty!
+  removeObjectFromFavorites(objectId: String!): Boolean
+  startImportMetadataTool: Boolean!
+  deleteAssetUploads(assetUploadIds: [String!]!): Boolean!
+  logout: Boolean!
+  changeRoomOwner(owner: String!, id: ID!): Boolean!
+  createDataPropertySequence(dataProperty: CreateDataPropertySequenceInput!): DataProperty!
+  updateDataPropertyDateTime(dataProperty: UpdateDataPropertyDateTimeInput!): DataProperty!
+  updateTypeFilter(filter: UpdateTypeFilterInput!): TypeFilter!
+  requestPasswordReset(username: String!): Boolean!
+  createAssetUploads(targetFolderId: String!, items: [AssetUploadInput!]!): [AssetUpload!]!
+  updateDataPropertyFiles(dataProperty: UpdateDataPropertyFilesInput!): DataProperty!
+  updateRoom(room: UpdateDiscussionRoomInput!): DiscussionRoom!
+  moveReferenceMetadataObject(moveInput: MoveReferenceMetadataObjectInput!): Boolean!
+  enablePublishing(moduleId: String!): Boolean!
+  reindexRepository: Boolean!
+  disablePublishing(moduleId: String!): Boolean!
+  importToAssets(importInput: ImportToAssetsInput!): [DataObject!]!
+  createBpmnMessage(dataProperty: CreateBpmnMessageInput!): BpmnMessage!
+  createFilter(filter: CreateSystemFilterInput!): SystemFilter!
+  changeThreadOwner(owner: String!, id: ID!): Boolean!
+  changeDataObjectStatus(id: ID!, status: String!): Boolean!
+  deleteThread(id: ID!): Boolean!
+  addObjectToFavorites(objectId: String!): Boolean
+  createSavedSearch(savedSearch: CreateSavedSearchInput!): SavedSearch!
+  createDataPropertyText(dataProperty: CreateDataPropertyTextInput!): DataProperty!
+  createDataPropertyBoolean(dataProperty: CreateDataPropertyBooleanInput!): DataProperty!
+  updateThread(thread: UpdateDiscussionThreadInput!): DiscussionThread!
+  updateUserPassword(oldPassword: String!, name: String!, newPassword: String!): Boolean!
+  leaveRoom(id: ID!): Boolean!
+  deleteDataObject(id: ID!): Boolean!
+  readMessages(messageIds: [String!]!): [DiscussionMessage]!
+  updateDataPropertyDecimal(dataProperty: UpdateDataPropertyDecimalInput!): DataProperty!
+  deleteUser(name: String!): Boolean!
+  createWorkspace(workspace: CreateWorkspaceInput!): Workspace!
+  updateMessage(message: UpdateDiscussionMessageInput!): DiscussionMessage!
+  updateWorkspace(workspace: UpdateWorkspaceInput!): Workspace!
+  createDataPropertyString(dataProperty: CreateDataPropertyStringInput!): DataProperty!
+  createOrUpdateBpmnProcessType(dataProperty: CreateOrUpdateBpmnProcessTypeInput!): String
+  removeObjectsFromCollection(collectionId: String!, objectIds: [String]!): [DataObject!]
+  updateGroup(group: UpdateGroupInput!): Group!
+  login(password: String!, username: String!): String!
+  moveDataObject(targetId: ID!, id: ID!): Boolean!
+  updateView(view: UpdateViewInput!): View!
+  createBpmnProcessDataType(dataType: CreateBpmnProcessDataTypeInput!): DataType!
+  createTypeFilter(filter: CreateTypeFilterInput!): TypeFilter!
+  deleteGroup(name: String!): Boolean!
+  createView(view: CreateViewInput!): View!
+  createDataPropertyUsers(dataProperty: CreateDataPropertyUsersInput!): DataProperty!
+  createDataPropertyObject(dataProperty: CreateDataPropertyObjectInput!): DataProperty!
+  createFilterView(filterId: String!, defaultListViewType: FilterDefaultViewEnum!): View!
+  createApiSpec(apiSpec: CreateApiSpecInput!): ApiSpec!
+  createLifecycle(lifecycle: CreateLifecycleInput!): Lifecycle!
+  updateDataPropertyObjectFilter(dataProperty: UpdateDataPropertyObjectFilterInput!): DataProperty!
+  updateUser(user: UpdateUserInput!): User!
+  deleteMessage(id: ID!): Boolean!
+  createHtmlWidgetGroup(htmlWidgetGroup: CreateHtmlWidgetGroupInput!): HtmlWidgetGroup!
+  createRoom(room: CreateDiscussionRoomInput!): DiscussionRoom!
+  updateSettings(settings: [UpdateSettingInput!]!): Boolean!
+  updateDataType(dataType: UpdateDataTypeInput!): DataType!
+  token(code: String!): String!
+  updateDataPropertyText(dataProperty: UpdateDataPropertyTextInput!): DataProperty!
+  archiveRoom(id: ID!): Boolean!
+  createReferenceDataType(referenceDataType: CreateReferenceDataTypeInput!): ReferenceDataType!
+  updateApplication(application: UpdateApplicationInput!): Application!
+  addObjectsToFavorites(objectIds: [String]!): [DataObject!]
+  deleteSavedSearch(id: ID!): Boolean!
+  updateSetting(setting: UpdateSettingInput!): Setting!
+  createDataObjectsFromLiveConnect(providerId: String!, user: String!, items: [AssetDropboxInput!]!): [DataObject!]!
+  updateUserProfile(profile: UpdateUserProfileInput!): User!
+  updateLifecycle(lifecycle: UpdateLifecycleInput!): Lifecycle!
+  changeDataObjectStatusBulk(status: String!, objectIds: [ID!]!): Boolean!
+  hideDirectMessagesRoom(id: ID!): DiscussionDirectMessagesRoom!
+  createDataPropertyFile(dataProperty: CreateDataPropertyFileInput!): DataProperty!
+  deleteDataObjectBulk(ids: [ID!]!): Boolean!
+  createUser(user: CreateUserInput!): User!
+  removeObjectFromCollection(collectionId: String!, objectId: String!): Boolean
+  unarchiveRoom(id: ID!): Boolean!
+  createDataType(dataType: CreateDataTypeInput!): DataType!
+  resetPassword(password: String!, key: String!): Boolean!
+  createDataPropertyUser(dataProperty: CreateDataPropertyUserInput!): DataProperty!
+  createDataPropertyDateTime(dataProperty: CreateDataPropertyDateTimeInput!): DataProperty!
+  updateRole(role: UpdateRoleInput!): Role!
+  addObjectToCollection(collectionId: String!, objectId: String!): Boolean
+
+  """Create data template from data object with GUID = dataObjectId."""
+  saveDataObjectAsTemplate(dataObjectId: String!): DataObject!
+  createModule(module: CreateModuleInput!): Module!
+  updateFilter(filter: UpdateSystemFilterInput!): SystemFilter!
+  clearCache: Boolean!
+  updateAsset(assetUpload: AssetUploadInput!): AssetUpload!
+  updateModulePrivileges(privileges: [UpdateGrantedPrivilegesInput!], metadataObjectId: String!): Module!
+  createDataPropertyTime(dataProperty: CreateDataPropertyTimeInput!): DataProperty!
+  updateDataPropertyFile(dataProperty: UpdateDataPropertyFileInput!): DataProperty!
+  updateDataPropertyMultiSelection(dataProperty: UpdateDataPropertyMultiSelectionInput!): DataProperty!
+  archiveThread(id: ID!): Boolean!
+  updateDataPropertyVersion(dataProperty: UpdateDataPropertyVersionInput!): DataProperty!
+  updateDataPropertyObject(dataProperty: UpdateDataPropertyObjectInput!): DataProperty!
+  createDataPropertyDate(dataProperty: CreateDataPropertyDateInput!): DataProperty!
+  updateDataPropertySequence(dataProperty: UpdateDataPropertySequenceInput!): DataProperty!
+  updateReferenceMetadataObjectPermissions(referenceMetadataObjectId: String!, permissions: [UpdateGrantedPermissionsInput!]): ReferenceMetadataObject!
+  joinToPublicRoom(id: ID!): DiscussionRoom!
+  archiveMetaDataObject(id: String!): Boolean!
+  updateDataPropertySelection(dataProperty: UpdateDataPropertySelectionInput!): DataProperty!
+  republishDataObject(publishDataObjectInput: PublishDataObjectInput!): Boolean!
+  createGroup(group: CreateGroupInput!): Group!
+  updateDataPropertyStatus(dataProperty: UpdateDataPropertyStatusInput!): DataProperty!
+  unarchiveMetaDataObject(id: String!): Boolean!
+  changeDataObjectOwner(owner: String!, id: ID!): Boolean!
+  updateDataPropertyObjects(dataProperty: UpdateDataPropertyObjectsInput!): DataProperty!
+  deleteMetaDataObject(id: String!): Boolean!
+  updatePostTemplate(postTemplate: UpdatePostTemplateInput!): PostTemplate!
+  updateTheme(theme: UpdateThemeInput!): Theme!
+  createThread(thread: CreateDiscussionThreadInput!): DiscussionThread!
+  createApiSpecsGroup(apiSpecsGroup: CreateApiSpecsGroupInput!): ApiSpecsGroup!
+  createDataPropertyInteger(dataProperty: CreateDataPropertyIntegerInput!): DataProperty!
+  createDataObjectVersion(createVersionInput: CreateDataObjectVersionInput!): DataObject!
+  createMessage(message: CreateDiscussionMessageInput!): DiscussionMessage!
+  updateHtmlWidget(htmlWidget: UpdateHtmlWidgetInput!): HtmlWidget!
+  updateApiSpecsGroup(apiSpecsGroup: UpdateApiSpecsGroupInput!): ApiSpecsGroup!
+  createDataObject(object: CreateDataObjectInput!): DataObject!
+  createCollection(collectionPath: String!, collectionDescription: String): String!
+  restoreDataObjectVersion(versionId: ID!): DataObject!
+  updateDataPropertyAttributes(dataProperty: UpdateDataPropertyAttributesInput!): DataProperty!
+  createDataObjectFromTemplate(object: CreateDataObjectFromTemplateInput!): DataObject!
+  updateBpmnMessage(dataProperty: UpdateBpmnMessageInput!): BpmnMessage!
+  updateDataPropertyUser(dataProperty: UpdateDataPropertyUserInput!): DataProperty!
+  updateDataPropertyUsers(dataProperty: UpdateDataPropertyUsersInput!): DataProperty!
+  moveDataObjectBulk(targetId: ID!, ids: [ID!]!): Boolean!
+  setMembersForRole(members: [MemberInput!]!, name: String!): Boolean!
+  createDataPropertyObjects(dataProperty: CreateDataPropertyObjectsInput!): DataProperty!
+  removeObjectsFromFavorites(objectIds: [String]!): [DataObject!]
+  updateDataPropertyTime(dataProperty: UpdateDataPropertyTimeInput!): DataProperty!
+  stopImportMetadataTool: Boolean!
+  updateReferenceDataGroup(referenceDataGroup: UpdateReferenceDataGroupInput!): ReferenceDataGroup!
+  sendEmail(sendEmailInput: SendEmailInput!): Boolean!
+  restoreUser(uid: String!): User!
+  saveViewCustomization(customization: ViewCustomizationInput!): Boolean!
+  failAssetUploads: Boolean!
+  changeDataObjectOwnerBulk(owner: String!, objectIds: [ID!]!): Boolean!
+  createDirectMessagesRoom(room: CreateDiscussionDirectMessagesRoomInput!): DiscussionDirectMessagesRoom!
+  createDataPropertyObjectFilter(dataProperty: CreateDataPropertyObjectFilterInput!): DataProperty!
+  changeStatusAndUpdateDataObject(currentState: String, object: UpdateDataObjectInput!, status: [String]!): Boolean!
+  updateSavedSearch(savedSearch: UpdateSavedSearchInput!): SavedSearch!
+  unpublishDataObject(unpublishDataObjectInput: UnpublishDataObjectInput!): Boolean!
+  updateReferenceDataType(referenceDataType: UpdateReferenceDataTypeInput!): ReferenceDataType!
+  unarchiveThread(id: ID!): Boolean!
+  publishDataObject(publishDataObjectInput: PublishDataObjectInput!): Boolean!
+  createPostTemplate(postTemplate: CreatePostTemplateInput!): PostTemplate!
+  createDataPropertySelection(dataProperty: CreateDataPropertySelectionInput!): DataProperty!
+  updateDataPropertyDate(dataProperty: UpdateDataPropertyDateInput!): DataProperty!
+  updateWorkspacePermissions(permissions: [UpdateGrantedPermissionsInput!], metadataObjectId: String!): Workspace!
+  createDataPropertyMultiSelection(dataProperty: CreateDataPropertyMultiSelectionInput!): DataProperty!
+  readAllMessages(parentId: String!): [DiscussionMessage]!
+  createWorkbench(workbench: CreateWorkbenchInput!): Workbench!
+  addObjectsToCollection(collectionId: String!, objectIds: [String]!): [DataObject!]
+  updateDataTypePrivileges(privileges: [UpdateGrantedPrivilegesInput!], metadataObjectId: String!): DataType!
+  updateDataPropertyInteger(dataProperty: UpdateDataPropertyIntegerInput!): DataProperty!
+  updateApiSpec(apiSpec: UpdateApiSpecInput!): ApiSpec!
+  updateHtmlWidgetGroup(htmlWidgetGroup: UpdateHtmlWidgetGroupInput!): HtmlWidgetGroup!
+  deleteGroupBulk(names: [String!]!): Boolean!
+  updateDataObject(object: UpdateDataObjectInput!): DataObject!
+  publish(comment: String!): Boolean!
+  createDataPropertyAttributes(dataProperty: CreateDataPropertyAttributesInput!): DataProperty!
+  createExternalGroup(externalGroup: CreateOrUpdateExternalGroupInput!): ExternalGroupMapping!
+  createDataPropertyDecimal(dataProperty: CreateDataPropertyDecimalInput!): DataProperty!
+  recalcDataObjectFormulas(id: String!): DataObject!
+  updateModule(module: UpdateModuleInput!): Module!
+  createHtmlWidget(htmlWidget: CreateHtmlWidgetInput!): HtmlWidget!
+  deleteUserBulk(names: [String!]!): Boolean!
+  updateDataPropertyString(dataProperty: UpdateDataPropertyStringInput!): DataProperty!
+}
+
+""""""
+type OAuth2ServiceProvider {
+  authorizationServerUrl: String!
+  clientId: String
+  clientSecret: String
+  description: String
+  enabled: Boolean!
+  requestTokenUrl: String
+  scopes: [String]
+  serviceName: String!
+  tokenServerUrl: String!
+  userAuthorizationUrl: String
+}
+
+""""""
+type OAuth2ServiceToken {
+  accessToken: String!
+  clientId: String
+  creationDate: Date!
+  expirationTimeMilliseconds: String
+  id: Long
+  isShared: Boolean!
+  refreshToken: String
+  serviceLogin: String!
+  serviceName: String!
+  sharedWith: String
+  username: String!
+}
+
+"""Built-in scalar for dynamic values"""
+scalar ObjectScalar
+
+""""""
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  pageIndex: Int!
+  pageSize: Int!
+  totalCount: Int!
+}
+
+""""""
+input PaginationInput {
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+""""""
+type Permission {
+  displayName: String!
+  value: PermissionEnum!
+}
+
+""""""
+enum PermissionEnum {
+  CREATE
+  MANAGE
+  READ
+  REMOVE
+  WRITE
+}
+
+""""""
+type PostTemplate implements MetadataObject {
+  bodyTemplate: String!
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  status: MetadataObjectStatusEnum!
+  subjectTemplate: String!
+}
+
+""""""
+enum PrivacyStatusEnum {
+  PRIVATE
+  PUBLIC
+}
+
+""""""
+type Privilege {
+  displayName: String!
+  value: PrivilegeEnum!
+}
+
+""""""
+enum PrivilegeEnum {
+  CAN_CHANGE_OWNER
+  CAN_CHANGE_STATE
+  CAN_CREATE
+  CAN_DELETE
+  CAN_DOWNLOAD
+  CAN_EDIT
+  CAN_IMPORT
+  CAN_MANAGE_FAVORITES
+  CAN_MANAGE_PERMISSIONS
+  CAN_MANAGE_SHARED_SEARCHES
+  CAN_MANAGE_TEMPLATES
+  CAN_MANAGE_VERSIONS
+  CAN_MOVE
+  CAN_PUBLISH
+  CAN_READ
+  CAN_SEE_HISTORY
+}
+
+""""""
+type PropertyGroup {
+  description: String
+  displayName: String!
+  id: String!
+  name: String!
+  properties(propertyTypeEnum: PropertyTypeEnum): [DataProperty!]!
+  status: MetadataObjectStatusEnum
+}
+
+""""""
+type PropertyType {
+  displayName: String!
+  propertyTypeEnum: PropertyTypeEnum!
+  systemOnly: Boolean!
+}
+
+""""""
+enum PropertyTypeEnum {
+  ATTRIBUTES
+  BOOLEAN
+  DATA_OBJECT
+  DATA_OBJECTS
+  DATE
+  DATETIME
+  DECIMAL
+  FILE
+  FILES
+  INTEGER
+  MULTI_SELECTION
+  OBJECT_FILTER
+  SELECTION
+  SEQUENCE
+  STATUS
+  STRING
+  TEXT
+  TIME
+  USER
+  USERS
+  VERSION
+}
+
+""""""
+input PublishDataObjectInput {
+  objectId: String!
+  privacyStatus: PrivacyStatusEnum!
+  serviceLogin: String!
+  serviceName: String!
+  tags: String
+}
+
+""""""
+type PublishedApplication {
+  displayName: String!
+  htmlWidgets: [PublishedHtmlWidget!]!
+  id: String!
+  modules: [PublishedModule!]!
+  notificationJson: String!
+  toolbarJson: String!
+  workbenches: [PublishedWorkbench!]!
+}
+
+""""""
+type PublishedApplicationVersion {
+  comment: String!
+  id: String!
+  publishDate: String!
+  user: User!
+  version: String!
+}
+
+""""""
+type PublishedApplicationVersionList {
+  items: [PublishedApplicationVersion!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+type PublishedDataType {
+  brandingJson: String
+  canCreateAnother: Boolean!
+  dataTypeComment: DataType
+  description: String
+  displayName: String!
+  exportViews: [PublishedExportView!]!
+  id: String!
+  lifecycle: PublishedLifecycle!
+  name: String!
+  publishedReportingView: PublishedView!
+  stateMachine: String
+}
+
+""""""
+type PublishedExportView {
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  fileProperty: String
+  group: String
+  id: String!
+  name: String!
+  parentId: String!
+  template: File
+  viewMode: String
+  viewTypeEnum: ViewTypeEnum
+}
+
+""""""
+type PublishedFilter {
+  description: String
+  displayName: String!
+  id: String!
+  name: String!
+  route: String!
+}
+
+""""""
+type PublishedHtmlWidget {
+  css: String
+  html: String
+  id: String!
+  js: String
+  name: String!
+  widgetJson: String
+}
+
+""""""
+type PublishedLifecycle {
+  lifecycleJson: String
+}
+
+""""""
+type PublishedModule {
+  availableUsers: [User!]
+  brandingJson: String
+  dataTypes: [PublishedDataType!]!
+  description: String
+  displayName: String!
+  filters: [PublishedFilter!]!
+  icon: File!
+  id: String!
+  import: Boolean!
+  lifecycleStates: [LifecycleState!]!
+  name: String!
+  properties: [PropertyGroup!]!
+  route: String!
+  searchPage: SystemPage!
+  templatesPage: SystemPage!
+  userPrivileges: [PrivilegeEnum!]!
+  workspaces: [PublishedWorkspace!]!
+}
+
+""""""
+type PublishedView {
+  childrenTypes: [PublishedDataType!]!
+  contextId: String!
+  customFilterId: String
+  defaultView: Boolean!
+  filterJson: String
+  id: String!
+  idCopy: String!
+  import: Boolean!
+  objectId: ID
+  parentForCreation: ID
+  properties: [PropertyGroup]
+  sortingJson: String
+  upload: Boolean
+  viewJson: String!
+  viewMode: String
+  viewType: ViewTypeEnum!
+}
+
+""""""
+type PublishedWorkbench {
+  creationDate: Date!
+  description: String
+  displayName: String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  menuJson: String
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  roles: [Role!]!
+  status: MetadataObjectStatusEnum!
+}
+
+""""""
+type PublishedWorkspace {
+  brandingJson: String
+  description: String
+  displayName: String!
+  icon: File!
+  id: String!
+  import: Boolean!
+  name: String!
+  objectId: ID!
+  route: String!
+  userPrivileges: [PrivilegeEnum!]!
+}
+
+"""Query root"""
+type Query {
+  publishedTypeFilters(dataTypeId: String): [TypeFilter!]!
+  setting(key: String!): Setting!
+  fixWorkbenches: Boolean!
+  module(id: String!): Module!
+  profile(username: String): User!
+  dataObjectStatusOptions(currentState: String, objectId: ID!): [LifecycleTransition!]!
+  aggredatedDataObjects(params: ListParametersInput!): DataObjectList!
+  userSelectionOptions(selectionParameters: UserSelectionOptionsInput!): [User!]!
+  isApiSpecValid(apiSpec: ValidateApiSpecInput!): Boolean!
+  dateDisplayFormats: [DateDisplayFormat!]!
+  role(id: String!): Role!
+  isLifecycleValid(lifecycle: ValidateLifecycleInput!): Boolean!
+  savedSearch(id: String!): SavedSearch!
+  publishedApplication: PublishedApplication!
+  validationResults(severity: String): [ValidationResults]!
+
+  """Get template by id if user has privileges to data type."""
+  dataObjectTemplate(id: String!): DataObject!
+  userCollections(searchTerm: String!): [Collection]
+  serviceDtoJson(id: String!): String!
+  dataProperty(id: String!): DataProperty!
+  auditLogEntries(params: ListParametersInput): AuditLogEntriesList!
+  htmlWidgetGroup(id: String!): HtmlWidgetGroup!
+  privileges(includeModuleOnly: Boolean, moduleId: String!): [Privilege!]!
+  workspace(id: String!): Workspace!
+  htmlWidget(id: String!): HtmlWidget!
+  lifecycle(id: String!): Lifecycle!
+  view(id: String!): View!
+  versionDisplayFormats: [VersionDisplayFormat!]!
+  workbench(id: String!): Workbench!
+  isDataObjectValid(dataObject: ValidateDataObjectInput!): Boolean!
+  isRoleValid(role: ValidateRoleInput!): Boolean!
+  availableMembersForGroup(name: String, params: ListParametersInput!): [Member!]!
+  dataObjectSelectionView(customContextJson: String, key: String!): PublishedView!
+  passwordResetKeyValid(key: String!): Boolean!
+  dataType(id: String!): DataType!
+  externalGroups(params: ExternalGroupListParametersInput): ExternalGroupList!
+  dataObjectVersions(id: ID!): [Version!]!
+  users(params: ListParametersInput): UserList!
+  trashableUsers(params: TrashableListParametersInput): UserList!
+  objectsFromFavorites(params: ListParametersInput!): DataObjectList
+  auditUsers(params: ListParametersInput): UserList!
+  isLoggedIn: Boolean!
+  apiSpec(id: String!): ApiSpec!
+  dataObjects(params: ListParametersInput!): DataObjectList!
+  roles(params: ListParametersInput): RoleList!
+  isWorkbenchValid(workbench: ValidateWorkbenchInput!): Boolean!
+  postTemplate(id: String!): PostTemplate!
+  textFormatTypes: [TextFormatType!]!
+  isGroupValid(group: ValidateGroupInput!): Boolean!
+  isReferenceDataTypeValid(referenceDataType: ValidateReferenceDataTypeInput!): Boolean!
+  workbenches: [Workbench!]!
+  canChangeMetadataObjectStatus(action: MetadataObjectChangeStatusActionsEnum!, ids: [String!]): Boolean!
+  savedSearches(moduleId: String): [SavedSearch!]!
+  getCollection(collectionPath: String!): String!
+  isObjectInFavorites(objectId: String!): Boolean
+  publicRooms(params: ListParametersInput): DiscussionRoomList!
+  booleanDisplayFormats: [BooleanDisplayFormat!]!
+  message(messageId: String!): DiscussionMessage!
+  room(id: ID!): DiscussionRoom!
+  isPostTemplateValid(postTemplate: ValidatePostTemplateInput!): Boolean!
+  bpmnProcessType(id: String!): BpmnProcessType!
+  systemDefaults: SystemDefaults!
+
+  """
+  Get list of all available templates, filtered by user data type privileges.
+  """
+  dataObjectTemplates(dataTypeIds: [String!], parentId: String!): [DataObject!]!
+  propertyTypes: [PropertyType!]!
+  isTypeFilterValid(filter: ValidateTypeFilterInput!): Boolean!
+  availableSelections(referenceDataTypeId: String!, parentId: String!): [DataProperty!]!
+  publishedViews(params: ViewParametersInput!): [PublishedView!]!
+  referenceMetadataObjects(includeArchived: Boolean, parentId: String, objectType: ReferenceMetadataObjectTypeEnum): [ReferenceMetadataObject!]!
+  isDataPropertyValid(property: ValidateDataPropertyInput!): Boolean!
+  currentUserRooms(params: ListParametersInput): DiscussionRoomList!
+  nextMessages(count: Int!, messageId: String!): [DiscussionMessage]!
+  isUserValid(user: ValidateUserInput!): Boolean!
+  permissions(moduleId: String!): [Permission!]!
+  defaultResources: DefaultResources!
+  enabledLocales: [LocaleOption]!
+  apiSpecsGroup(id: String!): ApiSpecsGroup!
+  bpmnMessage(id: String!): BpmnMessage!
+  publishedAggregatedViews(route: String!): [PublishedView!]!
+  typeFilter(id: String!): TypeFilter!
+  apiSpecsGroups(parentId: String!): [ApiSpecsGroup!]!
+  dataObjectVersionOptions(id: ID!): [VersionIncrement!]!
+  objectsFromCollection(params: ListParametersInput!): DataObjectList
+  analyzerMap: Map_String_StringScalar!
+  assetUploads(batchIds: [String!], params: ListParametersInput): AssetUploadList!
+  isDataObjectValid2(dataObject: ValidateDataObjectInput!): DataObjectChanges!
+  isModuleValid(module: ValidateModuleInput!): Boolean!
+  theme: Theme!
+  isDataTypeValid(dataType: ValidateDataTypeInput!): Boolean!
+  isReferenceDataGroupValid(referenceDataGroup: ValidateReferenceDataGroupInput!): Boolean!
+  isApiSpecsGroupValid(apiSpecsGroup: ValidateApiSpecsGroupInput!): Boolean!
+  publishedApplicationVersions(params: ListParametersInput): PublishedApplicationVersionList!
+  filter(id: String!): SystemFilter!
+  viewTypes: [ViewType!]!
+  canDeleteLifecycleState(state: String!, lifecycleId: String!): Boolean!
+  previousMessages(count: Int!, messageId: String!): [DiscussionMessage]!
+  validateUpdateUserPassword(oldPassword: String!, name: String!, newPassword: String!): Boolean!
+  translate(sourceLocale: String!, targetLocales: [String]!, value: String!): Translate!
+  publishedModuleFilters(moduleId: String): [SystemFilter!]!
+  routes: [Route!]!
+  publishedFilterViews(params: FilterViewParametersInput!): [PublishedView!]!
+  isBpmnMessageValid(property: ValidateBpmnMessageInput!): Boolean!
+  group(name: String!): Group!
+  oauth2ServiceProviders: [OAuth2ServiceProvider]!
+  settings(key: String!): [Setting!]!
+  availableMembersForRole(name: String, params: ListParametersInput!): [Member!]!
+  isBpmnProcessValid(property: CreateOrUpdateBpmnProcessTypeInput!): Boolean!
+  directMessagesRoom(id: ID!): DiscussionDirectMessagesRoom!
+  dataObjectGenericStatus(id: ID!): DataObjectGenericStatus!
+  isFilterValid(filter: ValidateSystemFilterInput!): Boolean!
+  referenceDataGroup(id: String!): ReferenceDataGroup!
+  isViewValid(view: ValidateViewInput!): Boolean!
+  dataObject(id: ID!): DataObject!
+  passwordValid(password: String!): Boolean!
+  canChangeLifecycle(dataTypeId: String!): Boolean!
+  publishedReportingViews(dataTypeIds: [String!]): [PublishedView!]!
+  oauth2ServiceTokens: [OAuth2ServiceToken]!
+  offsetMessages(count: Int!, messageId: String!): [DiscussionMessage]!
+  offsetMessagesFromFirstUnread(count: Int!, parentId: String!): [DiscussionMessage]!
+  referenceDataType(id: String!): ReferenceDataType!
+  directMessagesRooms(params: ListParametersInput): DiscussionDirectMessagesRoomList!
+  attributesSelectionOptions(referenceDataTypeId: String!, parentValues: [String!]): [Attribute!]!
+  isWorkspaceValid(workspace: ValidateWorkspaceInput!): Boolean!
+  threads(params: ListParametersInput, roomId: String!): DiscussionThreadList!
+  groups(params: ListParametersInput): GroupList!
+  thread(id: ID!): DiscussionThread!
+  lastMessages(count: Int!, parentId: String!): [DiscussionMessage]!
+
+  """
+  Select available target folder or workspace for data object creation.Method considers current user privileges and permissions.
+  """
+  dataObjectHierarchy(
+    """
+    Root target. Can be GUID in case of workspace or folderish data object or module id (in format "/modules/module1").
+    """
+    parentTargetId: ID
+
+    """
+    Types of data object you are going to create. If omitted all available types of module's data types are used.
+    """
+    dataTypeIds: [String!]
+
+    """
+    Source data object ids (required parameter if you are going to move objects.
+    """
+    objectIds: [ID!]
+  ): [DataObjectHierarchy!]!
+  application: Application!
+  dataObjectSelectionOptions(referenceDataTypeId: String!, selectedDate: DataPropertyDateTimeValueInput, parentValues: [String!]): [DataObject!]!
+  user(name: String!): User!
+}
+
+""""""
+type RdmContentPayload {
+  referenceDataTypeId: String
+}
+
+""""""
+type ReferenceDataGroup implements MetadataObject & ReferenceMetadataObject {
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  grantedPermissions: [GrantedPermissions!]!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  permissionsInherited: Boolean
+  referenceMetadataObjectType: ReferenceMetadataObjectTypeEnum!
+  referenceMetadataObjects(includeArchived: Boolean, objectType: ReferenceMetadataObjectTypeEnum): [ReferenceMetadataObject!]!
+  status: MetadataObjectStatusEnum!
+}
+
+""""""
+type ReferenceDataType implements MetadataObject & ReferenceMetadataObject {
+  createRecordView: String
+  creationDate: Date!
+  dataFile: File
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  editRecordView: String
+  filterJson: String
+  grantedPermissions: [GrantedPermissions!]!
+  id: String!
+  isDateSpecific: Boolean
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  name: String!
+  navigateRecordView: String
+  parentId: String!
+  parentReferenceDataType: ReferenceDataType
+  permissionsInherited: Boolean
+  properties: [PropertyGroup!]!
+  recordTableView: String
+  referenceMetadataObjectType: ReferenceMetadataObjectTypeEnum!
+  searchPanelProperties: [PropertyGroup!]!
+  status: MetadataObjectStatusEnum!
+  views(includeArchived: Boolean, viewType: ViewTypeEnum): [View!]!
+}
+
+""""""
+interface ReferenceMetadataObject {
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  grantedPermissions: [GrantedPermissions!]!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  permissionsInherited: Boolean
+  referenceMetadataObjectType: ReferenceMetadataObjectTypeEnum!
+  status: MetadataObjectStatusEnum!
+}
+
+""""""
+enum ReferenceMetadataObjectTypeEnum {
+  DATA_TYPE
+  GROUP
+}
+
+""""""
+type Role implements MetadataObject {
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  members: [Member]
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  roles: [Role]
+  status: MetadataObjectStatusEnum!
+  visible: Boolean
+}
+
+""""""
+type RoleList {
+  items: [Role!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+type Route {
+  description: String!
+  displayName: String!
+  route: String!
+  routes: [Route!]!
+}
+
+""""""
+type SavedSearch {
+  displayName: String!
+  filterJson: String!
+  id: ID!
+  moduleName: String
+  owner: User!
+  route: String!
+  sortingJson: String!
+  viewJson: String!
+}
+
+""""""
+input SendEmailInput {
+  body: String!
+  subject: String!
+  to: [String!]!
+}
+
+""""""
+enum SequenceRestartInterval {
+  month
+  never
+  year
+}
+
+""""""
+type Setting {
+  key: String!
+  value: String!
+}
+
+""""""
+type StaticContentFile {
+  defaultResource: Boolean
+  encoding: String
+  htmlFiles: Map_String_StringScalar
+  length: String
+  mimeType: String
+  name: String!
+  resourceId: String
+  thumbnailUrl: String
+  url: String!
+}
+
+"""Subscription root"""
+type Subscription {
+  messages(topics: [String]!): SubscriptionMessage
+  unspecifiedPayloadMessages(topics: [String]!): SubscriptionUnspecifiedMessage
+  csvImports(topics: [String]!): SubscriptionCsvImportStatus
+  actions(topics: [String]!): SubscriptionAction
+  dataObjectChanges(id: ID!): DataObject
+  rdmContentChanges(topics: [String]!): SubscriptionRdmContentChanges
+}
+
+""""""
+type SubscriptionAction {
+  payload: SubscriptionActionPayload!
+  topic: String!
+}
+
+""""""
+type SubscriptionActionPayload {
+  actionKey: String!
+  relatedObjects: Map_String_StringScalar
+}
+
+""""""
+type SubscriptionCsvImportStatus {
+  payload: CsvImportStatus!
+  topic: String!
+}
+
+""""""
+type SubscriptionMessage {
+  payload: DiscussionMessage!
+  topic: String!
+}
+
+""""""
+type SubscriptionRdmContentChanges {
+  payload: RdmContentPayload!
+  topic: String!
+}
+
+""""""
+type SubscriptionUnspecifiedMessage {
+  payload: ObjectScalar!
+  topic: String!
+}
+
+""""""
+type SystemDefaults {
+  locale: String!
+  passwordSettings: [Setting!]!
+  timezone: String!
+}
+
+""""""
+type SystemFilter implements MetadataObject {
+  calendarView: String
+  childrenTypes: [DataType!]!
+  creationDate: Date!
+  dataObjectContext: Boolean!
+  defaultListView: FilterDefaultViewEnum
+  defaultViewType: ViewTypeEnum
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  exactDataType: Boolean!
+  filterJson: String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  kanbanView: String
+  modificationDate: Date!
+  name: String!
+  navigateView: String
+  parentId: String!
+  searchPanelProperties: [PropertyGroup!]!
+  status: MetadataObjectStatusEnum!
+  tileView: String
+}
+
+""""""
+type SystemPage {
+  calendarView: String
+  enabled: Boolean!
+  filterJson: String
+  navigateView: String
+  tileView: String
+}
+
+""""""
+input SystemPageInput {
+  calendarView: String
+  enabled: Boolean
+  filterJson: String
+  navigateView: String
+  tileView: String
+}
+
+""""""
+type TextFormatType {
+  displayName: String!
+  textFormatTypeEnum: TextFormatTypeEnum!
+}
+
+""""""
+enum TextFormatTypeEnum {
+  HTML
+  PLAIN
+}
+
+""""""
+type Theme {
+  applicationTitle: String!
+  favicon: File!
+  leftPanelDarkMode: Boolean!
+  logo: File!
+  logoSmall: File!
+  primaryColor: String!
+  staticContent: StaticContentFile
+  uid: String
+}
+
+""""""
+type Translate {
+  items: [TranslateOption]
+}
+
+""""""
+type TranslateOption {
+  locale: String
+  value: String
+}
+
+""""""
+input TrashableListParametersInput {
+  hints: String
+  pagination: PaginationInput
+  search: String
+  sortingJson: String
+  trashed: Boolean!
+}
+
+""""""
+type TypeFilter implements MetadataObject {
+  calendarView: String
+  childrenTypes: [DataType!]!
+  creationDate: Date!
+  dataObjectContext: Boolean!
+  defaultListView: FilterDefaultViewEnum
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  exactDataType: Boolean!
+  filterJson: String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  kanbanView: String
+  modificationDate: Date!
+  name: String!
+  navigateView: String
+  parentId: String!
+  searchPanelProperties: [PropertyGroup!]!
+  status: MetadataObjectStatusEnum!
+  tileView: String
+}
+
+""""""
+input UnpublishDataObjectInput {
+  objectId: String!
+  serviceName: String!
+}
+
+""""""
+input UpdateApiSpecInput {
+  authMethod: AuthMethod
+  basicAuthLogin: String
+  basicAuthPassword: String
+  clientCredFlowClientId: String
+  clientCredFlowClientSecret: String
+  clientCredFlowTokenUrl: String
+  displayName: String
+  id: String!
+  openApiJson: String
+  serviceUrl: String
+}
+
+""""""
+input UpdateApiSpecsGroupInput {
+  description: String
+  displayName: String
+  id: String!
+}
+
+""""""
+input UpdateApplicationInput {
+  displayName: String
+  notificationJson: String
+  toolbarJson: String
+}
+
+""""""
+input UpdateBpmnMessageInput {
+  dataJson: String
+  description: String
+  displayName: String
+  id: String!
+}
+
+""""""
+input UpdateDataObjectInput {
+  id: ID!
+  properties: [DataObjectPropertyInput!]
+}
+
+""""""
+input UpdateDataPropertyAttributesInput {
+  customizationRef: String
+  dateDataPropertyKey: String
+  description: String
+  displayName: String
+  formula: String
+  helpText: String
+  id: String!
+  parentSelection: String
+  readonly: Boolean
+  referenceDataTypeId: String
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyBooleanInput {
+  customizationRef: String
+  defaultValue: DataPropertyBooleanValueInput
+  description: String
+  displayFalseAs: String
+  displayFalseColor: String
+  displayFormat: BooleanDisplayFormatEnum
+  displayName: String
+  displayTrueAs: String
+  displayTrueColor: String
+  helpText: String
+  id: String!
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyDateInput {
+  customizationRef: String
+  defaultValue: DataPropertyDateValueInput
+  description: String
+  displayFormat: DateDisplayFormatEnum
+  displayName: String
+  helpText: String
+  id: String!
+  maxValue: DataPropertyDateValueInput
+  minValue: DataPropertyDateValueInput
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyDateTimeInput {
+  customizationRef: String
+  defaultValue: DataPropertyDateTimeValueInput
+  description: String
+  displayFormat: DateDisplayFormatEnum
+  displayName: String
+  helpText: String
+  id: String!
+  maxValue: DataPropertyDateTimeValueInput
+  minValue: DataPropertyDateTimeValueInput
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyDecimalInput {
+  customizationRef: String
+  defaultValue: DataPropertyDecimalValueInput
+  description: String
+  displayName: String
+  formula: String
+  helpText: String
+  id: String!
+  maxValue: DataPropertyDecimalValueInput
+  minValue: DataPropertyDecimalValueInput
+  precision: Int
+  prefix: String
+  readonly: Boolean
+  required: Boolean
+  suffix: String
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyFileInput {
+  customizationRef: String
+  description: String
+  displayName: String
+  downloadable: Boolean
+  helpText: String
+  id: String!
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyFilesInput {
+  customizationRef: String
+  description: String
+  displayName: String
+  downloadable: Boolean
+  helpText: String
+  id: String!
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyIntegerInput {
+  customizationRef: String
+  defaultValue: DataPropertyIntegerValueInput
+  description: String
+  displayName: String
+  helpText: String
+  id: String!
+  maxValue: DataPropertyIntegerValueInput
+  minValue: DataPropertyIntegerValueInput
+  prefix: String
+  readonly: Boolean
+  required: Boolean
+  suffix: String
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyMultiSelectionInput {
+  customizationRef: String
+  dateDataPropertyKey: String
+  description: String
+  displayName: String
+  formula: String
+  helpText: String
+  id: String!
+  parentSelection: String
+  readonly: Boolean
+  referenceDataTypeId: String
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyObjectFilterInput {
+  bindingJson: String
+  customizationRef: String
+  description: String
+  displayName: String
+  filterId: String
+  helpText: String
+  id: String!
+  readonly: Boolean
+  relationObjectProperty: String
+  relationTypes: [String]
+  required: Boolean
+  useInSearchOrSort: Boolean
+  viewJson: String
+}
+
+""""""
+input UpdateDataPropertyObjectInput {
+  customizationRef: String
+  description: String
+  displayName: String
+  helpText: String
+  id: String!
+  readonly: Boolean
+  relationObjectProperty: String
+  relationTypes: [String]
+  required: Boolean
+  useInSearchOrSort: Boolean
+  viewJson: String
+}
+
+""""""
+input UpdateDataPropertyObjectsInput {
+  customizationRef: String
+  description: String
+  displayName: String
+  helpText: String
+  id: String!
+  readonly: Boolean
+  relationObjectProperty: String
+  relationTypes: [String]
+  required: Boolean
+  useInSearchOrSort: Boolean
+  viewJson: String
+}
+
+""""""
+input UpdateDataPropertySelectionInput {
+  customizationRef: String
+  dateDataPropertyKey: String
+  description: String
+  displayName: String
+  formula: String
+  helpText: String
+  id: String!
+  parentSelection: String
+  readonly: Boolean
+  referenceDataTypeId: String
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertySequenceInput {
+  customizationRef: String
+  description: String
+  displayName: String
+  helpText: String
+  id: String!
+  initialValue: Int
+  prefix: String
+  readonly: Boolean
+  required: Boolean
+  restartInterval: SequenceRestartInterval
+  suffix: String
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyStatusInput {
+  customizationRef: String
+  description: String
+  displayName: String
+  helpText: String
+  id: String!
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyStringInput {
+  customizationRef: String
+  defaultValue: DataPropertyStringValueInput
+  description: String
+  displayName: String
+  formula: String
+  helpText: String
+  icon: String
+  id: String!
+  maxLength: Int
+  minLength: Int
+  multilanguage: Boolean
+  pattern: String
+  prefix: String
+  readonly: Boolean
+  required: Boolean
+  suffix: String
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyTextInput {
+  customizationRef: String
+  defaultValue: DataPropertyTextValueInput
+  description: String
+  displayName: String
+  helpText: String
+  id: String!
+  maxLength: Int
+  minLength: Int
+  multilanguage: Boolean
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyTimeInput {
+  customizationRef: String
+  defaultValue: DataPropertyTimeValueInput
+  description: String
+  displayFormat: DateDisplayFormatEnum
+  displayName: String
+  helpText: String
+  id: String!
+  maxValue: DataPropertyTimeValueInput
+  minValue: DataPropertyTimeValueInput
+  readonly: Boolean
+  required: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyUserInput {
+  customizationRef: String
+  description: String
+  displayName: String
+  filterByDataObjectPermissions: Boolean
+  filterByDataTypePrivileges: Boolean
+  filterByRoles: [String!]
+  helpText: String
+  id: String!
+  readonly: Boolean
+  required: Boolean
+  sortingFullName: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyUsersInput {
+  customizationRef: String
+  description: String
+  displayName: String
+  filterByDataObjectPermissions: Boolean
+  filterByDataTypePrivileges: Boolean
+  filterByRoles: [String!]
+  helpText: String
+  id: String!
+  readonly: Boolean
+  required: Boolean
+  sortingFullName: Boolean
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataPropertyVersionInput {
+  customizationRef: String
+  description: String
+  displayFormat: VersionDisplayFormatEnum
+  displayName: String
+  helpText: String
+  id: String!
+  useInSearchOrSort: Boolean
+}
+
+""""""
+input UpdateDataTypeInput {
+  brandingJson: String
+  calendarView: String
+  canBeUsedAsTemplate: Boolean
+  canCreateAnother: Boolean
+  canHaveDiscussion: Boolean
+  cardView: String
+  childTableView: String
+  childrenTypes: [String!]
+  createFromTemplateView: String
+  createView: String
+  dataTypeComment: String
+  description: String
+  discussionMembersId: String
+  displayName: String
+  editView: String
+  embedView: String
+  filterJson: String
+  id: String!
+  inheritBpmnScheme: Boolean
+  lifecycle: String
+  navigateView: String
+  reportingView: String
+  tileView: String
+  versionIncrement: [VersionIncrementEnum!]
+  versionable: Boolean
+}
+
+""""""
+input UpdateDiscussionMessageInput {
+  attachmentsValueInput: FilesInput
+  id: String!
+  message: String
+}
+
+""""""
+input UpdateDiscussionRoomInput {
+  description: String
+  iconBatchId: String
+  id: String!
+  name: String
+  participants: [String!]
+  private: Boolean
+}
+
+""""""
+input UpdateDiscussionThreadInput {
+  color: String
+  id: String!
+  name: String
+}
+
+""""""
+input UpdateGrantedPermissionsInput {
+  permissions: [PermissionEnum!]!
+  role: String!
+}
+
+""""""
+input UpdateGrantedPrivilegesInput {
+  privileges: [PrivilegeEnum!]!
+  role: String!
+}
+
+""""""
+input UpdateGroupInput {
+  description: String
+  displayName: String
+  name: String!
+}
+
+""""""
+input UpdateHtmlWidgetGroupInput {
+  description: String!
+  id: String!
+}
+
+""""""
+input UpdateHtmlWidgetInput {
+  css: String
+  html: String
+  id: String!
+  js: String
+  widgetJson: String
+}
+
+""""""
+input UpdateLifecycleInput {
+  description: String
+  displayName: String
+  id: String!
+  lifecycleJson: String
+}
+
+""""""
+input UpdateModuleInput {
+  brandingJson: String
+  calendarView: String
+  cardView: String
+  childTableView: String
+  createView: String
+  description: String
+  displayName: String
+  editView: String
+  embedView: String
+  iconBatchId: String
+  id: String!
+  kanbanView: String
+  navigateView: String
+  reportingView: String
+  searchPage: SystemPageInput
+  templatesPage: SystemPageInput
+  tileView: String
+}
+
+""""""
+input UpdatePostTemplateInput {
+  bodyTemplate: String
+  description: String
+  displayName: String
+  id: String!
+  subjectTemplate: String
+}
+
+""""""
+input UpdateReferenceDataGroupInput {
+  description: String
+  displayName: String
+  referenceDataGroupId: String!
+}
+
+""""""
+input UpdateReferenceDataTypeInput {
+  createRecordView: String
+  dataFileBatchId: String
+  description: String
+  displayName: String
+  editRecordView: String
+  filterJson: String
+  navigateRecordView: String
+  recordTableView: String
+  referenceDataTypeId: String!
+}
+
+""""""
+input UpdateRoleInput {
+  description: String
+  displayName: String
+  id: String!
+  visible: Boolean
+}
+
+""""""
+input UpdateSavedSearchInput {
+  displayName: String
+  filterJson: String
+  id: String!
+  sortingJson: String
+  viewJson: String
+}
+
+""""""
+input UpdateSettingInput {
+  key: String!
+  value: String!
+}
+
+""""""
+input UpdateSystemFilterInput {
+  calendarView: String
+  childrenTypes: [String!]
+  dataObjectContext: Boolean
+  defaultListView: FilterDefaultViewEnum
+  description: String
+  displayName: String
+  filterJson: String
+  id: String!
+  kanbanView: String
+  navigateView: String
+  tileView: String
+}
+
+""""""
+input UpdateThemeInput {
+  applicationTitle: String
+  faviconBatchId: String
+  leftPanelDarkMode: Boolean
+  logoBatchId: String
+  logoSmallBatchId: String
+  primaryColor: String
+}
+
+""""""
+input UpdateTypeFilterInput {
+  calendarView: String
+  childrenTypes: [String!]
+  dataObjectContext: Boolean
+  defaultListView: FilterDefaultViewEnum
+  description: String
+  displayName: String
+  exactDataType: Boolean
+  filterJson: String
+  id: String!
+  kanbanView: String
+  navigateView: String
+  tileView: String
+}
+
+""""""
+input UpdateUserInput {
+  email: String
+  firstName: String
+  groups: [String!]
+  isSuperUser: Boolean
+  lastName: String
+  name: String!
+  roles: [String!]
+  visible: Boolean
+}
+
+""""""
+input UpdateUserProfileInput {
+  avatarBatchId: String
+  birthdate: Date
+  email: String
+  firstName: String
+  gender: Boolean
+  lastName: String
+  locale: String
+  name: String!
+  phonenumber: String
+  timezone: String
+}
+
+""""""
+input UpdateViewInput {
+  description: String
+  displayName: String
+  fileProperty: String
+  group: String
+  id: String!
+  managementMode: ViewManagementModeEnum
+  sortingJson: String
+  templateBatchId: String
+  viewJson: String
+  viewMode: String
+}
+
+""""""
+input UpdateWorkbenchInput {
+  description: String
+  displayName: String
+  id: String!
+  menuJson: String
+  roles: [String]
+}
+
+""""""
+input UpdateWorkspaceInput {
+  brandingJson: String
+  calendarView: String
+  cardView: String
+  childTableView: String
+  childrenTypes: [String!]
+  createView: String
+  description: String
+  displayName: String
+  editView: String
+  embedView: String
+  filterJson: String
+  iconBatchId: String
+  id: String!
+  isImportAllowed: Boolean
+  kanbanView: String
+  navigateView: String
+  tileView: String
+}
+
+""""""
+type User {
+  allGroups: [Group!]
+  allRoles: [Role!]
+  displayName(multilanguage: Boolean = false): String!
+  groups: [Group!]!
+  isExternal: Boolean!
+  isSuperUser: Boolean!
+  name: String!
+  parents: [String]
+  roles: [Role!]!
+  trashed: Boolean!
+  type: MemberType!
+  uid: ID!
+  userprofile: UserProfile!
+  visible: Boolean
+}
+
+""""""
+type UserList {
+  items: [User!]!
+  pageInfo: PageInfo!
+}
+
+""""""
+type UserProfile {
+  avatar: File
+  birthdate: Date
+  email: String!
+  firstName: String!
+  gender: Boolean
+  lastName: String!
+  locale: String
+  phonenumber: String
+  timezone: String
+}
+
+""""""
+input UserSelectionOptionsInput {
+  dataObjectId: String
+  dataTypeId: String
+  propertyId: String!
+}
+
+""""""
+input ValidateApiSpecInput {
+  openApiJson: String!
+  parentId: String!
+}
+
+""""""
+input ValidateApiSpecsGroupInput {
+  name: String!
+  parentId: String!
+}
+
+""""""
+input ValidateBpmnMessageInput {
+  id: String
+  name: String!
+  parentId: String!
+}
+
+""""""
+input ValidateDataObjectInput {
+  objectId: String
+  parentId: String
+  properties: [DataObjectPropertyInput!]
+  propertyToValidate: String
+  typeId: String
+}
+
+""""""
+input ValidateDataPropertyInput {
+  id: String
+  name: String!
+  parentId: String!
+}
+
+""""""
+input ValidateDataTypeInput {
+  id: String
+  name: String!
+  parentId: String!
+}
+
+""""""
+input ValidateGroupInput {
+  isNew: Boolean!
+  name: String!
+}
+
+""""""
+input ValidateLifecycleInput {
+  id: String
+  name: String!
+  parentId: String!
+}
+
+""""""
+input ValidateModuleInput {
+  id: String
+  name: String!
+}
+
+""""""
+input ValidatePostTemplateInput {
+  bodyTemplate: String!
+  id: String
+  parentId: String!
+  subjectTemplate: String!
+}
+
+""""""
+input ValidateReferenceDataGroupInput {
+  isNew: Boolean!
+  name: String!
+}
+
+""""""
+input ValidateReferenceDataTypeInput {
+  isNew: Boolean!
+  name: String!
+}
+
+""""""
+input ValidateRoleInput {
+  id: String
+  name: String!
+}
+
+""""""
+input ValidateSystemFilterInput {
+  id: String
+  name: String!
+  parentId: String!
+}
+
+""""""
+input ValidateTypeFilterInput {
+  id: String
+  name: String!
+  parentId: String!
+}
+
+""""""
+input ValidateUserInput {
+  isNew: Boolean!
+  name: String!
+}
+
+""""""
+input ValidateViewInput {
+  name: String!
+  parentId: String!
+}
+
+""""""
+input ValidateWorkbenchInput {
+  id: String
+  menuJson: String
+  name: String
+  roles: [String]
+}
+
+""""""
+input ValidateWorkspaceInput {
+  id: String
+  name: String!
+  parentId: String!
+}
+
+""""""
+type ValidationResults {
+  dataType: DataType
+  isValid: Boolean!
+  module: Module
+  validation: [GenericValidationResult]
+}
+
+""""""
+type Version {
+  majorVersion: Int!
+  minorVersion: Int!
+  qualifier: VersionQualifier
+  versionInfo: VersionInfo
+}
+
+""""""
+type VersionDisplayFormat {
+  displayFormatEnum: VersionDisplayFormatEnum
+  displayName: String
+}
+
+""""""
+enum VersionDisplayFormatEnum {
+  LONG
+  SHORT
+}
+
+""""""
+type VersionIncrement {
+  displayName: String!
+  version: String!
+  versionIncrementEnum: VersionIncrementEnum!
+}
+
+""""""
+enum VersionIncrementEnum {
+  MAJOR
+  MINOR
+}
+
+""""""
+type VersionInfo {
+  comment: String
+  creationDate: Date
+  route: String!
+  user: User
+}
+
+""""""
+type VersionQualifier {
+  displayName: String!
+  versionQualifierEnum: VersionQualifierEnum!
+}
+
+""""""
+enum VersionQualifierEnum {
+  ACTUAL
+  DRAFT
+}
+
+""""""
+type View implements MetadataObject {
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  fileProperty: String
+  group: String
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  managementMode: ViewManagementModeEnum
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  properties: [PropertyGroup!]!
+  sortingJson: String
+  status: MetadataObjectStatusEnum!
+  template: File
+  viewJson: String!
+  viewMode: String
+  viewType: ViewType!
+}
+
+""""""
+input ViewCustomizationInput {
+  contextId: String!
+  filterJson: String
+  sortingJson: String
+  tableViewJson: String
+}
+
+""""""
+enum ViewManagementModeEnum {
+  AUTO_MANAGEMENT
+  USER_MANAGEMENT
+}
+
+""""""
+input ViewParametersInput {
+  action: ActionEnum!
+  dataTypeId: ID
+  filterJson: String
+  route: String!
+  routeState: String
+  viewId: String
+}
+
+""""""
+type ViewType {
+  displayName: String!
+  viewTypeEnum: ViewTypeEnum!
+}
+
+""""""
+enum ViewTypeEnum {
+  CALENDAR
+  CARD
+  CONTAINER
+  EXPORT
+  FORM
+  KANBAN
+  REPORTING
+  TABLE
+  TILE
+}
+
+""""""
+enum WorkStateEnum {
+  COMPLETED
+  ERROR
+  RUNNING
+  SCHEDULED
+}
+
+""""""
+type Workbench implements MetadataObject {
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  id: String!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  menuJson: String
+  modificationDate: Date!
+  name: String!
+  parentId: String!
+  roles: [Role!]!
+  status: MetadataObjectStatusEnum!
+}
+
+""""""
+type Workspace implements MetadataObject {
+  brandingJson: String
+  calendarView: String
+  cardView: String
+  childTableView: String
+  childrenTypes: [DataType!]!
+  createView: String
+  creationDate: Date!
+  description(multilanguage: Boolean = false): String
+  displayName(multilanguage: Boolean = false): String!
+  editView: String
+  embedView: String
+  filterJson: String
+  grantedPermissions: [GrantedPermissions!]!
+  icon: File!
+  id: String!
+  isImportAllowed: Boolean!
+  isPreconfigured: Boolean!
+  isSystem: Boolean!
+  kanbanView: String
+  modificationDate: Date!
+  name: String!
+  navigateView: String
+  parentId: String!
+  searchPanelProperties: [PropertyGroup!]!
+  status: MetadataObjectStatusEnum!
+  tileView: String
+  views(includeArchived: Boolean, viewType: ViewTypeEnum): [View!]!
+}
+
+""""""
+type XmlAndModelDecoration {
+  bpmnXml: String
+  decorJson: String
+  valid: Boolean!
+  validationResultsJson: String
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Assistant",
+  "version": "1.0.0",
+  "description": "Assistant",
+  "main": "dist/server.js",
+  "type": "module",
+  "scripts": {
+    "codegen": "bash codegen.sh",
+    "build": "tsx --compile src/server.ts --out-dir dist",
+    "start": "node dist/app.js",
+    "dev": "tsx watch src/app.ts"
+  },
+  "dependencies": {
+    "@genql/runtime": "^2.10.0",
+    "dotenv": "17.2.4",
+    "express": "5.2.1",
+    "graphql": "16.10.0",
+    "openai": "6.44.0",
+    "swagger-jsdoc": "6.2.8",
+    "swagger-ui-express": "5.0.0",
+    "zod": "3.25.1"
+  },
+  "devDependencies": {
+    "@genql/cli": "^2.10.0",
+    "@types/express": "5.0.0",
+    "@types/node": "22.0.0",
+    "@types/swagger-jsdoc": "6.0.4",
+    "@types/swagger-ui-express": "4.1.8",
+    "prettier": "3.2.5",
+    "tsx": "4.19.0",
+    "typescript": "6.0.3"
+  }
+}

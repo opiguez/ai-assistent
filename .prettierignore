@@ -1,0 +1,11 @@
+**/*.md
+**/*.svg
+
+.prettierrc
+.vscode/*
+node_modules/*
+dist/*
+.env.dev
+Dockerfile
+package.json
+package-lock.json
