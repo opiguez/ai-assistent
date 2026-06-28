@@ -37,3 +37,4 @@ app.listen(PORT, () => {
 });
 
 //TODO: .env обновить для secure инфо
+//ENV - prod and dev

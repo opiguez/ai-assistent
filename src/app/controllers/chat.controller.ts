@@ -6,8 +6,29 @@ import {
 } from '@modelcontextprotocol/client';
 import axios from 'axios';
 
+async function connectWithRetry(
+  client: any,
+  transport: any,
+  retries = 5,
+  delay = 2000,
+) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await client.connect(transport);
+      console.log('[MCP Client] Успешно подключен к серверу на порту 3002');
+      return;
+    } catch (err) {
+      console.log(
+        `[MCP Client] Сервер еще не готов (попытка ${i + 1}/${retries}). Ждем ${delay}мс...`,
+      );
+      await new Promise((res) => setTimeout(res, delay));
+    }
+  }
+  throw new Error('Не удалось подключиться к MCP-серверу.');
+}
+
 export default async function registerConnectChatToMCPServer(app: Express) {
-  const MCP_SERVER_URL = 'http://localhost:3002';
+  const MCP_SERVER_URL = 'http://127.0.0.1:3002';
   const transport = new StreamableHTTPClientTransport(
     new URL(`${MCP_SERVER_URL}/mcp`),
   );
@@ -15,14 +36,22 @@ export default async function registerConnectChatToMCPServer(app: Express) {
     { name: 'lowcode-ai-client', version: '1.0.0' },
     { capabilities: {} },
   );
-  await mcpClient.connect(transport);
-  console.log('[MCP Client] Успешно подключен к серверу на порту 3002');
+
+  await connectWithRetry(mcpClient, transport);
 
   const aiService = new AIService(mcpClient);
 
   app.post('/api/chat', async (req, res) => {
     try {
       const { message, sessionId, executeStep } = req.body;
+
+      // Получаем актуальное состояние сессии с MCP-сервера
+      const sessionResponse = await axios.post(
+        `${MCP_SERVER_URL}/api/history/session`,
+        { sessionId },
+      );
+      const session = sessionResponse.data;
+
       // 1. Запрашиваем у MCP-сервера готовый промпт со всей историей
       const mcpPrompt = await mcpClient.getPrompt({
         name: 'prepare-task-context',
@@ -38,15 +67,21 @@ export default async function registerConnectChatToMCPServer(app: Express) {
 
       // 2. Классифицируем слои для фильтрации инструментов (только если это не выполнение шага ТЗ)
       let activatedLayers: string[] = ['DATA'];
-      if (!executeStep && message && message.length <= 1000) {
-        activatedLayers = await aiService.classifyShortMessage(message);
-        console.log('Активированные ИИ слои:', activatedLayers);
-      }
 
       // Настраиваем заголовки для SSE стриминга на фронтенд
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
+
+      req.setTimeout(0);
+      res.setTimeout(0);
+
+      // Отслеживание обрыва связи клиентом
+      let isDisconnected = false;
+      req.on('close', () => {
+        isDisconnected = true;
+        console.log('[SSE] Клиент закрыл соединение. Прерываем обработку.');
+      });
 
       // 3. Запускаем агентский цикл (передаем готовый массив сообщений)
       const logsGenerator = aiService.executeTaskWithMcp(
@@ -57,22 +92,26 @@ export default async function registerConnectChatToMCPServer(app: Express) {
       let finalReportText = '';
 
       for await (const log of logsGenerator) {
+        if (isDisconnected) {
+          console.log(
+            '[SSE] Цикл генерации остановлен, так как клиент отключился.',
+          );
+          break;
+        }
+
         res.write(`data: ${JSON.stringify(log)}\n\n`);
 
         if (log.type === 'text_chunk') finalReportText += log.text;
         if (log.type === 'final_response') finalReportText = log.text;
       }
 
+      if (isDisconnected) {
+        return res.end();
+      }
+
       // =========================================================================
       // 4. ФИКСИРУЕМ РЕЗУЛЬТАТЫ В ИСТОРИЮ ЧЕРЕЗ REST API MCP-СЕРВЕРА
       // =========================================================================
-
-      // Получаем актуальное состояние сессии с MCP-сервера
-      const sessionResponse = await axios.post(
-        `${MCP_SERVER_URL}/api/history/session`,
-        { sessionId },
-      );
-      const session = sessionResponse.data;
 
       // Сценарий А: Если пользователь отправил большое ТЗ впервые
       if (

@@ -1,14 +1,24 @@
-FROM node:24-alpine
 
+FROM node:22-alpine AS builder
 WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
 
 COPY package*.json ./
 
-RUN npm install --legacy-peer-deps
+# УСТАНАВЛИВАЕМ ПРОДАКШН ЗАВИСИМОСТИ (Создаем чистую node_modules)
+# Флаг --only=production гарантирует, что установятся только рабочие пакеты
+RUN npm ci --only=production
 
-COPY . .
+# Копируем наш скомпилированный код из предыдущего этапа
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000-3010
 
-# Запускаем в режиме разработки через tsx (команда npm run dev)
-CMD ["npm", "run", "dev"]
+CMD ["node", "dist/app.js"]

@@ -114,7 +114,6 @@ export class AIService {
       iterations++;
       yield { type: 'thinking_start' };
 
-      // Отправляем запрос в OpenAI (или Qwen) со свежим массивом сообщений
       const stream = await openai.chat.completions.create({
         model: this.modelName,
         messages: messages,

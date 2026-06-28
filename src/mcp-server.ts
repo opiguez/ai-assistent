@@ -18,16 +18,21 @@ const server = new McpServer({
 const transport = new NodeStreamableHTTPServerTransport({
   sessionIdGenerator: undefined,
 });
-await server.connect(transport);
 
 //регистрация для MCP tools/promts/resources
 registerTools(server);
 registerResources(server);
 registerHistoryPrompt(server);
 
+await server.connect(transport);
+
 //регистрация роутинга history в MCP сервер для доступа снаружи
 registerHistoryRoutes(app);
 
-app.listen(3002, () => {
-  console.log('[MCP Server] Успешно запущен на порту 3002');
+app.post('/mcp', (req, res) => {
+  transport.handleRequest(req, res, req.body);
+});
+
+app.listen(3002, '127.0.0.1', () => {
+  console.log(`MCP Express Server running on port ${3002}`);
 });

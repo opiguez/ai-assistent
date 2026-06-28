@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  # --- СЕРВИС 1: MCP СЕРВЕР ---
+  mcp-server:
+    build:
+      context: .
+    # ПЕРЕОПРЕДЕЛЯЕМ КОМАНДУ: Вместо app.js запускаем mcp-server.js
+    command: node dist/mcp-server.js
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+
+  # --- СЕРВИС 2: ПРИЛОЖЕНИЕ ЧАТА ---
+  chat-app:
+    build:
+      context: .
+    # Здесь команду можно не писать (применится CMD из Dockerfile), 
+    # но лучше указать явно для наглядности:
+    command: node dist/app.js
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - MCP_SERVER_URL=http://mcp-server:3002 # Важно: имя сервиса вместо localhost!
+    depends_on:
+      - mcp-server # Чат не запустится, пока не поднимется MCP-сервер
