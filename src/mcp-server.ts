@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node';
 import { createMcpExpressApp } from '@modelcontextprotocol/express';
-import { registerHistoryRoutes } from './mcp/routes/history.route';
+import { registerHistoryRoutes } from './mcp/controllers/history.controller';
 import registerResources from './mcp/dataLayer/resources';
 import registerHistoryPrompt from './mcp/dataLayer/history-promt';
 import registerTools from './mcp/dataLayer/tools';
