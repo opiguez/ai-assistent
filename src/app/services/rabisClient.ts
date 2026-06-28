@@ -1,4 +1,4 @@
-import { createClient } from '../generated/client/index';
+import { createClient } from '../../generated/client/index';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.dev' });

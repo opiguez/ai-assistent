@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Заменить на локальный
-ENDPOINT="https://smk-night-dev.bacup.ru/graphql"
+ENDPOINT=""
 LOGIN="admin"
 PASSWORD="admin"
 

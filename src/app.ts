@@ -2,12 +2,15 @@ import express from 'express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import dotenv from 'dotenv';
-import { rabisClient } from './services/rabisClient';
-import { AIService } from './services/ai.service';
-import { HistoryService } from './services/history.service';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
+import { AIService } from './app/services/ai.service';
+import {
+  Client,
+  StreamableHTTPClientTransport,
+} from '@modelcontextprotocol/client';
+import axios from 'axios';
 
 dotenv.config({ path: '.env.dev' });
+const app = express();
 
 const swaggerOptions = {
   definition: {
@@ -26,175 +29,127 @@ const swaggerOptions = {
   },
   apis: ['./src/**/*.ts'],
 };
-//new StreamableHTTPClientTransport()
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
-const app = express();
 app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-const aiService = new AIService();
-const historyService = new HistoryService();
+//регистрация клиента к серверу
+const MCP_SERVER_URL = 'http://localhost:3002';
+const transport = new StreamableHTTPClientTransport(
+  new URL(`${MCP_SERVER_URL}/mcp`),
+);
+const mcpClient = new Client(
+  { name: 'lowcode-ai-client', version: '1.0.0' },
+  { capabilities: {} },
+);
 
-// Заглушка для получения текущего состояния No-Code платформы из GraphQL
-const getGraphQLStateMock = async () => {
-  return {
-    existingModules: [
-      {
-        id: 'mod_warehouse_uuid_111',
-        name: 'Складской учет',
-        code: 'warehouse',
-        workspaces: [
-          {
-            id: 'ws_default_uuid_222',
-            name: 'Дефолтная рабочая область',
-            code: 'default',
-          },
-        ],
-        dataTypes: [
-          {
-            id: 'dt_product_uuid_333',
-            name: 'Товар',
-            code: 'product',
-            isHierarchical: false,
-            fields: [
-              { name: 'ID', code: 'id', fieldType: 'text' },
-              { name: 'Наименование', code: 'title', fieldType: 'text' },
-              { name: 'Цена', code: 'price', fieldType: 'number' },
-            ],
-          },
-        ],
-      },
-    ],
-  };
-};
+await mcpClient.connect(transport);
+console.log('[MCP Client] Успешно подключен к серверу на порту 3002');
+
+const aiService = new AIService(mcpClient);
 
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, sessionId, executeStep } = req.body;
-    const session = await historyService.getOrCreateSession(sessionId);
-    const mockState = await getGraphQLStateMock(); // Актуальный срез структуры БД
+    // 1. Запрашиваем у MCP-сервера готовый промпт со всей историей
+    const mcpPrompt = await mcpClient.getPrompt({
+      name: 'prepare-task-context',
+      arguments: {
+        sessionId: String(sessionId),
+        message: message || '',
+        // ИСПРАВЛЕНИЕ: приводим boolean к строке 'true' / 'false'
+        executeStep: executeStep ? 'true' : 'false',
+      },
+    });
+
+    const preparedMessages = mcpPrompt.messages;
+
+    // 2. Классифицируем слои для фильтрации инструментов (только если это не выполнение шага ТЗ)
+    let activatedLayers: string[] = ['DATA'];
+    if (!executeStep && message && message.length <= 1000) {
+      activatedLayers = await aiService.classifyShortMessage(message);
+      console.log('Активированные ИИ слои:', activatedLayers);
+    }
+
+    // Настраиваем заголовки для SSE стриминга на фронтенд
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // 3. Запускаем агентский цикл (передаем готовый массив сообщений)
+    const logsGenerator = aiService.executeTaskWithMcp(
+      preparedMessages,
+      activatedLayers,
+    );
+
+    let finalReportText = '';
+
+    for await (const log of logsGenerator) {
+      res.write(`data: ${JSON.stringify(log)}\n\n`);
+
+      if (log.type === 'text_chunk') finalReportText += log.text;
+      if (log.type === 'final_response') finalReportText = log.text;
+    }
 
     // =========================================================================
-    // СЦЕНАРИЙ А: Пользователь загрузил большое ТЗ (Длинный текст)
+    // 4. ФИКСИРУЕМ РЕЗУЛЬТАТЫ В ИСТОРИЮ ЧЕРЕЗ REST API MCP-СЕРВЕРА
     // =========================================================================
+
+    // Получаем актуальное состояние сессии с MCP-сервера
+    const sessionResponse = await axios.post(
+      `${MCP_SERVER_URL}/api/history/session`,
+      { sessionId },
+    );
+    const session = sessionResponse.data;
+
+    // Сценарий А: Если пользователь отправил большое ТЗ впервые
     if (
       message &&
       message.length > 1000 &&
       session.mode !== 'CHUNK_PROCESSING'
     ) {
-      console.log('--- Обнаружено большое ТЗ. Запуск планировщика ---');
-
-      // Нарезаем ТЗ на массив атомарных задач
+      console.log('--- Нарезка большого ТЗ на стороне клиента ---');
       const tasks = await aiService.splitLargeSpecification(message);
-
-      if (tasks.length === 0) {
-        return res.status(422).json({
-          status: 'ERROR',
-          message: 'Не удалось разобрать ТЗ на шаги.',
+      if (tasks.length > 0) {
+        // Отправляем массив задач обратно на сервер, чтобы инициализировать очередь
+        await axios.post(`${MCP_SERVER_URL}/api/history/start-chunk`, {
+          sessionId,
+          tasks,
         });
       }
+    } else {
+      // Сценарий Б: Иначе это было выполнение задачи — схлопываем результат в логах
+      let actualTaskDescription = message;
 
-      // Инициализируем пошаговую очередь в сессии
-      await historyService.startChunkProcessing(sessionId, tasks);
-      await historyService.appendMessage(
+      if (executeStep && session.mode === 'CHUNK_PROCESSING') {
+        // Вытаскиваем описание текущей задачи из структуры сессии, пришедшей по сети
+        actualTaskDescription =
+          session.tasksQueue[session.currentStepIndex]?.description || message;
+      }
+
+      // Отправляем отчет о выполнении задачи на MCP-сервер для схлопывания контекста
+      await axios.post(`${MCP_SERVER_URL}/api/history/append-result`, {
         sessionId,
-        'user',
-        `Вот мое ТЗ: ${message}`,
-      );
-
-      // Возвращаем план проекта. Фронтенд выведет список задач с кнопками "Выполнить"
-      return res.json({
-        status: 'CHUNK_PROCESSING_STARTED',
-        message: 'ТЗ успешно распарсено на задачи. План готов.',
-        tasksQueue: tasks,
-        currentStepIndex: 0,
+        taskDescription: actualTaskDescription,
+        finalReportText,
       });
     }
 
-    // =========================================================================
-    // ОПРЕДЕЛЕНИЕ ТЕКУЩЕЙ ЗАДАЧИ ДЛЯ АГЕНТА
-    // =========================================================================
-    let taskDescription = '';
-
-    // Если фронтенд прислал флаг executeStep, значит мы выполняем текущий шаг из очереди ТЗ
-    if (executeStep && session.mode === 'CHUNK_PROCESSING') {
-      const currentTask = await historyService.getCurrentTask(sessionId);
-      if (!currentTask) {
-        return res
-          .status(400)
-          .json({ error: 'Текущая задача в очереди не найдена' });
-      }
-      taskDescription = currentTask.description;
-      console.log(
-        `--- Выполнение шага ${session.currentStepIndex} из очереди ТЗ: ${taskDescription} ---`,
-      );
-    } else {
-      // Иначе это обычный короткий запрос из чата
-      taskDescription = message;
-      console.log(`--- Обычный точечный запрос: ${taskDescription} ---`);
-    }
-
-    if (!taskDescription) {
-      return res.status(400).json({ error: 'Пустой запрос или задача' });
-    }
-
-    // =========================================================================
-    // ЗАПУСК АГЕНТА (SSE-СТРИМ ПРЯМОГО ВЫПОЛНЕНИЯ)
-    // =========================================================================
-
-    // Настраиваем заголовки для потоковой передачи логов
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    // Если это короткий чат, классифицируем (опционально)
-    if (!executeStep) {
-      const activatedLayers =
-        await aiService.classifyShortMessage(taskDescription);
-      console.log('Активированные ИИ слои:', activatedLayers);
-    }
-
-    const chatHistory = await historyService.getChatHistoryForAI(sessionId);
-
-    // Запускаем агентский цикл. Агент вызывает РЕАЛЬНЫЕ инструменты (БЕЗ суффикса _draft)
-    const logsGenerator = aiService.executeTaskWithMcp(
-      taskDescription,
-      chatHistory,
-      mockState,
-    );
-
-    let finalReportText = '';
-
-    // Стримим шаги и чанки текста на фронтенд в реальном времени
-    for await (const log of logsGenerator) {
-      res.write(`data: ${JSON.stringify(log)}\n\n`);
-
-      if (log.type === 'text_chunk') {
-        finalReportText += log.text;
-      }
-      if (log.type === 'final_response') {
-        finalReportText = log.text;
-      }
-    }
-
-    // 1. Фиксируем чистый текстовый результат в историю сессии (без технического JSON мусора)
-    await historyService.appendMcpTaskResult(
-      sessionId,
-      taskDescription,
-      finalReportText,
-    );
-
-    // 2. Если мы выполняли шаг из очереди ТЗ, автоматически сдвигаем указатель вперед
+    // 5. Автоматически сдвигаем указатель очереди ТЗ вперед через REST API
     let hasNextStep = false;
     let nextStepIndex = 0;
 
     if (session.mode === 'CHUNK_PROCESSING' && executeStep) {
-      hasNextStep = await historyService.moveToNextStep(sessionId);
-      nextStepIndex = session.currentStepIndex;
+      const nextStepResponse = await axios.post(
+        `${MCP_SERVER_URL}/api/history/next-step`,
+        { sessionId },
+      );
+      hasNextStep = nextStepResponse.data.hasNextStep;
+      nextStepIndex = nextStepResponse.data.nextStepIndex;
     }
 
-    // Отправляем фронтенду финальное событие с метаданными, чтобы закрыть поток
+    // Закрываем SSE поток финальным событием
     const finalEvent = {
       type: 'execution_completed',
       status:
@@ -219,26 +174,27 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-app.get('/api/rabis-data', async (_, res) => {
-  try {
-    const result = await rabisClient.chain.query
-      .module({ id: '/modules/Calculator' })
-      .get({
-        id: true,
-        name: true,
-        description: true,
-        editView: true,
-        status: true,
-      });
+// app.get('/api/rabis-data', async (_, res) => {
+//   try {
+//     const result = await rabisClient.chain.query
+//       .module({ id: '/modules/Calculator' })
+//       .get({
+//         id: true,
+//         name: true,
+//         description: true,
+//         editView: true,
+//         status: true,
+//       });
 
-    return res.json({ success: true, module: result });
-  } catch (error) {
-    console.error('Ошибка запроса к системе РАБИС:', error);
-    res.status(500).json({ success: false, error: String(error) });
-  }
-});
+//     return res.json({ success: true, module: result });
+//   } catch (error) {
+//     console.error('Ошибка запроса к системе РАБИС:', error);
+//     res.status(500).json({ success: false, error: String(error) });
+//   }
+// });
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`Node.js сервер успешно запущен на http://localhost:${PORT}`);
 });

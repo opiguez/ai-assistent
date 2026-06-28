@@ -1,9 +1,9 @@
 //# Интеграция с локальной Qwen (генерация, prompt)
 import { OpenAI } from 'openai';
-import { Task } from '../types/session';
-import { SYSTEM_PROMPTS } from '../tools/promts';
+import { Task } from '../../types/session';
+import { SYSTEM_PROMPTS } from '../../mcp/systemPromts';
 import { Client } from '@modelcontextprotocol/client';
-import { McpStepLog } from '../types/mcp';
+import { McpStepLog } from '../../types/mcp';
 
 export const openai = new OpenAI({
   baseURL: 'http://localhost:11434/v1',
@@ -40,7 +40,7 @@ export class AIService {
 
   async classifyShortMessage(message: string): Promise<string[]> {
     const response = await openai.chat.completions.create({
-      model: 'qwen2.5:7b',
+      model: this.modelName,
       messages: [
         { role: 'system', content: SYSTEM_PROMPTS.CLASSIFIER },
         { role: 'user', content: message },
@@ -58,12 +58,47 @@ export class AIService {
   }
 
   async *executeTaskWithMcp(
-    taskDescription: string,
-    chatHistory: any[],
-    currentSystemState: any,
+    preparedMessages: any[], // Принимаем готовые сообщения от MCP промпта
+    activatedLayers: Array<string>,
   ): AsyncGenerator<McpStepLog, void, unknown> {
+    const messages: any[] = preparedMessages.map((msg, index) => {
+      const textContent =
+        typeof msg.content === 'object' && msg.content !== null
+          ? msg.content.text
+          : msg.content;
+
+      // Если это самое первое сообщение, и оно пришло с сервера как маркер инструкции,
+      // мы на лету превращаем его в полноценную роль 'system' для OpenAI
+      if (
+        index === 0 &&
+        (textContent.includes('ИНСТРУКЦИЯ') ||
+          textContent.includes('Вы — опытный DATA_ENGINEER'))
+      ) {
+        return {
+          role: 'system',
+          content: textContent,
+        };
+      }
+
+      // Все остальные сообщения (история чата) остаются со своими ролями (user / assistant)
+      return {
+        role: msg.role,
+        content: textContent,
+      };
+    });
+
+    // 1. Запрашиваем доступные инструменты у MCP-сервера
     const mcpToolsResponse = await this.mcpClient.listTools();
-    const openAiTools = mcpToolsResponse.tools.map((tool) => ({
+
+    // 2. Фильтруем инструменты на основе активированных слоев
+    const filteredMcpTools = mcpToolsResponse.tools.filter((tool) => {
+      if (activatedLayers.includes('DATA')) return true;
+      if (activatedLayers.includes('UI')) return true;
+      return false;
+    });
+
+    // 3. Маппим инструменты в формат, понятный OpenAI API
+    const openAiTools = filteredMcpTools.map((tool) => ({
       type: 'function' as const,
       function: {
         name: tool.name,
@@ -72,19 +107,6 @@ export class AIService {
       },
     }));
 
-    const stateContext = `
-    <CURRENT_LOW_CODE_SCHEMA>
-    Ниже представлен актуальный слепок структуры системы, которая РЕАЛЬНО создана в базе данных.
-    ${JSON.stringify(currentSystemState, null, 2)}
-    </CURRENT_LOW_CODE_SCHEMA>
-    `;
-
-    const messages: any[] = [
-      { role: 'system', content: SYSTEM_PROMPTS.DATA_ENGINEER + stateContext },
-      ...chatHistory,
-      { role: 'user', content: `Выполни задачу: ${taskDescription}` },
-    ];
-
     let iterations = 0;
     const MAX_ITERATIONS = 10; // Защита от зацикливания
 
@@ -92,7 +114,7 @@ export class AIService {
       iterations++;
       yield { type: 'thinking_start' };
 
-      // Включаем stream: true для живого вывода текста модели
+      // Отправляем запрос в OpenAI (или Qwen) со свежим массивом сообщений
       const stream = await openai.chat.completions.create({
         model: this.modelName,
         messages: messages,
@@ -110,13 +132,13 @@ export class AIService {
         const delta = chunk.choices[0]?.delta;
         if (!delta) continue;
 
-        // 1. Стримим текст, если модель пишет ответ/рассуждения
+        // Стримим текстовые рассуждения модели
         if (delta.content) {
           fullContent += delta.content;
           yield { type: 'text_chunk', text: delta.content };
         }
 
-        // 2. Собираем куски вызовов инструментов (OpenAI шлет их частями)
+        // Собираем куски вызовов инструментов
         if (delta.tool_calls) {
           for (const tcDelta of delta.tool_calls) {
             if (!toolCallsMap.has(tcDelta.index)) {
@@ -136,7 +158,7 @@ export class AIService {
         }
       }
 
-      // Формируем финальный объект сообщения для истории (совместимый с OpenAI)
+      // Формируем финальный объект сообщения ассистента для локальной истории цикла
       const tool_calls = Array.from(toolCallsMap.values());
       const builtMessage: any = {
         role: 'assistant',
@@ -144,10 +166,10 @@ export class AIService {
       };
       if (tool_calls.length > 0) builtMessage.tool_calls = tool_calls;
 
-      // Сохраняем шаг в историю контекста
+      // Сохраняем шаг ассистента в контекст текущего диалога
       messages.push(builtMessage);
 
-      // Если модель не вызвала инструменты — цикл завершен
+      // Если модель не вызвала инструменты — задача решена, выходим
       if (tool_calls.length === 0) {
         yield {
           type: 'final_response',
@@ -156,7 +178,7 @@ export class AIService {
         return;
       }
 
-      // Выполняем собранные инструменты последовательно
+      // Последовательно выполняем собранные инструменты через MCP-клиент
       for (const toolCall of tool_calls) {
         const toolName = toolCall.function.name;
         let args: any = {};
@@ -175,6 +197,7 @@ export class AIService {
         };
 
         try {
+          // Делаем реальный вызов инструмента на MCP-сервере
           const toolResult = await this.mcpClient.callTool({
             name: toolName,
             arguments: args,
@@ -211,7 +234,7 @@ export class AIService {
       }
     }
 
-    // Если вышли за лимит итераций
+    // Если вышли за лимит итераций агента
     yield {
       type: 'final_response',
       text: 'Превышено максимальное количество шагов агента. Процесс остановлен.',

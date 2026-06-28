@@ -1,7 +1,7 @@
 //# Управление контекстом и памятью сессии
-import { ChatSession, Task } from '../types/session';
+import { ChatSession, Task } from '../../types/session';
 
-export class HistoryService {
+class HistoryService {
   private sessions = new Map<string, ChatSession>();
 
   async getOrCreateSession(sessionId: string): Promise<ChatSession> {
@@ -120,3 +120,5 @@ export class HistoryService {
     });
   }
 }
+
+export const historyService = new HistoryService();
