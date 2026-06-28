@@ -90,4 +90,33 @@ export class HistoryService {
   async clearSession(sessionId: string) {
     this.sessions.delete(sessionId);
   }
+
+  /**
+   * Сохраняет успешное выполнение задачи Агентом в глобальную историю.
+   * Вместо сохранения десятков технических сообщений (tool_calls, tool),
+   * сохраняет красивый текстовый отчет для пользователя и лаконичный системный маркер.
+   */
+  async appendMcpTaskResult(
+    sessionId: string,
+    userTask: string,
+    finalReport: string,
+  ) {
+    const session = await this.getOrCreateSession(sessionId);
+
+    // 1. Фиксируем запрос пользователя (если его еще нет в истории)
+    session.chatHistory.push({
+      role: 'user',
+      content: `Выполни задачу: ${userTask}`,
+    });
+
+    // 2. Фиксируем финальный текстовый ответ Агента для отображения в чате
+    session.chatHistory.push({ role: 'assistant', content: finalReport });
+
+    // 3. Схлопываем контекст: пишем системный маркер, чтобы модель на следующем шаге
+    // знала, что эта часть ТЗ уже успешно интегрирована в систему.
+    session.chatHistory.push({
+      role: 'system',
+      content: `[СИСТЕМНОЕ УВЕДОМЛЕНИЕ]: Задача "${userTask}" успешно выполнена через автоматические инструменты. Изменения применены в БД.`,
+    });
+  }
 }

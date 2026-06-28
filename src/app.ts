@@ -1,12 +1,11 @@
 import express from 'express';
-import { OpenAI } from 'openai';
-import { z } from 'zod';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import dotenv from 'dotenv';
 import { rabisClient } from './services/rabisClient';
 import { AIService } from './services/ai.service';
 import { HistoryService } from './services/history.service';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 
 dotenv.config({ path: '.env.dev' });
 
@@ -27,7 +26,7 @@ const swaggerOptions = {
   },
   apis: ['./src/**/*.ts'],
 };
-
+//new StreamableHTTPClientTransport()
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
 const app = express();
@@ -72,210 +71,151 @@ const getGraphQLStateMock = async () => {
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, sessionId } = req.body;
+    const { message, sessionId, executeStep } = req.body;
     const session = await historyService.getOrCreateSession(sessionId);
-    const mockState = await getGraphQLStateMock();
+    const mockState = await getGraphQLStateMock(); // Актуальный срез структуры БД
 
     // =========================================================================
-    // СЦЕНАРИЙ А: Пользователь загрузил большое ТЗ (длинный текст)
+    // СЦЕНАРИЙ А: Пользователь загрузил большое ТЗ (Длинный текст)
     // =========================================================================
-    if (message.length > 1000 && session.mode !== 'CHUNK_PROCESSING') {
+    if (
+      message &&
+      message.length > 1000 &&
+      session.mode !== 'CHUNK_PROCESSING'
+    ) {
       console.log('--- Обнаружено большое ТЗ. Запуск планировщика ---');
 
-      // Режем ТЗ на массив атомарных задач
+      // Нарезаем ТЗ на массив атомарных задач
       const tasks = await aiService.splitLargeSpecification(message);
 
       if (tasks.length === 0) {
-        return res.json({
+        return res.status(422).json({
           status: 'ERROR',
           message: 'Не удалось разобрать ТЗ на шаги.',
         });
       }
 
-      // Переводим сессию в режим очереди задач
+      // Инициализируем пошаговую очередь в сессии
       await historyService.startChunkProcessing(sessionId, tasks);
-
-      // Берем самую первую задачу из свежей очереди для генерации черновика
-      const firstTask = tasks[0];
-
-      // Генерируем для нее GraphQL-действия (Tools)
-      const aiResult = await aiService.generateActionsForTask(
-        firstTask.task,
-        session.chatHistory,
-        mockState,
+      await historyService.appendMessage(
+        sessionId,
+        'user',
+        `Вот мое ТЗ: ${message}`,
       );
 
-      // ВАЖНО: Мы НЕ записываем этот шаг в историю сообщений ИИ прямо сейчас.
-      // История чата заполнится только тогда, когда пользователь нажмет кнопку «Применить изменения»
-      // и бэкенд выполнит реальный GraphQL запрос в эндпоинте /api/chat/execute.
-
+      // Возвращаем план проекта. Фронтенд выведет список задач с кнопками "Выполнить"
       return res.json({
-        status: 'ROADMAP_INITIALIZED',
-        message: `Я проанализировал ваше ТЗ и составил план из ${tasks.length} шагов. Давайте двигаться по порядку.`,
+        status: 'CHUNK_PROCESSING_STARTED',
+        message: 'ТЗ успешно распарсено на задачи. План готов.',
         tasksQueue: tasks,
-        currentStep: 0,
-        suggestedActions:
-          aiResult.type === 'action_required' ? aiResult.actions : [],
-        aiComment:
-          aiResult.type === 'text_response'
-            ? aiResult.text
-            : `Шаг 1: ${firstTask.task}. Пожалуйста, проверьте и утвердите предложенную структуру.`,
+        currentStepIndex: 0,
       });
     }
 
     // =========================================================================
-    // СЦЕНАРИЙ Б: Мы уже находимся внутри выполнения пошаговой очереди большого ТЗ
+    // ОПРЕДЕЛЕНИЕ ТЕКУЩЕЙ ЗАДАЧИ ДЛЯ АГЕНТА
     // =========================================================================
-    if (session.mode === 'CHUNK_PROCESSING') {
-      const currentTask = session.tasksQueue[session.currentStepIndex];
+    let taskDescription = '';
+
+    // Если фронтенд прислал флаг executeStep, значит мы выполняем текущий шаг из очереди ТЗ
+    if (executeStep && session.mode === 'CHUNK_PROCESSING') {
+      const currentTask = await historyService.getCurrentTask(sessionId);
+      if (!currentTask) {
+        return res
+          .status(400)
+          .json({ error: 'Текущая задача в очереди не найдена' });
+      }
+      taskDescription = currentTask.description;
       console.log(
-        `--- Выполнение шага ${session.currentStepIndex} из очереди ТЗ ---`,
+        `--- Выполнение шага ${session.currentStepIndex} из очереди ТЗ: ${taskDescription} ---`,
       );
+    } else {
+      // Иначе это обычный короткий запрос из чата
+      taskDescription = message;
+      console.log(`--- Обычный точечный запрос: ${taskDescription} ---`);
+    }
 
-      // Генерируем действия для текущей задачи из очереди
-      const aiResult = await aiService.generateActionsForTask(
-        currentTask.task,
-        session.chatHistory,
-        mockState,
-      );
-
-      // Здесь логика аналогична Сценарию А: отдаем черновик (suggestedActions) на фронтенд.
-      // Ждем, пока пользователь проверит карточки согласования. В историю чата пока ничего не пишем.
-      return res.json({
-        status: 'CHUNK_STEP_EXECUTION',
-        currentStep: session.currentStepIndex,
-        taskDescription: currentTask.task,
-        suggestedActions:
-          aiResult.type === 'action_required' ? aiResult.actions : [],
-        aiComment:
-          aiResult.type === 'text_response'
-            ? aiResult.text
-            : `Пожалуйста, проверьте параметры для шага: "${currentTask.task}".`,
-      });
+    if (!taskDescription) {
+      return res.status(400).json({ error: 'Пустой запрос или задача' });
     }
 
     // =========================================================================
-    // СЦЕНАРИЙ В: Обычный короткий диалог в чате
+    // ЗАПУСК АГЕНТА (SSE-СТРИМ ПРЯМОГО ВЫПОЛНЕНИЯ)
     // =========================================================================
-    console.log('--- Обычный короткий запрос ---');
 
-    // Используем маленькую/быструю модель для понимания скрытого смысла (DATA/BPMN/UI)
-    const activatedLayers = await aiService.classifyShortMessage(message);
-    console.log('Активированные ИИ слои:', activatedLayers);
+    // Настраиваем заголовки для потоковой передачи логов
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
-    // Отправляем запрос в тяжелую модель (для MVP генерируем действия слоя DATA)
-    const aiResult = await aiService.generateActionsForTask(
-      message,
-      session.chatHistory,
+    // Если это короткий чат, классифицируем (опционально)
+    if (!executeStep) {
+      const activatedLayers =
+        await aiService.classifyShortMessage(taskDescription);
+      console.log('Активированные ИИ слои:', activatedLayers);
+    }
+
+    const chatHistory = await historyService.getChatHistoryForAI(sessionId);
+
+    // Запускаем агентский цикл. Агент вызывает РЕАЛЬНЫЕ инструменты (БЕЗ суффикса _draft)
+    const logsGenerator = aiService.executeTaskWithMcp(
+      taskDescription,
+      chatHistory,
       mockState,
     );
 
-    // ЕСЛИ ИИ ПРЕДЛОЖИЛ ЧЕРНОВИК ДЕЙСТВИЙ (Требуется подтверждение человека):
-    if (aiResult.type === 'action_required') {
-      // ВАЖНО: Мы сохраняем реплику пользователя в историю СРАЗУ, чтобы модель помнила
-      // контекст своего уточнения, если пользователь решит оспорить черновик текстом в чате.
-      await historyService.appendMessage(sessionId, 'user', message);
+    let finalReportText = '';
 
-      return res.json({
-        status: 'CONFIRMATION_REQUIRED',
-        suggestedActions: aiResult.actions,
-        comment:
-          'Я подготовил черновик изменений в структуру данных на основе вашего запроса. Утвердите его для создания.',
-      });
+    // Стримим шаги и чанки текста на фронтенд в реальном времени
+    for await (const log of logsGenerator) {
+      res.write(`data: ${JSON.stringify(log)}\n\n`);
+
+      if (log.type === 'text_chunk') {
+        finalReportText += log.text;
+      }
+      if (log.type === 'final_response') {
+        finalReportText = log.text;
+      }
     }
 
-    // ЕСЛИ ИИ ПРОСТО ОТВЕТИЛ ТЕКСТОМ (Задал уточняющий вопрос):
-    // В этом случае никаких действий в GraphQL нет, идет обычный живой диалог.
-    await historyService.appendMessage(sessionId, 'user', message);
-    await historyService.appendMessage(
+    // 1. Фиксируем чистый текстовый результат в историю сессии (без технического JSON мусора)
+    await historyService.appendMcpTaskResult(
       sessionId,
-      'assistant',
-      aiResult.text as string,
+      taskDescription,
+      finalReportText,
     );
 
-    return res.json({
-      status: 'SUCCESS',
-      message: aiResult.text,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
+    // 2. Если мы выполняли шаг из очереди ТЗ, автоматически сдвигаем указатель вперед
+    let hasNextStep = false;
+    let nextStepIndex = 0;
 
-// =============================================================================
-// ЭНДПОИНТ ФИЗИЧЕСКОГО ИСПОЛНЕНИЯ И СХЛОПЫВАНИЯ КОНТЕНТА (Новый критический узел)
-// Вызывается фронтендом, когда пользователь нажимает кнопку «ПРИМЕНИТЬ ИЗМЕНЕНИЯ» на карточке
-// =============================================================================
-app.post('/api/chat/execute', async (req, res) => {
-  try {
-    const { sessionId, actions, summaryMessage } = req.body;
-    const session = await historyService.getOrCreateSession(sessionId);
-
-    console.log(
-      '--- Выполнение GraphQL мутаций из подтвержденного черновика ---',
-      actions,
-    );
-
-    // 1. Создаем карту для подмены PENDING_ID на реальные UUID из вашей системы
-    const idMap = new Map<string, string>();
-
-    // 2. Последовательно выполняем мутации (Ваш будущий rabisClient)
-    for (const action of actions) {
-      if (action.functionName === 'createModule') {
-        // const realModule = await rabisClient.createModule(action.arguments);
-        // idMap.set('PENDING_MODULE_ID', realModule.id);
-        idMap.set('PENDING_MODULE_ID', 'real_mod_uuid_example_123'); // Заглушка
-      }
-
-      if (action.functionName === 'createDataType') {
-        // Подменяем заглушку ID модуля на реальный UUID, полученный шагом выше
-        const modId =
-          action.arguments.moduleId === 'PENDING_MODULE_ID'
-            ? idMap.get('PENDING_MODULE_ID')
-            : action.arguments.moduleId;
-
-        // const realDataType = await rabisClient.createDataType({ ...action.arguments, moduleId: modId });
-        // idMap.set('PENDING_DATA_TYPE_ID', realDataType.id);
-        idMap.set('PENDING_DATA_TYPE_ID', 'real_dt_uuid_example_456'); // Заглушка
-      }
-
-      if (action.functionName === 'createDataTypeField') {
-        const dtId =
-          action.arguments.dataTypeId === 'PENDING_DATA_TYPE_ID'
-            ? idMap.get('PENDING_DATA_TYPE_ID')
-            : action.arguments.dataTypeId;
-
-        // await rabisClient.createDataTypeField({ ...action.arguments, dataTypeId: dtId });
-      }
+    if (session.mode === 'CHUNK_PROCESSING' && executeStep) {
+      hasNextStep = await historyService.moveToNextStep(sessionId);
+      nextStepIndex = session.currentStepIndex;
     }
 
-    // 3. СХЛОПЫВАНИЕ КОНТЕНТА: Очищаем историю чата от длинных обсуждений и
-    // записываем одну емкую системную строку о том, что объекты успешно созданы.
-    const logSummary =
-      summaryMessage || 'Успешно созданы новые элементы метаданных.';
-    await historyService.archiveExecutedActions(sessionId, logSummary);
+    // Отправляем фронтенду финальное событие с метаданными, чтобы закрыть поток
+    const finalEvent = {
+      type: 'execution_completed',
+      status:
+        session.mode === 'CHUNK_PROCESSING'
+          ? 'STEP_EXECUTED_AND_MOVED'
+          : 'EXECUTED',
+      hasNextStep,
+      nextStepIndex,
+    };
 
-    // 4. Если мы в режиме большого ТЗ, автоматически двигаем очередь к следующему шагу
-    if (session.mode === 'CHUNK_PROCESSING') {
-      const hasNext = await historyService.moveToNextStep(sessionId);
-
-      return res.json({
-        status: 'STEP_EXECUTED_AND_MOVED',
-        message: 'Текущий шаг ТЗ успешно выполнен!',
-        hasNextStep: hasNext,
-        nextStepIndex: session.currentStepIndex,
-      });
-    }
-
-    // Если это был обычный точечный запрос из чата
-    return res.json({
-      status: 'EXECUTED',
-      message: 'Структура успешно обновлена в системе!',
-    });
+    res.write(`data: ${JSON.stringify(finalEvent)}\n\n`);
+    return res.end();
   } catch (error) {
-    console.error('Ошибка выполнения черновика:', error);
-    res.status(500).json({ error: 'Failed to execute architecture schema' });
+    console.error('Критическая ошибка в /api/chat:', error);
+    if (res.headersSent) {
+      res.write(
+        `data: ${JSON.stringify({ type: 'critical_error', error: 'Внутренняя ошибка сервера' })}\n\n`,
+      );
+      return res.end();
+    }
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 

@@ -1,6 +1,7 @@
 export interface Task {
   layer: 'DATA' | 'BPMN' | 'UI';
   task: string;
+  description: string;
 }
 
 export interface ChatSession {
