@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/server';
+import express from 'express';
 import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node';
 import { createMcpExpressApp } from '@modelcontextprotocol/express';
 import { registerHistoryRoutes } from './mcp/controllers/history.controller';
@@ -7,6 +8,8 @@ import registerHistoryPrompt from './mcp/dataLayer/history-promt';
 import registerTools from './mcp/dataLayer/tools';
 
 const app = createMcpExpressApp();
+
+app.use(express.json());
 
 const server = new McpServer({
   name: 'rabis-lowcode-mcp-server',

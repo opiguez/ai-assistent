@@ -1,10 +1,7 @@
 import { Express } from 'express';
-import express from 'express';
 import { historyService } from '../services/history.service';
 
 export function registerHistoryRoutes(app: Express) {
-  app.use(express.json());
-
   /**
    * 1. Получить или создать текущую сессию
    */
