@@ -1,9 +1,7 @@
+import { ENV } from './config/base';
 import express from 'express';
-import dotenv from 'dotenv';
 import registerConnectChatToMCPServer from './app/controllers/chat.controller';
 import registerSwagger from './app/services/swagger.service';
-
-dotenv.config({ path: '.env.dev' });
 
 const app = express();
 app.use(express.json());
@@ -11,30 +9,10 @@ app.use(express.json());
 registerSwagger(app);
 registerConnectChatToMCPServer(app);
 
-// app.get('/api/rabis-data', async (_, res) => {
-//   try {
-//     const result = await rabisClient.chain.query
-//       .module({ id: '/modules/Calculator' })
-//       .get({
-//         id: true,
-//         name: true,
-//         description: true,
-//         editView: true,
-//         status: true,
-//       });
+const host = new URL(ENV.LOCAL_SERVER_URL_NO_PORT).hostname;
 
-//     return res.json({ success: true, module: result });
-//   } catch (error) {
-//     console.error('Ошибка запроса к системе РАБИС:', error);
-//     res.status(500).json({ success: false, error: String(error) });
-//   }
-// });
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Node.js сервер успешно запущен на http://localhost:${PORT}`);
+app.listen(ENV.PORT_APP, host, () => {
+  console.log(
+    `Node.js сервер успешно запущен на ${ENV.LOCAL_SERVER_URL_NO_PORT}:${ENV.PORT_APP}`,
+  );
 });
-
-//TODO: .env обновить для secure инфо
-//ENV - prod and dev

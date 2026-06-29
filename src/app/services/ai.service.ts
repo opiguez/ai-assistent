@@ -5,14 +5,15 @@ import { SYSTEM_PROMPTS } from '../../mcp/systemPromts';
 import { Client } from '@modelcontextprotocol/client';
 import { McpStepLog } from '../../types/mcp';
 import { jsonrepair } from 'jsonrepair';
+import { ENV } from '../../config/base';
 
 export const openai = new OpenAI({
-  baseURL: 'http://localhost:11434/v1',
+  baseURL: `${ENV.OLLAMA_URL}/v1`,
   apiKey: 'local-dev',
 });
 
 export class AIService {
-  private modelName = 'SetneufPT/Qwen3.6-27B-MTP_Q3_32K_16GB-GPU';
+  private modelName = ENV.OLLAMA_MODEL;
   private mcpClient: Client;
 
   constructor(mcpClient: Client) {

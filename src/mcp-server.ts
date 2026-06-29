@@ -6,6 +6,7 @@ import { registerHistoryRoutes } from './mcp/controllers/history.controller';
 import registerResources from './mcp/dataLayer/resources';
 import registerHistoryPrompt from './mcp/dataLayer/history-promt';
 import registerTools from './mcp/dataLayer/tools';
+import { ENV } from './config/base';
 
 const app = createMcpExpressApp();
 
@@ -33,6 +34,10 @@ app.post('/mcp', (req, res) => {
   transport.handleRequest(req, res, req.body);
 });
 
-app.listen(3002, '127.0.0.1', () => {
-  console.log(`MCP Express Server running on port ${3002}`);
+const host = new URL(ENV.LOCAL_SERVER_URL_NO_PORT).hostname;
+
+app.listen(ENV.PORT_MCP1, host, () => {
+  console.log(
+    `MCP сервер успешно запущен на ${ENV.LOCAL_SERVER_URL_NO_PORT}:${ENV.PORT_MCP1}`,
+  );
 });

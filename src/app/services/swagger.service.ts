@@ -1,6 +1,7 @@
 import { Express } from 'express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import { ENV } from '../../config/base';
 
 export default async function registerSwagger(app: Express) {
   const swaggerOptions = {
@@ -13,7 +14,7 @@ export default async function registerSwagger(app: Express) {
       },
       servers: [
         {
-          url: `http://localhost:${process.env.PORT || 3000}`,
+          url: `${ENV.LOCAL_SERVER_URL_NO_PORT}:${ENV.PORT_APP}`,
           description: 'Локальный сервер',
         },
       ],

@@ -1,11 +1,9 @@
+import { ENV } from '../../config/base';
 import { createClient } from '../../generated/client/index';
-import dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.dev' });
-
-const ENDPOINT = process.env.GRAPHQL_URL || 'http://localhost:8080/graphql';
-const LOGIN = process.env.PLATFORM_USERNAME || 'admin';
-const PASSWORD = process.env.PLATFORM_PASSWORD || 'admin';
+const ENDPOINT = ENV.GRAPHQL_ADRESS;
+const LOGIN = ENV.PLATFORM_USERNAME || 'admin';
+const PASSWORD = ENV.PLATFORM_PASSWORD || 'admin';
 
 const authBuffer = Buffer.from(`${LOGIN}:${PASSWORD}`).toString('base64');
 

@@ -1,3 +1,4 @@
+import { ENV } from '../../config/base';
 import { Express } from 'express';
 import { AIService } from '../services/ai.service';
 import {
@@ -78,7 +79,7 @@ async function ensureMcpConnection(mcpClient: any, serverUrl: string) {
 }
 
 export default async function registerConnectChatToMCPServer(app: Express) {
-  const MCP_SERVER_URL = 'http://127.0.0.1:3002';
+  const MCP_SERVER_URL = `${ENV.LOCAL_SERVER_URL_NO_PORT}:${ENV.PORT_MCP1}`;
   const transport = new StreamableHTTPClientTransport(
     new URL(`${MCP_SERVER_URL}/mcp`),
   );
