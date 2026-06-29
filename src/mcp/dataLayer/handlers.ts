@@ -5,61 +5,204 @@ import {
   CreateDataTypeFieldSchema,
   CreateModuleFieldSchema,
 } from './schema';
+import rabisClient from '../../generated/client';
 
 type CreateModuleArgs = z.infer<typeof CreateModuleSchema>;
 type CreateDataTypeArgs = z.infer<typeof CreateDataTypeSchema>;
 type CreateDataTypeFieldArgs = z.infer<typeof CreateDataTypeFieldSchema>;
 type CreateModuleFieldArgs = z.infer<typeof CreateModuleFieldSchema>;
 
-export const handleCreateModule = async ({ name, code }: CreateModuleArgs) => {
-  console.log(`[MCP Server] Выполнение инструмента: createModule`, {
-    name,
-    code,
-  });
-  return {
-    content: [
-      {
-        type: 'text' as const,
-        text: JSON.stringify({ id: 'real_mod_uuid_111', status: 'success' }),
-      },
-    ],
-  };
+export const handleCreateModule = async ({ displayName, name, description, brandingJson }: CreateModuleArgs) => {
+  console.log(`[MCP Server] Выполнение инструмента: createModule`, { displayName, name });
+  
+  try {
+    const response = await rabisClient.chain.mutation
+      .createModule({
+        module: {
+          displayName,
+          name,
+          description,
+          brandingJson,
+        },
+      })
+      .get({
+        id: true,
+        name: true,
+      });
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify({ 
+            id: response.id, 
+            status: 'success',
+            message: 'Модуль успешно создан'
+          }),
+        },
+      ],
+    };
+  } catch (error: any) {
+    console.error(`[MCP Error] Ошибка в createModule:`, error);
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify({ status: 'error', message: error.message || 'Ошибка базы данных' }),
+        },
+      ],
+    };
+  }
 };
 
-export const handleCreateDataType = async (args: CreateDataTypeArgs) => {
-  console.log(`[MCP Server] Выполнение инструмента: createDataType`, args);
-  return {
-    content: [
-      {
-        type: 'text' as const,
-        text: JSON.stringify({ id: 'real_dt_uuid_222', status: 'success' }),
-      },
-    ],
-  };
+export const handleCreateDataType = async ({ displayName, name, parentId, lifecycle, description, canHaveChildren, canHaveDiscussion }: CreateDataTypeArgs) => {
+  console.log(`[MCP Server] Выполнение инструмента: createDataType`, { displayName, name });
+  
+  try {
+    const response = await rabisClient.chain.mutation
+      .createDataType({
+        dataType: {
+          displayName,
+          name,
+          parentId,
+          lifecycle: lifecycle || 'DEFAULT_LIFECYCLE',
+          description,
+          canHaveChildren,
+          canHaveDiscussion,
+        },
+      })
+      .get({
+        id: true,
+        name: true,
+      });
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify({ 
+            id: response.id, 
+            status: 'success',
+            message: 'Тип данных успешно создан'
+          }),
+        },
+      ],
+    };
+  } catch (error: any) {
+    console.error(`[MCP Error] Ошибка в createDataType:`, error);
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify({ status: 'error', message: error.message || 'Ошибка базы данных' }),
+        },
+      ],
+    };
+  }
 };
 
-export const handleCreateDataTypeField = async (
-  args: CreateDataTypeFieldArgs,
-) => {
-  console.log(`[MCP Server] Выполнение инструмента: createDataTypeField`, args);
-  return {
-    content: [
-      {
-        type: 'text' as const,
-        text: JSON.stringify({ status: 'success', code: args.code }),
+export const handleCreateDataTypeField = async ({ displayName, name, dataTypeId, propertyType, description, required }: CreateDataTypeFieldArgs) => {
+  console.log(`[MCP Server] Выполнение инструмента: createDataTypeField`, { displayName, name });
+  
+  try {
+    let mutationFn;
+    switch (propertyType) {
+      case 'INTEGER': mutationFn = rabisClient.chain.mutation.createDataPropertyInteger; break;
+      case 'BOOLEAN': mutationFn = rabisClient.chain.mutation.createDataPropertyBoolean; break;
+      case 'DATE': mutationFn = rabisClient.chain.mutation.createDataPropertyDate; break;
+      case 'DATETIME': mutationFn = rabisClient.chain.mutation.createDataPropertyDateTime; break;
+      case 'DECIMAL': mutationFn = rabisClient.chain.mutation.createDataPropertyDecimal; break;
+      case 'TEXT': mutationFn = rabisClient.chain.mutation.createDataPropertyText; break;
+      default: mutationFn = rabisClient.chain.mutation.createDataPropertyString; break;
+    }
+
+    const response = await mutationFn({
+      dataProperty: {
+        displayName,
+        name,
+        parentId: dataTypeId,
+        description,
+        required: required || false,
       },
-    ],
-  };
+    }).get({
+      id: true,
+      name: true,
+    });
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify({ 
+            id: response.id, 
+            status: 'success',
+            message: 'Поле типа данных успешно создано'
+          }),
+        },
+      ],
+    };
+  } catch (error: any) {
+    console.error(`[MCP Error] Ошибка в createDataTypeField:`, error);
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify({ status: 'error', message: error.message || 'Ошибка базы данных' }),
+        },
+      ],
+    };
+  }
 };
 
-export const handleCreateModuleField = async (args: CreateModuleFieldArgs) => {
-  console.log(`[MCP Server] Выполнение инструмента: createModuleField`, args);
-  return {
-    content: [
-      {
-        type: 'text' as const,
-        text: JSON.stringify({ status: 'success', code: args.code }),
+export const handleCreateModuleField = async ({ displayName, name, moduleId, propertyType, description, required }: CreateModuleFieldArgs) => {
+  console.log(`[MCP Server] Выполнение инструмента: createModuleField`, { displayName, name });
+  
+  try {
+    let mutationFn;
+    switch (propertyType) {
+      case 'INTEGER': mutationFn = rabisClient.chain.mutation.createDataPropertyInteger; break;
+      case 'BOOLEAN': mutationFn = rabisClient.chain.mutation.createDataPropertyBoolean; break;
+      case 'DATE': mutationFn = rabisClient.chain.mutation.createDataPropertyDate; break;
+      case 'DATETIME': mutationFn = rabisClient.chain.mutation.createDataPropertyDateTime; break;
+      case 'DECIMAL': mutationFn = rabisClient.chain.mutation.createDataPropertyDecimal; break;
+      case 'TEXT': mutationFn = rabisClient.chain.mutation.createDataPropertyText; break;
+      default: mutationFn = rabisClient.chain.mutation.createDataPropertyString; break;
+    }
+
+    const response = await mutationFn({
+      dataProperty: {
+        displayName,
+        name,
+        parentId: moduleId,
+        description,
+        required: required || false,
       },
-    ],
-  };
+    }).get({
+      id: true,
+      name: true,
+    });
+
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify({ 
+            id: response.id, 
+            status: 'success',
+            message: 'Общее поле модуля успешно создано'
+          }),
+        },
+      ],
+    };
+  } catch (error: any) {
+    console.error(`[MCP Error] Ошибка в createModuleField:`, error);
+    return {
+      content: [
+        {
+          type: 'text' as const,
+          text: JSON.stringify({ status: 'error', message: error.message || 'Ошибка базы данных' }),
+        },
+      ],
+    };
+  }
 };

@@ -27,7 +27,7 @@ const tools = [
     {
       title: 'Create Module',
       description:
-        'Создает новый модуль (верхнеуровневый контейнер). При создании модуля автоматически создается дефолтная рабочая область (DEFAULT_WORKSPACE_ID). Не создавай несколько модулей за раз.',
+        'Создает новый модуль (верхнеуровневый контейнер). При создании модуля автоматически создается дефолтная рабочая область. Не создавай несколько модулей за раз.',
       inputSchema: CreateModuleSchema,
     },
     handleCreateModule,
@@ -37,7 +37,7 @@ const tools = [
     {
       title: 'Create DataType',
       description:
-        'Создает новый тип данных (сущность) внутри модуля. Помни: тип не существует отдельно от модуля.',
+        'Создает новый тип данных (сущность) внутри модуля. Помни: тип не существует отдельно от модуля. Укажи parentId созданного модуля.',
       inputSchema: CreateDataTypeSchema,
     },
     handleCreateDataType,
@@ -47,7 +47,7 @@ const tools = [
     {
       title: 'Create DataTypeField',
       description:
-        'Создает специфичное поле внутри конкретного Типа Данных. Вызывай для описания уникальных атрибутов объекта.',
+        'Создает специфичное поле внутри конкретного Типа Данных. Вызывай для описания уникальных атрибутов объекта. Укажи dataTypeId и propertyType.',
       inputSchema: CreateDataTypeFieldSchema,
     },
     handleCreateDataTypeField,
@@ -57,7 +57,7 @@ const tools = [
     {
       title: 'Create Module(common) Field',
       description:
-        "Создает ОБЩЕЕ (сквозное) поле на уровне Модуля. Все типы данных внутри этого модуля автоматически унаследуют это поле (например, 'дата создания', 'автор').",
+        "Создает ОБЩЕЕ (сквозное) поле на уровне Модуля. Все типы данных внутри этого модуля автоматически унаследуют это поле. Укажи moduleId и propertyType.",
       inputSchema: CreateModuleFieldSchema,
     },
     handleCreateModuleField,
