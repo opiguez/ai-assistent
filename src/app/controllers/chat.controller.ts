@@ -45,8 +45,7 @@ async function ensureMcpConnection(mcpClient: any, serverUrl: string) {
     return;
   }
 
-  // Делаем легкий проверочный пинг (вызов любого дешевого метода, например, listTools или listPrompts)
-  // Это самый надежный способ узнать, жив ли удаленный HTTP-сервер
+  // Делаем легкий проверочный пинг
   try {
     await mcpClient.listPrompts();
   } catch (pingError) {
@@ -89,7 +88,6 @@ export default async function registerConnectChatToMCPServer(app: Express) {
     { capabilities: {} },
   );
 
-  // Первичное подключение при старте
   try {
     await connectWithRetry(mcpClient, transport);
   } catch (err) {
@@ -102,24 +100,24 @@ export default async function registerConnectChatToMCPServer(app: Express) {
   const aiService = new AIService(mcpClient);
 
   app.post('/api/chat', async (req, res) => {
+    let logsGenerator: AsyncGenerator<any, void, unknown> | null = null;
+
     try {
       const { message, sessionId, executeStep } = req.body;
 
-      // 1. Проверяем связь (и реконнектим, если сервер перезапускался)
       try {
         await ensureMcpConnection(mcpClient, MCP_SERVER_URL);
       } catch (connError: any) {
         return res.status(503).json({ error: connError.message });
       }
 
-      // Получаем актуальное состояние сессии с MCP-сервера
       const sessionResponse = await axios.post(
         `${MCP_SERVER_URL}/api/history/session`,
         { sessionId },
       );
-      const session = sessionResponse.data;
 
-      // 2. Безопасный вызов getPrompt
+      const currentSession = sessionResponse.data;
+
       let mcpPrompt;
       try {
         mcpPrompt = (await mcpClient.getPrompt({
@@ -141,16 +139,10 @@ export default async function registerConnectChatToMCPServer(app: Express) {
       const isLargeSpecification =
         mcpPrompt.meta?.isLargeSpecification || false;
 
-      // =========================================================================
-      // ФИКС ПУНКТА 4: ДИНАМИЧЕСКАЯ КЛАССИФИКАЦИЯ СЛОЕВ
-      // =========================================================================
       let activatedLayers: string[] = ['DATA'];
-
-      // Вызываем классификатор, только если это не автоматическое выполнение шага очереди
       if (!executeStep && message) {
         try {
           const detectedLayer = await aiService.classifyShortMessage(message);
-
           if (detectedLayer) {
             activatedLayers = detectedLayer;
             console.log(
@@ -165,7 +157,7 @@ export default async function registerConnectChatToMCPServer(app: Express) {
         }
       }
 
-      // Настраиваем заголовки для SSE стриминга на фронтенд
+      // Настраиваем заголовки для SSE стриминга
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
@@ -173,19 +165,21 @@ export default async function registerConnectChatToMCPServer(app: Express) {
       req.setTimeout(0);
       res.setTimeout(0);
 
-      // Отслеживание обрыва связи клиентом
+      // Отслеживание обрыва связи клиентом (Защита от утечки памяти)
       let isDisconnected = false;
       req.on('close', () => {
         isDisconnected = true;
         console.log('[SSE] Клиент закрыл соединение. Прерываем обработку.');
+        if (logsGenerator && typeof logsGenerator.return === 'function') {
+          logsGenerator.return();
+        }
       });
 
-      // 3. Запускаем агентский цикл (передаем готовый массив сообщений и динамические слои)
-      const logsGenerator = aiService.executeTaskWithMcp(
+      // Запускаем агентский цикл
+      logsGenerator = aiService.executeTaskWithMcp(
         preparedMessages,
         activatedLayers,
       );
-
       let finalReportText = '';
 
       for await (const log of logsGenerator) {
@@ -206,14 +200,10 @@ export default async function registerConnectChatToMCPServer(app: Express) {
         return res.end();
       }
 
-      // =========================================================================
-      // 4. ФИКСИРУЕМ РЕЗУЛЬТАТЫ В ИСТОРИЮ ЧЕРЕЗ REST API MCP-СЕРВЕРА
-      // =========================================================================
-
       if (
         message &&
         isLargeSpecification &&
-        session.mode !== 'CHUNK_PROCESSING'
+        currentSession.mode !== 'CHUNK_PROCESSING'
       ) {
         console.log('--- Нарезка большого ТЗ на стороне клиента ---');
         const tasks = await aiService.splitLargeSpecification(message);
@@ -226,10 +216,10 @@ export default async function registerConnectChatToMCPServer(app: Express) {
       } else {
         let actualTaskDescription = message;
 
-        if (executeStep && session.mode === 'CHUNK_PROCESSING') {
+        if (executeStep && currentSession.mode === 'CHUNK_PROCESSING') {
           actualTaskDescription =
-            session.tasksQueue[session.currentStepIndex]?.description ||
-            message;
+            currentSession.tasksQueue[currentSession.currentStepIndex]
+              ?.description || message;
         }
 
         await axios.post(`${MCP_SERVER_URL}/api/history/append-result`, {
@@ -242,7 +232,8 @@ export default async function registerConnectChatToMCPServer(app: Express) {
       let hasNextStep = false;
       let nextStepIndex = 0;
 
-      if (session.mode === 'CHUNK_PROCESSING' && executeStep) {
+      // Проверяем статус повторно на свежих данных сессии
+      if (currentSession.mode === 'CHUNK_PROCESSING' && executeStep) {
         const nextStepResponse = await axios.post(
           `${MCP_SERVER_URL}/api/history/next-step`,
           { sessionId },
@@ -254,7 +245,7 @@ export default async function registerConnectChatToMCPServer(app: Express) {
       const finalEvent = {
         type: 'execution_completed',
         status:
-          session.mode === 'CHUNK_PROCESSING'
+          currentSession.mode === 'CHUNK_PROCESSING'
             ? 'STEP_EXECUTED_AND_MOVED'
             : 'EXECUTED',
         hasNextStep,
