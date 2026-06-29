@@ -21,28 +21,44 @@ export const BaseLowCodeSchema = z.object({
 
 export const CreateModuleSchema = BaseLowCodeSchema.extend({});
 
+// СХЕМА ДЛЯ ОБЫЧНОГО/ДОЧЕРНЕГО ТИПА ДАННЫХ
 export const CreateDataTypeSchema = BaseLowCodeSchema.extend({
   parentId: z
     .string()
     .describe(
-      "ID родительского модуля. Если модуль создается в этой же сессии, передай 'PENDING_MODULE_ID'.",
+      "ID родительского модуля или родительской сущности. Если модуль создается в этой же сессии, передай 'PENDING_MODULE_ID'.",
     ),
   lifecycle: z
     .string()
     .optional()
     .describe(
-      "Идентификатор жизненного цикла (например, '/modules/Calculator/lifecycles/default', где /modules/${ИМЯ_МОДУЛЯ}/lifecycles/${ИМЯ_ЖИЗНЕННОГО_ЦИКЛА}'). для BPMN(процесс) не нужен",
+      "Идентификатор жизненного цикла. Строгий формат: '/modules/ИМЯ_МОДУЛЯ/lifecycles/ИМЯ_ЦИКЛА' (например, '/modules/Calculator/lifecycles/default').",
     ),
   canHaveChildren: z
     .boolean()
     .default(false)
     .describe(
-      'Может ли эта сущность иметь вложенные элементы (древовидная структура). Для BPMN(процесс) не нужен',
+      'Флаг древовидной структуры. Передай true, если эта сущность может содержать вложенные дочерние элементы.',
     ),
   description: z
     .string()
     .optional()
-    .describe('Подробное описание сущности на русском языке.'),
+    .describe('Подробное описание назначения сущности на русском языке.'),
+});
+
+// СХЕМА ДЛЯ BPMN-ПРОЦЕССА
+export const CreateBpmnDataTypeSchema = BaseLowCodeSchema.extend({
+  parentId: z
+    .string()
+    .describe(
+      "ID родительского модуля, в котором создается бизнес-процесс. Если модуль создается в этой же сессии, передай 'PENDING_MODULE_ID'.",
+    ),
+  description: z
+    .string()
+    .optional()
+    .describe(
+      'Подробное описание бизнес-процесса и его шагов на русском языке.',
+    ),
 });
 
 export const FieldTypeEnum = z
@@ -65,7 +81,7 @@ export const CreateDataTypeFieldSchema = BaseLowCodeSchema.extend({
   dataTypeId: z
     .string()
     .describe(
-      "ID типа данных. Если тип создается сейчас, передай 'PENDING_DATA_TYPE_ID'.",
+      "ID типа данных. Если тип создается прямо сейчас в рамках одного шага, передай строго строку 'PENDING_DATA_TYPE_ID'.",
     ),
   propertyType: FieldTypeEnum.describe(
     'Системный тип данных поля (например, STRING, INTEGER, BOOLEAN).',
@@ -74,7 +90,7 @@ export const CreateDataTypeFieldSchema = BaseLowCodeSchema.extend({
     .string()
     .optional()
     .describe(
-      'Поле для вычислений на основе других полей. Формат: [ИМЯ_ТИПА:ИМЯ_ПОЛЯ] - для  типа. [_common:ИМЯ_ПОЛЯ] - для модульного поля(префикс - _common). Пример [_common:test1] + [parentBpmnCalculator:test2])',
+      'Формула вычислений. Синтаксис СТРОГО без пробелов внутри скобок: `[ИМЯ_ТИПА:ИМЯ_ПОЛЯ]` — для обычного поля типа; `[_common:ИМЯ_ПОЛЯ]` — для модульного поля. Пример: `[_common:test1]+[parentBpmnCalculator:test2]`',
     ),
   description: z
     .string()
@@ -90,15 +106,17 @@ export const CreateModuleFieldSchema = BaseLowCodeSchema.extend({
   moduleId: z
     .string()
     .describe(
-      "ID модуля. Если модуль создается сейчас, передай 'PENDING_MODULE_ID'.",
+      "ID модуля. Если модуль создается прямо сейчас в рамках одного шага, передай строго строку 'PENDING_MODULE_ID'.",
     ),
   formula: z
     .string()
     .optional()
     .describe(
-      'Поле для вычислений на основе других полей. Формат: [ИМЯ_ТИПА:ИМЯ_ПОЛЯ] - для  типа. [ИМЯ_ПОЛЯ] - для модульного поля. Пример [_someNum] + [parentBpmnCalculator:test2])',
+      'Формула вычислений. Синтаксис СТРОГО без пробелов внутри скобок: `[ИМЯ_ТИПА:ИМЯ_ПОЛЯ]` — для поля конкретного типа; `[ИМЯ_ПОЛЯ]` — для модульного поля текущего модуля. Пример: `[someNum]+[parentBpmnCalculator:test2]`',
     ),
-  propertyType: FieldTypeEnum.describe('Системный тип данных для общего поля.'),
+  propertyType: FieldTypeEnum.describe(
+    'Системный тип данных для общего модульного поля.',
+  ),
   description: z
     .string()
     .optional()

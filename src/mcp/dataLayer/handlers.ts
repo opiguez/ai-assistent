@@ -4,12 +4,13 @@ import {
   CreateDataTypeSchema,
   CreateDataTypeFieldSchema,
   CreateModuleFieldSchema,
+  CreateBpmnDataTypeSchema,
 } from './schema';
 import { rabisClient } from '../../app/services/rabisClient.service';
 
 type CreateModuleArgs = z.infer<typeof CreateModuleSchema>;
 type CreateDataTypeArgs = z.infer<typeof CreateDataTypeSchema>;
-type CreateBpmnDataTypeArgs = z.infer<typeof CreateDataTypeSchema>;
+type CreateBpmnDataTypeArgs = z.infer<typeof CreateBpmnDataTypeSchema>;
 type CreateDataTypeFieldArgs = z.infer<typeof CreateDataTypeFieldSchema>;
 type CreateModuleFieldArgs = z.infer<typeof CreateModuleFieldSchema>;
 
