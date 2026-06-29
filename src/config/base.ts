@@ -45,6 +45,11 @@ const envSchema = z.object({
     .transform(Number)
     .pipe(z.number().positive())
     .default(3002),
+  LARGE_SPECIFICATION_THRESHOLD: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().positive())
+    .default(2000),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

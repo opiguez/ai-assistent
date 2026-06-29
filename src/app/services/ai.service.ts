@@ -1,7 +1,7 @@
 //# Интеграция с локальной Qwen (генерация, prompt)
 import { OpenAI } from 'openai';
 import { Task } from '../../types/session';
-import { SYSTEM_PROMPTS } from '../../mcp/systemPromts';
+import { SYSTEM_PROMPTS } from '../../mcp/systemPrompts';
 import { Client } from '@modelcontextprotocol/client';
 import { McpStepLog } from '../../types/mcp';
 import { jsonrepair } from 'jsonrepair';
@@ -113,14 +113,14 @@ export class AIService {
     preparedMessages: any[],
     activatedLayers: Array<string>,
   ): AsyncGenerator<McpStepLog, void, unknown> {
+    // 1. Формируем чистый массив сообщений
     const messages: any[] = preparedMessages.map((msg, index) => {
       const textContent =
         typeof msg.content === 'object' && msg.content !== null
           ? msg.content.text
           : msg.content;
 
-      // Первое сообщение из генератора контекста ВСЕГДА должно быть системным промптом для LLM.
-      // Мы явно форсируем роль 'system' для index === 0, либо доверяем роли от MCP сервера.
+      // Первое сообщение всегда форсируем как системный промпт для локальных LLM
       const determinedRole = index === 0 ? 'system' : msg.role || 'user';
 
       return {
@@ -129,6 +129,7 @@ export class AIService {
       };
     });
 
+    // 2. Инициализация и получение инструментов от MCP
     let mcpToolsResponse;
     try {
       mcpToolsResponse = await this.mcpClient.listTools();
@@ -143,19 +144,19 @@ export class AIService {
         name: 'listTools',
         error: 'MCP сервер недоступен',
       };
-      mcpToolsResponse = { tools: [] }; // Продолжаем работу без инструментов, чтобы не упал стрим
+      mcpToolsResponse = { tools: [] }; // Продолжаем без инструментов, чтобы не крашить стрим
     }
 
-    // Фильтруем инструменты. Предполагается, что в названии инструмента или описании
+    // Фильтрация инструментов по слоям
     const filteredMcpTools = mcpToolsResponse.tools.filter((tool: any) => {
       const layers = activatedLayers.length > 0 ? activatedLayers : ['DATA'];
-
       return layers.some((layer) => {
         const prefix = `${layer.toLowerCase()}_`;
         return tool.name.toLowerCase().startsWith(prefix);
       });
     });
 
+    // Форматирование инструментов под стандарт OpenAI
     const openAiTools = filteredMcpTools.map((tool) => ({
       type: 'function' as const,
       function: {
@@ -168,20 +169,26 @@ export class AIService {
     let iterations = 0;
     const MAX_ITERATIONS = 10;
 
+    // Сет для отслеживания ошибок: предотвращает бесконечный вызов одного и того же сломанного инструмента
+    const failedToolCalls = new Set<string>();
+
     while (iterations < MAX_ITERATIONS) {
       iterations++;
       yield { type: 'thinking_start' };
 
+      const completionPayload = {
+        model: this.modelName,
+        messages: messages,
+        temperature: 0.2,
+        stream: true as const,
+        ...(openAiTools.length > 0
+          ? { tools: openAiTools, tool_choice: 'auto' as const }
+          : {}),
+      };
+
       let stream;
       try {
-        stream = await openai.chat.completions.create({
-          model: this.modelName,
-          messages: messages,
-          tools: openAiTools.length > 0 ? openAiTools : undefined,
-          tool_choice: openAiTools.length > 0 ? 'auto' : undefined,
-          temperature: 0.2,
-          stream: true,
-        });
+        stream = await openai.chat.completions.create(completionPayload);
       } catch (llmError: any) {
         console.error('[AI Service] Ошибка вызова LLM:', llmError);
         yield {
@@ -194,6 +201,7 @@ export class AIService {
       let fullContent = '';
       const toolCallsMap = new Map<number, any>();
 
+      // Чтение стрима ответов от LLM
       for await (const chunk of stream) {
         const delta = chunk.choices[0]?.delta;
         if (!delta) continue;
@@ -231,6 +239,7 @@ export class AIService {
 
       messages.push(builtMessage);
 
+      // Если модель не захотела вызывать инструменты — задача завершена
       if (tool_calls.length === 0) {
         yield {
           type: 'final_response',
@@ -239,57 +248,78 @@ export class AIService {
         return;
       }
 
-      //Сначала отправляем логи вызовов в UI (синхронно, перед запуском задач)
-      for (const toolCall of tool_calls) {
+      // 3. Единый и безопасный парсинг аргументов
+      const preparedTools = tool_calls.map((toolCall) => {
         let args: any = {};
         try {
-          args = JSON.parse(toolCall.function.arguments);
+          args =
+            typeof toolCall.function.arguments === 'string'
+              ? JSON.parse(toolCall.function.arguments)
+              : toolCall.function.arguments;
         } catch {
           args = toolCall.function.arguments;
         }
 
-        yield {
-          type: 'tool_call',
+        return {
           id: toolCall.id,
           name: toolCall.function.name,
           arguments: args,
+          rawArguments: toolCall.function.arguments,
+        };
+      });
+
+      // Оповещаем UI о намерении вызвать инструменты
+      for (const tool of preparedTools) {
+        yield {
+          type: 'tool_call',
+          id: tool.id,
+          name: tool.name,
+          arguments: tool.arguments,
         };
       }
 
-      // 2. Запускаем все тяжелые MCP-запросы ОДНОВРЕМЕННО через Promise.all
-      const toolPromises = tool_calls.map(async (toolCall) => {
-        const toolName = toolCall.function.name;
-        let args: any = {};
-        try {
-          args = JSON.parse(toolCall.function.arguments);
-        } catch {
-          args = toolCall.function.arguments;
+      // 4. Параллельное выполнение запросов к MCP серверам
+      const toolPromises = preparedTools.map(async (tool) => {
+        // Защита от зацикливания: если этот инструмент с этими аргументами уже падал, возвращаем ошибку сразу
+        const cacheKey = `${tool.name}_${JSON.stringify(tool.arguments)}`;
+        if (failedToolCalls.has(cacheKey)) {
+          return {
+            id: tool.id,
+            name: tool.name,
+            success: false,
+            payload:
+              'Инструмент повторно вызван с ошибочными аргументами. Операция прервана.',
+            isLoop: true,
+          };
         }
 
         try {
           const toolResult = await this.mcpClient.callTool({
-            name: toolName,
-            arguments: args,
+            name: tool.name,
+            arguments: tool.arguments,
           });
           return {
-            id: toolCall.id,
-            name: toolName,
+            id: tool.id,
+            name: tool.name,
             success: true,
             payload: toolResult.content,
+            isLoop: false,
           };
         } catch (error: any) {
+          failedToolCalls.add(cacheKey); // Запоминаем проблемный вызов
           return {
-            id: toolCall.id,
-            name: toolName,
+            id: tool.id,
+            name: tool.name,
             success: false,
             payload: error.message || 'Ошибка выполнения инструмента',
+            isLoop: false,
           };
         }
       });
 
       const executedTools = await Promise.all(toolPromises);
 
-      // 3. Отдаем результаты в UI-стрим и пушим их в историю контекста для LLM
+      // 5. Обработка результатов выполнения инструментов
       for (const res of executedTools) {
         if (res.success) {
           yield {
@@ -312,15 +342,30 @@ export class AIService {
             error: res.payload,
           };
 
+          // Если это было зацикливание, принудительно останавливаем агента, чтобы спасти контекст
+          if (res.isLoop) {
+            yield {
+              type: 'final_response',
+              text: `Агент остановлен из-за циклической ошибки в инструменте "${res.name}".`,
+            };
+            return;
+          }
+
+          // Даем модели шанс исправиться, передавая текст ошибки с четкой инструкцией
           messages.push({
             role: 'tool',
             tool_call_id: res.id,
-            content: JSON.stringify({ error: res.payload }),
+            content: JSON.stringify({
+              error: res.payload,
+              instruction:
+                'Исправь аргументы и попробуй снова или сообщи пользователю об ошибке. Не вызывай инструмент с теми же параметрами.',
+            }),
           });
         }
       }
     }
 
+    // Если вышли за пределы итераций
     yield {
       type: 'final_response',
       text: 'Превышено максимальное количество шагов агента. Процесс остановлен.',

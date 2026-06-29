@@ -8,7 +8,7 @@ export default async function registerSwagger(app: Express) {
     definition: {
       openapi: '3.0.0',
       info: {
-        title: 'API Подбора инверторов Форпост',
+        title: 'API агента для low-code системы',
         version: '1.0.0',
         description: 'Документация API чат-бота с поддержкой Function Calling',
       },

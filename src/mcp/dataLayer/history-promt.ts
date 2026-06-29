@@ -2,10 +2,11 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/server';
 
 import { historyService } from '../services/history.service';
-import { SYSTEM_PROMPTS } from '../systemPromts';
+import { SYSTEM_PROMPTS } from '../systemPrompts';
+import { ENV } from '../../config/base';
 
 export default function registerHistoryPrompt(server: McpServer) {
-  const LARGE_SPECIFICATION_THRESHOLD = 2000;
+  const LARGE_SPECIFICATION_THRESHOLD = ENV.LARGE_SPECIFICATION_THRESHOLD;
 
   server.registerPrompt(
     'prepare-task-context',

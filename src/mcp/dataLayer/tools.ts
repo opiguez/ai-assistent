@@ -7,6 +7,7 @@ import {
   handleCreateModuleField,
 } from './handlers';
 import {
+  CreateBpmnDataTypeSchema,
   CreateDataTypeFieldSchema,
   CreateDataTypeSchema,
   CreateModuleFieldSchema,
@@ -49,7 +50,7 @@ const tools = [
       title: 'Create BpmnDataType',
       description:
         'Создает новый BPMN бизнес-процесс (автоматизацию логики, воркфлоу) внутри указанного модуля. Помни: тип не существует отдельно от модуля. Укажи parentId созданного модуля.',
-      inputSchema: CreateDataTypeSchema,
+      inputSchema: CreateBpmnDataTypeSchema,
     },
     handleCreateBpmnDataType,
   ),
