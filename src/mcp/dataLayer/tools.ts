@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import {
+  handleCreateBpmnDataType,
   handleCreateDataType,
   handleCreateDataTypeField,
   handleCreateModule,
@@ -43,6 +44,16 @@ const tools = [
     handleCreateDataType,
   ),
   defineTool(
+    'data_create_bpmn_data_type',
+    {
+      title: 'Create BpmnDataType',
+      description:
+        'Создает новый тип данных (сущность-процесс(BPMN)) внутри модуля. Помни: тип не существует отдельно от модуля. Укажи parentId созданного модуля.',
+      inputSchema: CreateDataTypeSchema,
+    },
+    handleCreateBpmnDataType,
+  ),
+  defineTool(
     'data_create_data_type_field',
     {
       title: 'Create DataTypeField',
@@ -57,7 +68,7 @@ const tools = [
     {
       title: 'Create Module(common) Field',
       description:
-        "Создает ОБЩЕЕ (сквозное) поле на уровне Модуля. Все типы данных внутри этого модуля автоматически унаследуют это поле. Укажи moduleId и propertyType.",
+        'Создает ОБЩЕЕ (сквозное) поле на уровне Модуля. Все типы данных внутри этого модуля автоматически унаследуют это поле. Укажи moduleId и propertyType.',
       inputSchema: CreateModuleFieldSchema,
     },
     handleCreateModuleField,
