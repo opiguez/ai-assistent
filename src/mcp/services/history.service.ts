@@ -55,26 +55,33 @@ class HistoryService {
     return true; // Есть следующий шаг
   }
 
-  // ПОЛЕЗНОЕ ДОПОЛНЕНИЕ 1: Метод для "схлопывания" (архивации) выполненных шагов.
-  // Заменяет длинную цепочку "Хочу поле -> ИИ предложил -> Юзер утвердил" на одну короткую системную строку.
-  // Это очищает контекст 27B модели от лишнего шума и экономит токены.
+  // Метод для "схлопывания" (архивации) выполненных шагов.
+  // Безопасно очищает контекст модели от тяжелых JSON-тех-логов инструментов.
   async archiveExecutedActions(sessionId: string, summary: string) {
     const session = await this.getOrCreateSession(sessionId);
 
-    // Удаляем последние 2-3 сообщения (реплику юзера и tool_calls от ИИ),
-    // так как действие УЖЕ выполнено и теперь находится в реальной схеме GraphQL.
-    if (session.chatHistory.length >= 2) {
-      session.chatHistory = session.chatHistory.slice(0, -2);
-    }
+    // Удаляем все сообщения с ролью 'tool' и вызовы инструментов из роли 'assistant',
+    // так как они занимают много токенов, а действие уже зафиксировано в GraphQL.
+    session.chatHistory = session.chatHistory
+      .map((msg: any) => {
+        if (msg.role === 'assistant' && msg.tool_calls) {
+          // Клонируем сообщение, но очищаем массив вызовов функций, оставляя только текст рассуждения (если он был)
+          return {
+            role: 'assistant',
+            content: msg.content || 'Выполнена генерация через инструменты.',
+          };
+        }
+        return msg;
+      })
+      .filter((msg: any) => msg.role !== 'tool'); // Полностью вырезаем ответы инструментов
 
-    // Вместо них пишем одну жесткую правду для ИИ:
     session.chatHistory.push({
       role: 'system',
-      content: `[СИСТЕМНОЕ УВЕДОМЛЕНИЕ]: Действие успешно завершено пользователем в UI: ${summary}.`,
+      content: `[КОНТЕКСТ АКТУАЛИЗИРОВАН]: Действие успешно зафиксировано в схеме проекта: ${summary}. Предыдущие технические логи вызовов функций архивированы.`,
     });
   }
 
-  // ПОЛЕЗНОЕ ДОПОЛНЕНИЕ 2: Метод получения текущей задачи
+  // Метод получения текущей задачи
   async getCurrentTask(sessionId: string): Promise<Task | null> {
     const session = await this.getOrCreateSession(sessionId);
     if (

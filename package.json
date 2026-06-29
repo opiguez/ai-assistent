@@ -23,6 +23,7 @@
     "dotenv": "17.2.4",
     "express": "5.2.1",
     "graphql": "16.10.0",
+    "jsonrepair": "3.14.1",
     "openai": "6.44.0",
     "swagger-jsdoc": "6.2.8",
     "swagger-ui-express": "5.0.0",

@@ -23,7 +23,7 @@ function defineTool<T extends z.ZodObject<any, any>>(
 
 const tools = [
   defineTool(
-    'createModule',
+    'data_create_module',
     {
       title: 'Create Module',
       description:
@@ -33,7 +33,7 @@ const tools = [
     handleCreateModule,
   ),
   defineTool(
-    'createDataType',
+    'data_create_data_type',
     {
       title: 'Create DataType',
       description:
@@ -43,7 +43,7 @@ const tools = [
     handleCreateDataType,
   ),
   defineTool(
-    'createDataTypeField',
+    'data_create_data_type_field',
     {
       title: 'Create DataTypeField',
       description:
@@ -53,7 +53,7 @@ const tools = [
     handleCreateDataTypeField,
   ),
   defineTool(
-    'createModuleField',
+    'data_create_module_field',
     {
       title: 'Create Module(common) Field',
       description:

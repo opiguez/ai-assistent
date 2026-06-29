@@ -4,6 +4,7 @@ import { Task } from '../../types/session';
 import { SYSTEM_PROMPTS } from '../../mcp/systemPromts';
 import { Client } from '@modelcontextprotocol/client';
 import { McpStepLog } from '../../types/mcp';
+import { jsonrepair } from 'jsonrepair';
 
 export const openai = new OpenAI({
   baseURL: 'http://localhost:11434/v1',
@@ -19,23 +20,73 @@ export class AIService {
   }
 
   async splitLargeSpecification(specification: string): Promise<Task[]> {
-    const response = await openai.chat.completions.create({
-      model: this.modelName,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPTS.PLANNER },
-        { role: 'user', content: specification },
-      ],
-      temperature: 0.1,
-      response_format: { type: 'json_object' },
-    });
-
     try {
-      const parsed = JSON.parse(response.choices[0].message.content || '{}');
-      return parsed.tasks || [];
-    } catch (e) {
-      console.error('Ошибка парсинга плана ТЗ', e);
+      const response = await openai.chat.completions.create({
+        model: this.modelName,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPTS.PLANNER },
+          { role: 'user', content: specification },
+        ],
+        temperature: 0.1,
+        response_format: { type: 'json_object' },
+        max_tokens: 4000,
+      });
+
+      let rawContent = response.choices[0]?.message?.content || '{}';
+
+      // Очистка от Markdown
+      rawContent = rawContent.trim();
+      if (rawContent.startsWith('```')) {
+        rawContent = rawContent
+          .replace(/^```(?:json)?\n?/i, '')
+          .replace(/```$/, '')
+          .trim();
+      }
+
+      // Безопасный парсинг
+      try {
+        const parsed = JSON.parse(rawContent);
+        return this.validateAndNormalizeTasks(parsed.tasks);
+      } catch (parseError) {
+        console.warn('[Planner] JSON невалиден, запускаем jsonrepair...');
+        try {
+          const repairedContent = jsonrepair(rawContent);
+          const parsed = JSON.parse(repairedContent);
+          return this.validateAndNormalizeTasks(parsed.tasks);
+        } catch (repairError) {
+          console.error(
+            '[Planner] Критическая ошибка: jsonrepair не смог спасти строку:',
+            rawContent,
+          );
+          return [];
+        }
+      }
+    } catch (apiError) {
+      console.error('[Planner] Ошибка вызова API:', apiError);
       return [];
     }
+  }
+
+  private validateAndNormalizeTasks(rawTasks: any[]): Task[] {
+    if (!Array.isArray(rawTasks)) return [];
+
+    const validLayers = ['DATA', 'BPMN', 'UI'];
+
+    return rawTasks.map((t: any) => {
+      const rawLayer = String(t.layer || 'DATA').toUpperCase();
+      // Проверяем, входит ли слой в разрешенные, иначе даем фолбек на 'DATA'
+      const layer = validLayers.includes(rawLayer)
+        ? (rawLayer as 'DATA' | 'BPMN' | 'UI')
+        : 'DATA';
+
+      return {
+        layer,
+        task: String(
+          t.task || `task_${Math.random().toString(36).substr(2, 5)}`,
+        ),
+        description: String(t.description || t.task || 'Пустая задача'),
+      };
+    });
   }
 
   async classifyShortMessage(message: string): Promise<string[]> {
@@ -58,7 +109,7 @@ export class AIService {
   }
 
   async *executeTaskWithMcp(
-    preparedMessages: any[], // Принимаем готовые сообщения от MCP промпта
+    preparedMessages: any[],
     activatedLayers: Array<string>,
   ): AsyncGenerator<McpStepLog, void, unknown> {
     const messages: any[] = preparedMessages.map((msg, index) => {
@@ -67,37 +118,43 @@ export class AIService {
           ? msg.content.text
           : msg.content;
 
-      // Если это самое первое сообщение, и оно пришло с сервера как маркер инструкции,
-      // мы на лету превращаем его в полноценную роль 'system' для OpenAI
-      if (
-        index === 0 &&
-        (textContent.includes('ИНСТРУКЦИЯ') ||
-          textContent.includes('Вы — опытный DATA_ENGINEER'))
-      ) {
-        return {
-          role: 'system',
-          content: textContent,
-        };
-      }
+      // Первое сообщение из генератора контекста ВСЕГДА должно быть системным промптом для LLM.
+      // Мы явно форсируем роль 'system' для index === 0, либо доверяем роли от MCP сервера.
+      const determinedRole = index === 0 ? 'system' : msg.role || 'user';
 
-      // Все остальные сообщения (история чата) остаются со своими ролями (user / assistant)
       return {
-        role: msg.role,
+        role: determinedRole,
         content: textContent,
       };
     });
 
-    // 1. Запрашиваем доступные инструменты у MCP-сервера
-    const mcpToolsResponse = await this.mcpClient.listTools();
+    let mcpToolsResponse;
+    try {
+      mcpToolsResponse = await this.mcpClient.listTools();
+    } catch (mcpError) {
+      console.error(
+        '[AI Service] Не удалось получить список инструментов:',
+        mcpError,
+      );
+      yield {
+        type: 'tool_error',
+        id: 'mcp-init',
+        name: 'listTools',
+        error: 'MCP сервер недоступен',
+      };
+      mcpToolsResponse = { tools: [] }; // Продолжаем работу без инструментов, чтобы не упал стрим
+    }
 
-    // 2. Фильтруем инструменты на основе активированных слоев
-    const filteredMcpTools = mcpToolsResponse.tools.filter((tool) => {
-      if (activatedLayers.includes('DATA')) return true;
-      if (activatedLayers.includes('UI')) return true;
-      return false;
+    // Фильтруем инструменты. Предполагается, что в названии инструмента или описании
+    const filteredMcpTools = mcpToolsResponse.tools.filter((tool: any) => {
+      const layers = activatedLayers.length > 0 ? activatedLayers : ['DATA'];
+
+      return layers.some((layer) => {
+        const prefix = `${layer.toLowerCase()}_`;
+        return tool.name.toLowerCase().startsWith(prefix);
+      });
     });
 
-    // 3. Маппим инструменты в формат, понятный OpenAI API
     const openAiTools = filteredMcpTools.map((tool) => ({
       type: 'function' as const,
       function: {
@@ -108,22 +165,31 @@ export class AIService {
     }));
 
     let iterations = 0;
-    const MAX_ITERATIONS = 10; // Защита от зацикливания
+    const MAX_ITERATIONS = 10;
 
     while (iterations < MAX_ITERATIONS) {
       iterations++;
       yield { type: 'thinking_start' };
 
-      const stream = await openai.chat.completions.create({
-        model: this.modelName,
-        messages: messages,
-        tools: openAiTools.length > 0 ? openAiTools : undefined,
-        tool_choice: openAiTools.length > 0 ? 'auto' : undefined,
-        temperature: 0.2,
-        stream: true,
-      });
+      let stream;
+      try {
+        stream = await openai.chat.completions.create({
+          model: this.modelName,
+          messages: messages,
+          tools: openAiTools.length > 0 ? openAiTools : undefined,
+          tool_choice: openAiTools.length > 0 ? 'auto' : undefined,
+          temperature: 0.2,
+          stream: true,
+        });
+      } catch (llmError: any) {
+        console.error('[AI Service] Ошибка вызова LLM:', llmError);
+        yield {
+          type: 'critical_error',
+          error: 'Ошибка локальной языковой модели.',
+        };
+        return;
+      }
 
-      // Переменные для сборки полного ответа из чанков
       let fullContent = '';
       const toolCallsMap = new Map<number, any>();
 
@@ -131,13 +197,11 @@ export class AIService {
         const delta = chunk.choices[0]?.delta;
         if (!delta) continue;
 
-        // Стримим текстовые рассуждения модели
         if (delta.content) {
           fullContent += delta.content;
           yield { type: 'text_chunk', text: delta.content };
         }
 
-        // Собираем куски вызовов инструментов
         if (delta.tool_calls) {
           for (const tcDelta of delta.tool_calls) {
             if (!toolCallsMap.has(tcDelta.index)) {
@@ -157,7 +221,6 @@ export class AIService {
         }
       }
 
-      // Формируем финальный объект сообщения ассистента для локальной истории цикла
       const tool_calls = Array.from(toolCallsMap.values());
       const builtMessage: any = {
         role: 'assistant',
@@ -165,10 +228,8 @@ export class AIService {
       };
       if (tool_calls.length > 0) builtMessage.tool_calls = tool_calls;
 
-      // Сохраняем шаг ассистента в контекст текущего диалога
       messages.push(builtMessage);
 
-      // Если модель не вызвала инструменты — задача решена, выходим
       if (tool_calls.length === 0) {
         yield {
           type: 'final_response',
@@ -177,63 +238,88 @@ export class AIService {
         return;
       }
 
-      // Последовательно выполняем собранные инструменты через MCP-клиент
+      //Сначала отправляем логи вызовов в UI (синхронно, перед запуском задач)
       for (const toolCall of tool_calls) {
-        const toolName = toolCall.function.name;
         let args: any = {};
-
         try {
           args = JSON.parse(toolCall.function.arguments);
-        } catch (e) {
+        } catch {
           args = toolCall.function.arguments;
         }
 
         yield {
           type: 'tool_call',
           id: toolCall.id,
-          name: toolName,
+          name: toolCall.function.name,
           arguments: args,
         };
+      }
+
+      // 2. Запускаем все тяжелые MCP-запросы ОДНОВРЕМЕННО через Promise.all
+      const toolPromises = tool_calls.map(async (toolCall) => {
+        const toolName = toolCall.function.name;
+        let args: any = {};
+        try {
+          args = JSON.parse(toolCall.function.arguments);
+        } catch {
+          args = toolCall.function.arguments;
+        }
 
         try {
-          // Делаем реальный вызов инструмента на MCP-сервере
           const toolResult = await this.mcpClient.callTool({
             name: toolName,
             arguments: args,
           });
+          return {
+            id: toolCall.id,
+            name: toolName,
+            success: true,
+            payload: toolResult.content,
+          };
+        } catch (error: any) {
+          return {
+            id: toolCall.id,
+            name: toolName,
+            success: false,
+            payload: error.message || 'Ошибка выполнения инструмента',
+          };
+        }
+      });
 
+      const executedTools = await Promise.all(toolPromises);
+
+      // 3. Отдаем результаты в UI-стрим и пушим их в историю контекста для LLM
+      for (const res of executedTools) {
+        if (res.success) {
           yield {
             type: 'tool_result',
-            id: toolCall.id,
-            name: toolName,
-            result: toolResult.content,
+            id: res.id,
+            name: res.name,
+            result: res.payload,
           };
 
           messages.push({
             role: 'tool',
-            tool_call_id: toolCall.id,
-            content: JSON.stringify(toolResult.content),
+            tool_call_id: res.id,
+            content: JSON.stringify(res.payload),
           });
-        } catch (error: any) {
-          const errorMessage = error.message || 'Ошибка выполнения инструмента';
-
+        } else {
           yield {
             type: 'tool_error',
-            id: toolCall.id,
-            name: toolName,
-            error: errorMessage,
+            id: res.id,
+            name: res.name,
+            error: res.payload,
           };
 
           messages.push({
             role: 'tool',
-            tool_call_id: toolCall.id,
-            content: JSON.stringify({ error: errorMessage }),
+            tool_call_id: res.id,
+            content: JSON.stringify({ error: res.payload }),
           });
         }
       }
     }
 
-    // Если вышли за лимит итераций агента
     yield {
       type: 'final_response',
       text: 'Превышено максимальное количество шагов агента. Процесс остановлен.',

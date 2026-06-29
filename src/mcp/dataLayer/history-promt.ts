@@ -5,6 +5,8 @@ import { historyService } from '../services/history.service';
 import { SYSTEM_PROMPTS } from '../systemPromts';
 
 export default function registerHistoryPrompt(server: McpServer) {
+  const LARGE_SPECIFICATION_THRESHOLD = 2000;
+
   server.registerPrompt(
     'prepare-task-context',
     {
@@ -18,7 +20,7 @@ export default function registerHistoryPrompt(server: McpServer) {
           .default('')
           .describe('Ввод пользователя'),
         executeStep: z
-          .string() //
+          .string()
           .optional()
           .default('false')
           .transform((val) => val === 'true')
@@ -36,20 +38,27 @@ export default function registerHistoryPrompt(server: McpServer) {
     }) => {
       const session = await historyService.getOrCreateSession(sessionId);
 
+      // Вычисляем флаг большого ТЗ на основе нашей константы
+      const isLargeSpec =
+        message && message.length > LARGE_SPECIFICATION_THRESHOLD;
+
       // =========================================================================
-      // КУСОЧЕК 1: Сценарий А (Большое ТЗ / Планировщик)
+      // КУСОЧЕК 1: Сценарий А (Большое ТЗ / Планировщик / Архитектор)
       // =========================================================================
-      if (
-        message &&
-        message.length > 1000 &&
-        session.mode !== 'CHUNK_PROCESSING'
-      ) {
+      if (isLargeSpec && session.mode !== 'CHUNK_PROCESSING') {
         return {
+          // ФИКС 7: Передаем метаданные режима, чтобы клиент не гадал по тексту промпта
+          meta: {
+            mode: 'PLANNER',
+            isLargeSpecification: true,
+            thresholdUsed: LARGE_SPECIFICATION_THRESHOLD,
+          },
           messages: [
             {
-              role: 'user' as const, // Только user или assistant!
+              role: 'user' as const,
               content: {
                 type: 'text' as const,
+                // Текст чистый, без хрупких маркеров
                 text: `ИНСТРУКЦИЯ АРХИТЕКТОРА:\n${SYSTEM_PROMPTS.PLANNER}\n\nИсходное ТЗ пользователя:\n${message}`,
               },
             },
@@ -71,7 +80,6 @@ export default function registerHistoryPrompt(server: McpServer) {
       // =========================================================================
       const chatHistory = await historyService.getChatHistoryForAI(sessionId);
 
-      // Исключаем системные уведомления, так как MCP промпты их не поддерживают
       const formattedHistory = chatHistory
         .filter((msg) => msg.role !== 'system')
         .map((msg) => ({
@@ -83,9 +91,15 @@ export default function registerHistoryPrompt(server: McpServer) {
       // КУСОЧЕК 4: Сборка финального ответа для Инженера (Без роли system)
       // =========================================================================
       return {
+        // Передаем метаданные, что мы в режиме инженера
+        meta: {
+          mode: 'ENGINEER',
+          isLargeSpecification: false,
+          thresholdUsed: LARGE_SPECIFICATION_THRESHOLD,
+        },
         messages: [
           {
-            role: 'user' as const, // Инструкция инженера идет как ввод от user
+            role: 'user' as const,
             content: {
               type: 'text' as const,
               text: `СИСТЕМНАЯ ИНСТРУКЦИЯ ДЛЯ ВЫПОЛНЕНИЯ:\n${SYSTEM_PROMPTS.DATA_ENGINEER}\n\nВыполни следующую задачу: ${taskDescription}`,

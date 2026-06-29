@@ -63,3 +63,4 @@ crush.json
 .crushignore
 start_ollama.sh
 
+.aider*

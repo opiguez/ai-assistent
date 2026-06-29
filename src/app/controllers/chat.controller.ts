@@ -14,6 +14,13 @@ async function connectWithRetry(
 ) {
   for (let i = 0; i < retries; i++) {
     try {
+      // На всякий случай пробуем корректно закрыть старый транспорт, если он остался в клиенте
+      if (client.transport) {
+        try {
+          await client.close();
+        } catch {}
+      }
+
       await client.connect(transport);
       console.log('[MCP Client] Успешно подключен к серверу на порту 3002');
       return;
@@ -27,23 +34,82 @@ async function connectWithRetry(
   throw new Error('Не удалось подключиться к MCP-серверу.');
 }
 
+async function ensureMcpConnection(mcpClient: any, serverUrl: string) {
+  if (!mcpClient.transport) {
+    console.log('[MCP] Транспорт отсутствует. Инициализируем...');
+    const freshTransport = new StreamableHTTPClientTransport(
+      new URL(`${serverUrl}/mcp`),
+    );
+    await connectWithRetry(mcpClient, freshTransport);
+    return;
+  }
+
+  // Делаем легкий проверочный пинг (вызов любого дешевого метода, например, listTools или listPrompts)
+  // Это самый надежный способ узнать, жив ли удаленный HTTP-сервер
+  try {
+    await mcpClient.listPrompts();
+  } catch (pingError) {
+    console.warn(
+      '[MCP] Проверочный запрос провалился. Сервер перезапущен или недоступен. Переподключаемся...',
+    );
+
+    try {
+      // Принудительно закрываем старый клиент и уничтожаем зависший транспорт
+      await mcpClient.close().catch(() => {});
+
+      const freshTransport = new StreamableHTTPClientTransport(
+        new URL(`${serverUrl}/mcp`),
+      );
+      await connectWithRetry(mcpClient, freshTransport);
+
+      console.log(
+        '[MCP] Соединение успешно восстановлено через новый транспорт.',
+      );
+    } catch (reconnectError) {
+      console.error(
+        '[MCP] Не удалось переподключиться к серверу:',
+        reconnectError,
+      );
+      throw new Error(
+        'MCP-сервер временно недоступен. Повторите попытку позже.',
+      );
+    }
+  }
+}
+
 export default async function registerConnectChatToMCPServer(app: Express) {
   const MCP_SERVER_URL = 'http://127.0.0.1:3002';
   const transport = new StreamableHTTPClientTransport(
     new URL(`${MCP_SERVER_URL}/mcp`),
   );
+
   const mcpClient = new Client(
     { name: 'lowcode-ai-client', version: '1.0.0' },
     { capabilities: {} },
   );
 
-  await connectWithRetry(mcpClient, transport);
+  // Первичное подключение при старте
+  try {
+    await connectWithRetry(mcpClient, transport);
+  } catch (err) {
+    console.error(
+      '[MCP] Стартовое подключение не удалось. Агент попробует реконнект на первом запросе.',
+      err,
+    );
+  }
 
   const aiService = new AIService(mcpClient);
 
   app.post('/api/chat', async (req, res) => {
     try {
       const { message, sessionId, executeStep } = req.body;
+
+      // 1. Проверяем связь (и реконнектим, если сервер перезапускался)
+      try {
+        await ensureMcpConnection(mcpClient, MCP_SERVER_URL);
+      } catch (connError: any) {
+        return res.status(503).json({ error: connError.message });
+      }
 
       // Получаем актуальное состояние сессии с MCP-сервера
       const sessionResponse = await axios.post(
@@ -52,21 +118,51 @@ export default async function registerConnectChatToMCPServer(app: Express) {
       );
       const session = sessionResponse.data;
 
-      // 1. Запрашиваем у MCP-сервера готовый промпт со всей историей
-      const mcpPrompt = await mcpClient.getPrompt({
-        name: 'prepare-task-context',
-        arguments: {
-          sessionId: String(sessionId),
-          message: message || '',
-          // ИСПРАВЛЕНИЕ: приводим boolean к строке 'true' / 'false'
-          executeStep: executeStep ? 'true' : 'false',
-        },
-      });
+      // 2. Безопасный вызов getPrompt
+      let mcpPrompt;
+      try {
+        mcpPrompt = (await mcpClient.getPrompt({
+          name: 'prepare-task-context',
+          arguments: {
+            sessionId: String(sessionId),
+            message: message || '',
+            executeStep: executeStep ? 'true' : 'false',
+          },
+        })) as any;
+      } catch (promptError) {
+        console.error('[MCP] Ошибка при получении промпта:', promptError);
+        return res
+          .status(503)
+          .json({ error: 'Не удалось получить контекст от MCP-сервера.' });
+      }
 
       const preparedMessages = mcpPrompt.messages;
+      const isLargeSpecification =
+        mcpPrompt.meta?.isLargeSpecification || false;
 
-      // 2. Классифицируем слои для фильтрации инструментов (только если это не выполнение шага ТЗ)
+      // =========================================================================
+      // ФИКС ПУНКТА 4: ДИНАМИЧЕСКАЯ КЛАССИФИКАЦИЯ СЛОЕВ
+      // =========================================================================
       let activatedLayers: string[] = ['DATA'];
+
+      // Вызываем классификатор, только если это не автоматическое выполнение шага очереди
+      if (!executeStep && message) {
+        try {
+          const detectedLayer = await aiService.classifyShortMessage(message);
+
+          if (detectedLayer) {
+            activatedLayers = detectedLayer;
+            console.log(
+              `[Classifier] Сообщение классифицировано как слой: ${activatedLayers}`,
+            );
+          }
+        } catch (classError) {
+          console.error(
+            '[Classifier] Ошибка классификации сообщения, откат на дефолтный слой DATA:',
+            classError,
+          );
+        }
+      }
 
       // Настраиваем заголовки для SSE стриминга на фронтенд
       res.setHeader('Content-Type', 'text/event-stream');
@@ -83,7 +179,7 @@ export default async function registerConnectChatToMCPServer(app: Express) {
         console.log('[SSE] Клиент закрыл соединение. Прерываем обработку.');
       });
 
-      // 3. Запускаем агентский цикл (передаем готовый массив сообщений)
+      // 3. Запускаем агентский цикл (передаем готовый массив сообщений и динамические слои)
       const logsGenerator = aiService.executeTaskWithMcp(
         preparedMessages,
         activatedLayers,
@@ -113,33 +209,28 @@ export default async function registerConnectChatToMCPServer(app: Express) {
       // 4. ФИКСИРУЕМ РЕЗУЛЬТАТЫ В ИСТОРИЮ ЧЕРЕЗ REST API MCP-СЕРВЕРА
       // =========================================================================
 
-      // Сценарий А: Если пользователь отправил большое ТЗ впервые
       if (
         message &&
-        message.length > 1000 &&
+        isLargeSpecification &&
         session.mode !== 'CHUNK_PROCESSING'
       ) {
         console.log('--- Нарезка большого ТЗ на стороне клиента ---');
         const tasks = await aiService.splitLargeSpecification(message);
         if (tasks.length > 0) {
-          // Отправляем массив задач обратно на сервер, чтобы инициализировать очередь
           await axios.post(`${MCP_SERVER_URL}/api/history/start-chunk`, {
             sessionId,
             tasks,
           });
         }
       } else {
-        // Сценарий Б: Иначе это было выполнение задачи — схлопываем результат в логах
         let actualTaskDescription = message;
 
         if (executeStep && session.mode === 'CHUNK_PROCESSING') {
-          // Вытаскиваем описание текущей задачи из структуры сессии, пришедшей по сети
           actualTaskDescription =
             session.tasksQueue[session.currentStepIndex]?.description ||
             message;
         }
 
-        // Отправляем отчет о выполнении задачи на MCP-сервер для схлопывания контекста
         await axios.post(`${MCP_SERVER_URL}/api/history/append-result`, {
           sessionId,
           taskDescription: actualTaskDescription,
@@ -147,7 +238,6 @@ export default async function registerConnectChatToMCPServer(app: Express) {
         });
       }
 
-      // 5. Автоматически сдвигаем указатель очереди ТЗ вперед через REST API
       let hasNextStep = false;
       let nextStepIndex = 0;
 
@@ -160,7 +250,6 @@ export default async function registerConnectChatToMCPServer(app: Express) {
         nextStepIndex = nextStepResponse.data.nextStepIndex;
       }
 
-      // Закрываем SSE поток финальным событием
       const finalEvent = {
         type: 'execution_completed',
         status:
