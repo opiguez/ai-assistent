@@ -1,7 +1,6 @@
 //# Интеграция с локальной Qwen (генерация, prompt)
 import { OpenAI } from 'openai';
 import { Task } from '../../../shared/types/session';
-import { SYSTEM_PROMPTS } from '../../../mcp-data-server/systemPrompts';
 import { Client } from '@modelcontextprotocol/client';
 import { McpStepLog } from '../../../shared/types/mcp';
 import { jsonrepair } from 'jsonrepair';
@@ -25,7 +24,7 @@ export class AIService {
       const response = await openai.chat.completions.create({
         model: this.modelName,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPTS.PLANNER },
+          { role: 'system', content: '' },
           { role: 'user', content: specification },
         ],
         temperature: 0.1,
@@ -94,7 +93,7 @@ export class AIService {
     const response = await openai.chat.completions.create({
       model: this.modelName,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPTS.CLASSIFIER },
+        { role: 'system', content: '' },
         { role: 'user', content: message },
       ],
       temperature: 0.0,

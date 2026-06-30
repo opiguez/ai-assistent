@@ -7,6 +7,12 @@ export const CreateDataTypeSchema = BaseLowCodeSchema.extend({
     .describe(
       "ID родительского модуля. Если модуль создается в этой же сессии, передай 'PENDING_MODULE_ID'.",
     ),
+  baseType: z
+    .string()
+    .optional()
+    .describe(
+      'ID базового типа данных для наследования общих полей. Если несколько типов имеют одинаковый набор полей, создай базовый тип и укажи его ID здесь.',
+    ),
   canHaveChildren: z
     .boolean()
     .default(false)
@@ -34,6 +40,12 @@ export const CreateBpmnDataTypeSchema = BaseLowCodeSchema.extend({
     .string()
     .describe(
       "ID родительского модуля. Если модуль создается в этой же сессии, передай 'PENDING_MODULE_ID'.",
+    ),
+  baseType: z
+    .string()
+    .optional()
+    .describe(
+      'ID базового BPMN-типа для наследования общих полей.',
     ),
   canHaveChildren: z
     .boolean()

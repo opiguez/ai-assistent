@@ -101,7 +101,13 @@ const handleGetRefDataType = async (args: { id: string }) => {
   try {
     const res = await rabisClient.chain.query
       .referenceDataType({ id: args.id })
-      .get({ id: true, name: true, displayName: true, description: true, isDateSpecific: true });
+      .get({
+        id: true,
+        name: true,
+        displayName: true,
+        description: true,
+        isDateSpecific: true,
+      });
     return successList([res], 'Справочник получен');
   } catch (e) {
     return error(e, 'Ошибка получения справочника');
@@ -112,14 +118,12 @@ const handleGetRefDataType = async (args: { id: string }) => {
 
 const handleGetRefGroups = async () => {
   try {
-    const res = await rabisClient.chain.query
-      .referenceMetadataObjects({})
-      .get({
-        id: true,
-        name: true,
-        displayName: true,
-        referenceMetadataObjectType: true,
-      });
+    const res = await rabisClient.chain.query.referenceMetadataObjects({}).get({
+      id: true,
+      name: true,
+      displayName: true,
+      referenceMetadataObjectType: true,
+    });
     const groups = (res || []).filter(
       (g: any) => g.referenceMetadataObjectType === 'GROUP',
     );
@@ -159,7 +163,9 @@ export const referenceTools: ToolDef[] = [
     {
       title: 'Get Reference Data Group',
       description: 'Возвращает группу справочников по ID.',
-      inputSchema: z.object({ id: z.string().describe('ID группы справочников') }),
+      inputSchema: z.object({
+        id: z.string().describe('ID группы справочников'),
+      }),
     },
     handleGetRefGroup,
   ),
@@ -196,8 +202,7 @@ export const referenceTools: ToolDef[] = [
     'data_get_reference_groups',
     {
       title: 'Get Reference Data Groups',
-      description:
-        'Возвращает список всех групп справочников системы.',
+      description: 'Возвращает список всех групп справочников системы.',
       inputSchema: z.object({}),
     },
     handleGetRefGroups,

@@ -47,7 +47,7 @@ export const CreateStringFieldSchema = BaseLowCodeSchema.extend({
     .string()
     .optional()
     .describe(
-      'Формула вычислений. Синтаксис: `[ИМЯ_ТИПА:ИМЯ_ПОЛЯ]` или `[_common:ИМЯ_ПОЛЯ]`.',
+      'Формула вычислений. Синтаксис: `[ИМЯ_ТИПА:ИМЯ_ПОЛЯ]` - для дататипа или `[_common:ИМЯ_ПОЛЯ]` - для модульного. ограниченный синтаксис для строк язык groovy',
     ),
 });
 
@@ -107,16 +107,18 @@ export const CreateIntegerFieldSchema = BaseLowCodeSchema.extend({
     .boolean()
     .default(false)
     .describe('Использовать поле в поиске и сортировке.'),
-  defaultValue: z
-    .number()
-    .int()
-    .optional()
-    .describe('Значение по умолчанию.'),
+  defaultValue: z.number().int().optional().describe('Значение по умолчанию.'),
   minValue: z.number().int().optional().describe('Минимальное значение.'),
   maxValue: z.number().int().optional().describe('Максимальное значение.'),
   prefix: z.string().optional().describe('Префикс.'),
   suffix: z.string().optional().describe('Суффикс.'),
   unique: z.boolean().optional().describe('Уникальное значение.'),
+  formula: z
+    .string()
+    .optional()
+    .describe(
+      'Формула вычислений. Синтаксис: `[ИМЯ_ТИПА:ИМЯ_ПОЛЯ]` - для дататипа или `[_common:ИМЯ_ПОЛЯ]` - для модульного. складываем только целые числа',
+    ),
 });
 
 // 4. DECIMAL
@@ -152,7 +154,12 @@ export const CreateDecimalFieldSchema = BaseLowCodeSchema.extend({
     .describe('Количество знаков после запятой.'),
   prefix: z.string().optional().describe('Префикс.'),
   suffix: z.string().optional().describe('Суффикс.'),
-  formula: z.string().optional().describe('Формула вычислений.'),
+  formula: z
+    .string()
+    .optional()
+    .describe(
+      'Формула вычислений. Синтаксис: `[ИМЯ_ТИПА:ИМЯ_ПОЛЯ]` - для дататипа или `[_common:ИМЯ_ПОЛЯ]` - для модульного. ',
+    ),
 });
 
 // 5. BOOLEAN
@@ -226,14 +233,8 @@ export const CreateDateFieldSchema = BaseLowCodeSchema.extend({
     .enum(['SHORT', 'LONG', 'FULL'])
     .optional()
     .describe('Формат отображения даты.'),
-  minValue: z
-    .string()
-    .optional()
-    .describe('Минимальная дата (YYYY-MM-DD).'),
-  maxValue: z
-    .string()
-    .optional()
-    .describe('Максимальная дата (YYYY-MM-DD).'),
+  minValue: z.string().optional().describe('Минимальная дата (YYYY-MM-DD).'),
+  maxValue: z.string().optional().describe('Максимальная дата (YYYY-MM-DD).'),
 });
 
 // 7. DATETIME
@@ -267,14 +268,8 @@ export const CreateDateTimeFieldSchema = BaseLowCodeSchema.extend({
     .enum(['SHORT', 'LONG', 'FULL'])
     .optional()
     .describe('Формат отображения даты и времени.'),
-  minValue: z
-    .string()
-    .optional()
-    .describe('Минимальное значение (ISO 8601).'),
-  maxValue: z
-    .string()
-    .optional()
-    .describe('Максимальное значение (ISO 8601).'),
+  minValue: z.string().optional().describe('Минимальное значение (ISO 8601).'),
+  maxValue: z.string().optional().describe('Максимальное значение (ISO 8601).'),
   useTimeZone: z
     .boolean()
     .default(false)
@@ -312,14 +307,8 @@ export const CreateTimeFieldSchema = BaseLowCodeSchema.extend({
     .enum(['SHORT', 'LONG', 'FULL'])
     .optional()
     .describe('Формат отображения времени.'),
-  minValue: z
-    .string()
-    .optional()
-    .describe('Минимальное время (HH:mm:ss).'),
-  maxValue: z
-    .string()
-    .optional()
-    .describe('Максимальное время (HH:mm:ss).'),
+  minValue: z.string().optional().describe('Минимальное время (HH:mm:ss).'),
+  maxValue: z.string().optional().describe('Максимальное время (HH:mm:ss).'),
 });
 
 // 9. FILE
@@ -411,7 +400,9 @@ export const CreateSelectionFieldSchema = BaseLowCodeSchema.extend({
   parentSelection: z
     .string()
     .optional()
-    .describe('Ключ родительского поля Selection для иерархических справочников.'),
+    .describe(
+      'Ключ родительского поля Selection для иерархических справочников.',
+    ),
   dateDataPropertyKey: z
     .string()
     .optional()
@@ -453,7 +444,9 @@ export const CreateMultiSelectionFieldSchema = BaseLowCodeSchema.extend({
   parentSelection: z
     .string()
     .optional()
-    .describe('Ключ родительского поля Selection для иерархических справочников.'),
+    .describe(
+      'Ключ родительского поля Selection для иерархических справочников.',
+    ),
   dateDataPropertyKey: z
     .string()
     .optional()
@@ -647,10 +640,7 @@ export const CreateSequenceFieldSchema = BaseLowCodeSchema.extend({
     .boolean()
     .default(false)
     .describe('Использовать поле в поиске и сортировке.'),
-  initialValue: z
-    .number()
-    .int()
-    .describe('Начальное значение счетчика.'),
+  initialValue: z.number().int().describe('Начальное значение счетчика.'),
   prefix: z.string().optional().describe('Префикс номера.'),
   suffix: z.string().optional().describe('Суффикс номера.'),
   restartInterval: z
@@ -690,10 +680,7 @@ export const CreateAttributesFieldSchema = BaseLowCodeSchema.extend({
     .string()
     .optional()
     .describe('Ключ родительского поля Selection.'),
-  dateDataPropertyKey: z
-    .string()
-    .optional()
-    .describe('Ключ поля даты.'),
+  dateDataPropertyKey: z.string().optional().describe('Ключ поля даты.'),
 });
 
 // ──────────────────────────────────────────────────
@@ -701,21 +688,70 @@ export const CreateAttributesFieldSchema = BaseLowCodeSchema.extend({
 // ──────────────────────────────────────────────────
 const UPDATE_FIELD_OMIT = ['parentId', 'iconBatchId', 'brandingJson'];
 
-export const UpdateStringFieldSchema = deriveUpdateSchema(CreateStringFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateTextFieldSchema = deriveUpdateSchema(CreateTextFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateIntegerFieldSchema = deriveUpdateSchema(CreateIntegerFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateDecimalFieldSchema = deriveUpdateSchema(CreateDecimalFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateBooleanFieldSchema = deriveUpdateSchema(CreateBooleanFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateDateFieldSchema = deriveUpdateSchema(CreateDateFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateDateTimeFieldSchema = deriveUpdateSchema(CreateDateTimeFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateTimeFieldSchema = deriveUpdateSchema(CreateTimeFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateFileFieldSchema = deriveUpdateSchema(CreateFileFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateFilesFieldSchema = deriveUpdateSchema(CreateFilesFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateSelectionFieldSchema = deriveUpdateSchema(CreateSelectionFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateMultiSelectionFieldSchema = deriveUpdateSchema(CreateMultiSelectionFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateDataObjectFieldSchema = deriveUpdateSchema(CreateDataObjectFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateDataObjectsFieldSchema = deriveUpdateSchema(CreateDataObjectsFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateUserFieldSchema = deriveUpdateSchema(CreateUserFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateUsersFieldSchema = deriveUpdateSchema(CreateUsersFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateSequenceFieldSchema = deriveUpdateSchema(CreateSequenceFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
-export const UpdateAttributesFieldSchema = deriveUpdateSchema(CreateAttributesFieldSchema, { omitFields: UPDATE_FIELD_OMIT });
+export const UpdateStringFieldSchema = deriveUpdateSchema(
+  CreateStringFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateTextFieldSchema = deriveUpdateSchema(CreateTextFieldSchema, {
+  omitFields: UPDATE_FIELD_OMIT,
+});
+export const UpdateIntegerFieldSchema = deriveUpdateSchema(
+  CreateIntegerFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateDecimalFieldSchema = deriveUpdateSchema(
+  CreateDecimalFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateBooleanFieldSchema = deriveUpdateSchema(
+  CreateBooleanFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateDateFieldSchema = deriveUpdateSchema(CreateDateFieldSchema, {
+  omitFields: UPDATE_FIELD_OMIT,
+});
+export const UpdateDateTimeFieldSchema = deriveUpdateSchema(
+  CreateDateTimeFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateTimeFieldSchema = deriveUpdateSchema(CreateTimeFieldSchema, {
+  omitFields: UPDATE_FIELD_OMIT,
+});
+export const UpdateFileFieldSchema = deriveUpdateSchema(CreateFileFieldSchema, {
+  omitFields: UPDATE_FIELD_OMIT,
+});
+export const UpdateFilesFieldSchema = deriveUpdateSchema(
+  CreateFilesFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateSelectionFieldSchema = deriveUpdateSchema(
+  CreateSelectionFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateMultiSelectionFieldSchema = deriveUpdateSchema(
+  CreateMultiSelectionFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateDataObjectFieldSchema = deriveUpdateSchema(
+  CreateDataObjectFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateDataObjectsFieldSchema = deriveUpdateSchema(
+  CreateDataObjectsFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateUserFieldSchema = deriveUpdateSchema(CreateUserFieldSchema, {
+  omitFields: UPDATE_FIELD_OMIT,
+});
+export const UpdateUsersFieldSchema = deriveUpdateSchema(
+  CreateUsersFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateSequenceFieldSchema = deriveUpdateSchema(
+  CreateSequenceFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);
+export const UpdateAttributesFieldSchema = deriveUpdateSchema(
+  CreateAttributesFieldSchema,
+  { omitFields: UPDATE_FIELD_OMIT },
+);

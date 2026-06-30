@@ -3,7 +3,7 @@ import express from 'express';
 import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node';
 import { createMcpExpressApp } from '@modelcontextprotocol/express';
 import registerResources from './data/resources.js';
-import registerHistoryPrompt from './data/history-promt.js';
+import registerHistoryPrompt from './data/history-prompt.js';
 import registerDataLayerTools from './data/tools.js';
 import { ENV } from '../config/base.js';
 
