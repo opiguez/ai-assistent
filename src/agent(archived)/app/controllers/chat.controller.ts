@@ -1,4 +1,4 @@
-import { ENV } from '../../config/base';
+import { ENV } from '../../../config/base';
 import { Express } from 'express';
 import { AIService } from '../services/ai.service';
 import {
@@ -121,7 +121,7 @@ export default async function registerConnectChatToMCPServer(app: Express) {
       let mcpPrompt;
       try {
         mcpPrompt = (await mcpClient.getPrompt({
-          name: 'prepare-task-context',
+          name: 'prepare_task_context',
           arguments: {
             sessionId: String(sessionId),
             message: message || '',

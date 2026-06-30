@@ -8,10 +8,7 @@
     "codegen": "bash codegen.sh",
     "build": "tsc",
     "start:server": "node dist/mcp-server.js",
-    "start:app": "node dist/app.js",
-    "dev:server": "tsx src/mcp-server.ts",
-    "dev:app": "tsx watch src/app.ts",
-    "dev": "concurrently -n \"SERVER,APP\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:app\""
+    "dev:server": "tsx src/mcp-server.ts"
   },
   "dependencies": {
     "@genql/runtime": "^2.10.0",

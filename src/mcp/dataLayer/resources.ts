@@ -1,5 +1,4 @@
 import { McpServer } from '@modelcontextprotocol/server';
-import { getGraphQLStateMock } from '../../app/services/graphql.service';
 
 const resources = [
   {
@@ -11,7 +10,7 @@ const resources = [
       mimeType: 'application/json',
     },
     read: async (uri: URL) => {
-      const mockState = await getGraphQLStateMock(); // Ваш метод мока БД
+      const mockState = {}; // Ваш метод мока БД
       return {
         contents: [
           {

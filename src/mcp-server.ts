@@ -2,11 +2,10 @@ import { McpServer } from '@modelcontextprotocol/server';
 import express from 'express';
 import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node';
 import { createMcpExpressApp } from '@modelcontextprotocol/express';
-import { registerHistoryRoutes } from './mcp/controllers/history.controller';
-import registerResources from './mcp/dataLayer/resources';
-import registerHistoryPrompt from './mcp/dataLayer/history-promt';
-import registerTools from './mcp/dataLayer/tools';
-import { ENV } from './config/base';
+import registerResources from './mcp/dataLayer/resources.js';
+import registerHistoryPrompt from './mcp/dataLayer/history-promt.js';
+import registerDataLayerTools from './mcp/dataLayer/tools.js';
+import { ENV } from './config/base.js';
 
 const app = createMcpExpressApp();
 
@@ -20,15 +19,12 @@ const transport = new NodeStreamableHTTPServerTransport({
   sessionIdGenerator: undefined,
 });
 
-//регистрация для MCP tools/promts/resources
-registerTools(server);
+//регистрация для MCP(dataLayer) tools/promts/resources
+registerDataLayerTools(server);
 registerResources(server);
 registerHistoryPrompt(server);
 
 await server.connect(transport);
-
-//регистрация роутинга history в MCP сервер для доступа снаружи
-registerHistoryRoutes(app);
 
 app.post('/mcp', (req, res) => {
   transport.handleRequest(req, res, req.body);

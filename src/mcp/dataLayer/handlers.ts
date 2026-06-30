@@ -5,8 +5,8 @@ import {
   CreateDataTypeFieldSchema,
   CreateModuleFieldSchema,
   CreateBpmnDataTypeSchema,
-} from './schema';
-import { rabisClient } from '../../shared/services/rabisClient.service';
+} from './schema.js';
+import { rabisClient } from '../../shared/services/rabisClient.service.js';
 
 type CreateModuleArgs = z.infer<typeof CreateModuleSchema>;
 type CreateDataTypeArgs = z.infer<typeof CreateDataTypeSchema>;

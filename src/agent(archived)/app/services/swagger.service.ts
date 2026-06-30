@@ -1,7 +1,7 @@
 import { Express } from 'express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import { ENV } from '../../config/base';
+import { ENV } from '../../../config/base';
 
 export default async function registerSwagger(app: Express) {
   const swaggerOptions = {

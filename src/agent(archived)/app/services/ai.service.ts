@@ -1,11 +1,11 @@
 //# Интеграция с локальной Qwen (генерация, prompt)
 import { OpenAI } from 'openai';
-import { Task } from '../../types/session';
-import { SYSTEM_PROMPTS } from '../../mcp/systemPrompts';
+import { Task } from '../../../types/session';
+import { SYSTEM_PROMPTS } from '../../../mcp/systemPrompts';
 import { Client } from '@modelcontextprotocol/client';
-import { McpStepLog } from '../../types/mcp';
+import { McpStepLog } from '../../../types/mcp';
 import { jsonrepair } from 'jsonrepair';
-import { ENV } from '../../config/base';
+import { ENV } from '../../../config/base';
 
 export const openai = new OpenAI({
   baseURL: `${ENV.OLLAMA_URL}/v1`,

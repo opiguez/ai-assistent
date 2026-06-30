@@ -1,5 +1,5 @@
-import { ENV } from '../../config/base';
-import { createClient } from '../../generated/client/index';
+import { ENV } from '../../config/base.js';
+import { createClient } from '../../generated/client/index.js';
 
 const ENDPOINT = ENV.GRAPHQL_ADRESS;
 const LOGIN = ENV.PLATFORM_USERNAME || 'admin';

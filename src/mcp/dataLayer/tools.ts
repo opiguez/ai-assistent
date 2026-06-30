@@ -5,23 +5,17 @@ import {
   handleCreateDataTypeField,
   handleCreateModule,
   handleCreateModuleField,
-} from './handlers';
+} from './handlers.js';
 import {
   CreateBpmnDataTypeSchema,
   CreateDataTypeFieldSchema,
   CreateDataTypeSchema,
   CreateModuleFieldSchema,
   CreateModuleSchema,
-} from './schema';
-import { z } from 'zod';
-
-function defineTool<T extends z.ZodObject<any, any>>(
-  name: string,
-  config: { title: string; description: string; inputSchema: T },
-  cb: (args: z.infer<T>) => Promise<any>,
-) {
-  return { name, config, cb };
-}
+} from './schema.js';
+import { defineTool } from '../../shared/utils/base.js';
+import { ChatSessionReportSchema, ChatSessionSchema } from './agent/schema.js';
+import { historyService } from '../services/history.service.js';
 
 const tools = [
   defineTool(
@@ -74,9 +68,56 @@ const tools = [
     },
     handleCreateModuleField,
   ),
+  defineTool(
+    'save_tasks_queue',
+    {
+      title: 'Save Task Queue',
+      description:
+        'Регистрирует текущую очередь задач и переключает ее в CHUNK_PROCESSING',
+      inputSchema: ChatSessionSchema as any,
+    },
+    async ({ sessionId, tasks }) => {
+      await historyService.startChunkProcessing(sessionId, tasks);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Очередь из ${tasks.length} задач успешно создана и сохранена в БД. Режим переключен в CHUNK_PROCESSING.`,
+          },
+        ],
+      };
+    },
+  ),
+  defineTool(
+    'complete_current_task',
+    {
+      title: 'Report Current Step from Queue',
+      description: 'Делает отчет о проделанном шаге',
+      inputSchema: ChatSessionReportSchema as any,
+    },
+    async ({ sessionId, summary }) => {
+      const hasNext = await historyService.moveToNextStep(sessionId);
+
+      // 2. Вместо архивации всего чата, мы просто возвращаем ИИ инструкцию
+      // о том, что статус зафиксирован. OpenCode скормит этот текст модели.
+      let statusText = `[УСПЕХ]: Задача успешно выполнена и зафиксирована: ${summary}.\n`;
+
+      if (hasNext) {
+        const nextTask = await historyService.getCurrentTask(sessionId);
+        statusText += `Очередь продолжается. Следующая задача: ${nextTask?.description}. Вызови инструмент prepare_task_context для обновления контекста инженера.`;
+      } else {
+        statusText += `Ура! Все задачи из очереди ТЗ полностью выполнены. Система возвращена в режим NORMAL_CHAT.`;
+      }
+
+      return {
+        content: [{ type: 'text', text: statusText }],
+      };
+    },
+  ),
 ];
 
-export default function registerTools(server: McpServer) {
+export default function registerDataLayerTools(server: McpServer) {
   tools.forEach((tool) => {
     server.registerTool(tool.name, tool.config, tool.cb as any);
   });
