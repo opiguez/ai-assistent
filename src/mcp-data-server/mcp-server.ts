@@ -2,17 +2,17 @@ import { McpServer } from '@modelcontextprotocol/server';
 import express from 'express';
 import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node';
 import { createMcpExpressApp } from '@modelcontextprotocol/express';
-import registerResources from './mcp/dataLayer/resources.js';
-import registerHistoryPrompt from './mcp/dataLayer/history-promt.js';
-import registerDataLayerTools from './mcp/dataLayer/tools.js';
-import { ENV } from './config/base.js';
+import registerResources from './data/resources.js';
+import registerHistoryPrompt from './data/history-promt.js';
+import registerDataLayerTools from './data/tools.js';
+import { ENV } from '../config/base.js';
 
 const app = createMcpExpressApp();
 
 app.use(express.json());
 
 const server = new McpServer({
-  name: 'rabis-lowcode-mcp-server',
+  name: 'web-mcp_data',
   version: '1.0.0',
 });
 const transport = new NodeStreamableHTTPServerTransport({

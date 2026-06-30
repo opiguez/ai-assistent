@@ -1,5 +1,5 @@
 //# Управление контекстом и памятью сессии
-import { ChatSession, Task } from '../../types/session.js';
+import { ChatSession, Task } from '../types/session.js';
 
 class HistoryService {
   private sessions = new Map<string, ChatSession>();

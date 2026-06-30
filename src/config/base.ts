@@ -35,21 +35,11 @@ const envSchema = z.object({
   LOCAL_SERVER_URL_NO_PORT: z.url(
     'Некорректный URL для LOCAL_SERVER_URL_NO_PORT',
   ),
-  PORT_APP: z
-    .string()
-    .transform(Number)
-    .pipe(z.number().positive())
-    .default(3001),
   PORT_MCP1: z
     .string()
     .transform(Number)
     .pipe(z.number().positive())
     .default(3002),
-  LARGE_SPECIFICATION_THRESHOLD: z
-    .string()
-    .transform(Number)
-    .pipe(z.number().positive())
-    .default(2000),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

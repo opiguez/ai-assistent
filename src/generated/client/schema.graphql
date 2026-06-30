@@ -1,4 +1,5 @@
-""""""
+"""
+"""
 enum ActionEnum {
   CREATE
   CREATE_FROM_TEMPLATE
@@ -9,7 +10,8 @@ enum ActionEnum {
   RESPOND
 }
 
-""""""
+"""
+"""
 enum AllowedActionsEnum {
   CHANGE_OWNER
   CHANGE_STATE
@@ -29,7 +31,8 @@ enum AllowedActionsEnum {
   SEE_VERSIONS
 }
 
-""""""
+"""
+"""
 type ApiSpec implements MetadataObject {
   authMethod: AuthMethod!
   basicAuthLogin: String
@@ -53,7 +56,8 @@ type ApiSpec implements MetadataObject {
   version: String
 }
 
-""""""
+"""
+"""
 type ApiSpecsGroup implements MetadataObject {
   apiSpecs: [ApiSpec!]!
   creationDate: Date!
@@ -68,7 +72,8 @@ type ApiSpecsGroup implements MetadataObject {
   status: MetadataObjectStatusEnum!
 }
 
-""""""
+"""
+"""
 type Application implements MetadataObject {
   creationDate: Date!
   description(multilanguage: Boolean = false): String
@@ -88,14 +93,16 @@ type Application implements MetadataObject {
   workbenches: [Workbench!]!
 }
 
-""""""
+"""
+"""
 input AssetDropboxInput {
   fileId: String!
   fileName: String!
   targetFolderId: String!
 }
 
-""""""
+"""
+"""
 type AssetUpload {
   batchFileIndex: Int
   batchId: String
@@ -115,7 +122,8 @@ type AssetUpload {
   targetFolderId: String!
 }
 
-""""""
+"""
+"""
 input AssetUploadInput {
   chunks: Int
   dataObjectId: String
@@ -126,26 +134,30 @@ input AssetUploadInput {
   size: Long!
 }
 
-""""""
+"""
+"""
 type AssetUploadList {
   items: [AssetUpload!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 type AssetUploadStatus {
   displayName: String!
   status: AssetUploadStatusEnum!
 }
 
-""""""
+"""
+"""
 enum AssetUploadStatusEnum {
   COMPLETED
   FAILED
   IN_PROGRESS
 }
 
-""""""
+"""
+"""
 type Attribute {
   attribute: String!
   attributeType: PropertyType!
@@ -153,13 +165,15 @@ type Attribute {
   referenceDataTypeId: String
 }
 
-""""""
+"""
+"""
 type AttributeValue {
   attribute: Attribute!
   value: DataPropertyAttributesValueUnion
 }
 
-""""""
+"""
+"""
 input AttributeValueInput {
   attribute: String!
   booleanValueInput: DataPropertyBooleanValueInput
@@ -174,26 +188,30 @@ input AttributeValueInput {
   timeValueInput: DataPropertyTimeValueInput
 }
 
-""""""
+"""
+"""
 type AuditCategory {
   displayName: String!
   value: AuditCategoryEnum!
 }
 
-""""""
+"""
+"""
 enum AuditCategoryEnum {
   rabisAuthCategory
   rabisDataObjects
   rabisSettingsCategory
 }
 
-""""""
+"""
+"""
 type AuditEvent {
   displayName: String!
   value: AuditEventEnum!
 }
 
-""""""
+"""
+"""
 enum AuditEventEnum {
   rabisAuthException
   rabisAuthTokenExpired
@@ -224,13 +242,15 @@ enum AuditEventEnum {
   rabisSetMembers
 }
 
-""""""
+"""
+"""
 type AuditLogEntriesList {
   items: [AuditLogEntry!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 type AuditLogEntry {
   category: AuditCategory!
   event: AuditEvent!
@@ -240,7 +260,8 @@ type AuditLogEntry {
   user: User
 }
 
-""""""
+"""
+"""
 enum AuthMethod {
   BASIC_AUTH
   CLIENT_CREDENTIALS_FLOW
@@ -248,22 +269,27 @@ enum AuthMethod {
   RABIS_AUTH
 }
 
-"""An arbitrary precision signed decimal"""
+"""
+An arbitrary precision signed decimal
+"""
 scalar BigDecimal
 
-""""""
+"""
+"""
 type BooleanDisplayFormat {
   displayFormatEnum: BooleanDisplayFormatEnum!
   displayName: String!
 }
 
-""""""
+"""
+"""
 enum BooleanDisplayFormatEnum {
   ICON
   TEXT
 }
 
-""""""
+"""
+"""
 type BpmnMessage implements MetadataObject {
   creationDate: Date!
   dataJson: String!
@@ -278,7 +304,8 @@ type BpmnMessage implements MetadataObject {
   status: MetadataObjectStatusEnum!
 }
 
-""""""
+"""
+"""
 type BpmnMessageGroup {
   description: String
   displayName: String!
@@ -288,7 +315,8 @@ type BpmnMessageGroup {
   status: MetadataObjectStatusEnum
 }
 
-""""""
+"""
+"""
 type BpmnProcessType implements MetadataObject {
   bpmnXml: String!
   creationDate: Date!
@@ -308,7 +336,8 @@ type BpmnProcessType implements MetadataObject {
   status: MetadataObjectStatusEnum!
 }
 
-""""""
+"""
+"""
 type Collection implements MetadataObject {
   creationDate: Date!
   description(multilanguage: Boolean = false): String
@@ -324,7 +353,8 @@ type Collection implements MetadataObject {
   uid: String
 }
 
-""""""
+"""
+"""
 input CreateApiSpecInput {
   authMethod: AuthMethod!
   basicAuthLogin: String
@@ -339,7 +369,8 @@ input CreateApiSpecInput {
   serviceUrl: String!
 }
 
-""""""
+"""
+"""
 input CreateApiSpecsGroupInput {
   description: String
   displayName: String!
@@ -347,7 +378,8 @@ input CreateApiSpecsGroupInput {
   parentId: String!
 }
 
-""""""
+"""
+"""
 input CreateBpmnMessageInput {
   dataJson: String
   description: String
@@ -356,7 +388,8 @@ input CreateBpmnMessageInput {
   parentId: String!
 }
 
-""""""
+"""
+"""
 input CreateBpmnProcessDataTypeInput {
   baseType: String
   brandingJson: String
@@ -370,27 +403,31 @@ input CreateBpmnProcessDataTypeInput {
   rootVersionable: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataObjectFromTemplateInput {
   parentId: ID!
   properties: [DataObjectPropertyInput!]
   templateId: ID!
 }
 
-""""""
+"""
+"""
 input CreateDataObjectInput {
   parentId: ID!
   properties: [DataObjectPropertyInput!]
   typeId: String!
 }
 
-""""""
+"""
+"""
 input CreateDataObjectVersionInput {
   dataObjectId: ID!
   versionIncrementEnum: VersionIncrementEnum!
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyAttributesInput {
   customizationRef: String
   dateDataPropertyKey: String
@@ -406,7 +443,8 @@ input CreateDataPropertyAttributesInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyBooleanInput {
   customizationRef: String
   defaultValue: DataPropertyBooleanValueInput
@@ -425,7 +463,8 @@ input CreateDataPropertyBooleanInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyDateInput {
   customizationRef: String
   defaultValue: DataPropertyDateValueInput
@@ -442,7 +481,8 @@ input CreateDataPropertyDateInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyDateTimeInput {
   customizationRef: String
   defaultValue: DataPropertyDateTimeValueInput
@@ -460,7 +500,8 @@ input CreateDataPropertyDateTimeInput {
   useTimeZone: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyDecimalInput {
   customizationRef: String
   defaultValue: DataPropertyDecimalValueInput
@@ -480,7 +521,8 @@ input CreateDataPropertyDecimalInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyFileInput {
   customizationRef: String
   description: String
@@ -494,7 +536,8 @@ input CreateDataPropertyFileInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyFilesInput {
   customizationRef: String
   description: String
@@ -508,7 +551,8 @@ input CreateDataPropertyFilesInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyIntegerInput {
   customizationRef: String
   defaultValue: DataPropertyIntegerValueInput
@@ -527,7 +571,8 @@ input CreateDataPropertyIntegerInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyMultiSelectionInput {
   customizationRef: String
   dateDataPropertyKey: String
@@ -543,7 +588,8 @@ input CreateDataPropertyMultiSelectionInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyObjectFilterInput {
   customizationRef: String
   description: String
@@ -561,7 +607,8 @@ input CreateDataPropertyObjectFilterInput {
   viewJson: String
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyObjectInput {
   customizationRef: String
   description: String
@@ -578,7 +625,8 @@ input CreateDataPropertyObjectInput {
   viewJson: String
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyObjectsInput {
   customizationRef: String
   description: String
@@ -595,7 +643,8 @@ input CreateDataPropertyObjectsInput {
   viewJson: String
 }
 
-""""""
+"""
+"""
 input CreateDataPropertySelectionInput {
   customizationRef: String
   dateDataPropertyKey: String
@@ -612,7 +661,8 @@ input CreateDataPropertySelectionInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertySequenceInput {
   customizationRef: String
   description: String
@@ -629,7 +679,8 @@ input CreateDataPropertySequenceInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyStringInput {
   customizationRef: String
   defaultValue: DataPropertyStringValueInput
@@ -652,7 +703,8 @@ input CreateDataPropertyStringInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyTextInput {
   customizationRef: String
   defaultValue: DataPropertyTextValueInput
@@ -670,7 +722,8 @@ input CreateDataPropertyTextInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyTimeInput {
   customizationRef: String
   defaultValue: DataPropertyTimeValueInput
@@ -687,7 +740,8 @@ input CreateDataPropertyTimeInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyUserInput {
   customizationRef: String
   description: String
@@ -704,7 +758,8 @@ input CreateDataPropertyUserInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataPropertyUsersInput {
   customizationRef: String
   description: String
@@ -721,7 +776,8 @@ input CreateDataPropertyUsersInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDataTypeInput {
   baseType: String
   brandingJson: String
@@ -736,12 +792,14 @@ input CreateDataTypeInput {
   rootVersionable: Boolean
 }
 
-""""""
+"""
+"""
 input CreateDiscussionDirectMessagesRoomInput {
   participant: String!
 }
 
-""""""
+"""
+"""
 input CreateDiscussionMessageInput {
   attachmentsValueInput: FilesInput
   message: String
@@ -749,7 +807,8 @@ input CreateDiscussionMessageInput {
   replyId: String
 }
 
-""""""
+"""
+"""
 input CreateDiscussionRoomInput {
   description: String
   hidden: Boolean
@@ -759,7 +818,8 @@ input CreateDiscussionRoomInput {
   private: Boolean!
 }
 
-""""""
+"""
+"""
 input CreateDiscussionThreadInput {
   color: String
   initMessage: String!
@@ -767,21 +827,24 @@ input CreateDiscussionThreadInput {
   roomId: String!
 }
 
-""""""
+"""
+"""
 input CreateGroupInput {
   description: String
   displayName: String!
   name: String!
 }
 
-""""""
+"""
+"""
 input CreateHtmlWidgetGroupInput {
   description: String
   name: String!
   type: HtmlWidgetGroupTypeEnum!
 }
 
-""""""
+"""
+"""
 input CreateHtmlWidgetInput {
   css: String
   html: String
@@ -791,7 +854,8 @@ input CreateHtmlWidgetInput {
   widgetJson: String
 }
 
-""""""
+"""
+"""
 input CreateLifecycleInput {
   description: String
   displayName: String!
@@ -799,7 +863,8 @@ input CreateLifecycleInput {
   parentId: String!
 }
 
-""""""
+"""
+"""
 input CreateModuleInput {
   brandingJson: String
   description: String
@@ -808,21 +873,24 @@ input CreateModuleInput {
   name: String!
 }
 
-""""""
+"""
+"""
 input CreateOrUpdateBpmnProcessTypeInput {
   bpmn: String
   decor: String
   parentId: String!
 }
 
-""""""
+"""
+"""
 input CreateOrUpdateExternalGroupInput {
   externalGroupDescription: String
   externalGroupDisplayName: String!
   externalGroupName: String!
 }
 
-""""""
+"""
+"""
 input CreatePostTemplateInput {
   bodyTemplate: String!
   description: String
@@ -832,7 +900,8 @@ input CreatePostTemplateInput {
   subjectTemplate: String!
 }
 
-""""""
+"""
+"""
 input CreateReferenceDataGroupInput {
   description: String
   displayName: String!
@@ -840,7 +909,8 @@ input CreateReferenceDataGroupInput {
   parentGroupId: String!
 }
 
-""""""
+"""
+"""
 input CreateReferenceDataTypeInput {
   dataFileBatchId: String
   description: String
@@ -851,14 +921,16 @@ input CreateReferenceDataTypeInput {
   parentReferenceDataTypeId: String
 }
 
-""""""
+"""
+"""
 input CreateRoleInput {
   description: String
   displayName: String!
   name: String!
 }
 
-""""""
+"""
+"""
 input CreateSavedSearchInput {
   displayName: String!
   filterJson: String!
@@ -866,7 +938,8 @@ input CreateSavedSearchInput {
   viewJson: String!
 }
 
-""""""
+"""
+"""
 input CreateSystemFilterInput {
   calendarView: String
   childrenTypes: [String!]
@@ -884,7 +957,8 @@ input CreateSystemFilterInput {
   workspace: String
 }
 
-""""""
+"""
+"""
 input CreateTypeFilterInput {
   calendarView: String
   childrenTypes: [String!]
@@ -903,7 +977,8 @@ input CreateTypeFilterInput {
   tileView: String
 }
 
-""""""
+"""
+"""
 input CreateUserInput {
   email: String!
   external: Boolean
@@ -916,7 +991,8 @@ input CreateUserInput {
   roles: [String!]
 }
 
-""""""
+"""
+"""
 input CreateViewInput {
   description: String
   displayName: String!
@@ -930,7 +1006,8 @@ input CreateViewInput {
   viewTypeEnum: ViewTypeEnum!
 }
 
-""""""
+"""
+"""
 input CreateWorkbenchInput {
   description: String
   displayName: String!
@@ -939,7 +1016,8 @@ input CreateWorkbenchInput {
   roles: [String]!
 }
 
-""""""
+"""
+"""
 input CreateWorkspaceInput {
   brandingJson: String
   description: String
@@ -949,7 +1027,8 @@ input CreateWorkspaceInput {
   parentId: String!
 }
 
-""""""
+"""
+"""
 type CsvImportStatus {
   filename: String!
   importId: ID!
@@ -965,7 +1044,8 @@ type CsvImportStatus {
   userId: String!
 }
 
-""""""
+"""
+"""
 type DataObject {
   allowedActions: [AllowedActionsEnum!]!
   discussion: DiscussionRoom
@@ -986,13 +1066,15 @@ type DataObject {
   type: PublishedDataType!
 }
 
-""""""
+"""
+"""
 type DataObjectChanges {
   changes: [DataObjectProperty]
   dataObjectValid: Boolean!
 }
 
-""""""
+"""
+"""
 enum DataObjectGenericStatus {
   INACTIVE
   TRANSIENT
@@ -1000,26 +1082,30 @@ enum DataObjectGenericStatus {
   WORKLOG
 }
 
-""""""
+"""
+"""
 type DataObjectHierarchy {
   allowCreation: Boolean!
   id: ID!
   name: String!
 }
 
-""""""
+"""
+"""
 type DataObjectList {
   items: [DataObject!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 type DataObjectProperty {
   key: String!
   value: DataPropertyValue!
 }
 
-""""""
+"""
+"""
 input DataObjectPropertyInput {
   attributesValueInput: DataPropertyAttributesValueInput
   booleanValueInput: DataPropertyBooleanValueInput
@@ -1041,13 +1127,15 @@ input DataObjectPropertyInput {
   usersValueInput: DataPropertyUsersValueInput
 }
 
-""""""
+"""
+"""
 type DataObjectPublishInfo {
   link: String
   status: String!
 }
 
-""""""
+"""
+"""
 interface DataProperty {
   creationDate: Date!
   customizationRef: String
@@ -1073,7 +1161,8 @@ interface DataProperty {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyAttributes implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1104,21 +1193,35 @@ type DataPropertyAttributes implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyAttributesValue {
   attributesValue: [AttributeValue!]!
   selectedDate: String
 }
 
-""""""
+"""
+"""
 input DataPropertyAttributesValueInput {
   value: [AttributeValueInput!]
 }
 
-""""""
-union DataPropertyAttributesValueUnion = DataPropertyBooleanValue | DataPropertyDateTimeValue | DataPropertyDateValue | DataPropertyDecimalValue | DataPropertyIntegerValue | DataPropertyMultiSelectionValue | DataPropertySelectionValue | DataPropertyStringValue | DataPropertyTextValue | DataPropertyTimeValue
+"""
+"""
+union DataPropertyAttributesValueUnion =
+  | DataPropertyBooleanValue
+  | DataPropertyDateTimeValue
+  | DataPropertyDateValue
+  | DataPropertyDecimalValue
+  | DataPropertyIntegerValue
+  | DataPropertyMultiSelectionValue
+  | DataPropertySelectionValue
+  | DataPropertyStringValue
+  | DataPropertyTextValue
+  | DataPropertyTimeValue
 
-""""""
+"""
+"""
 type DataPropertyBoolean implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1151,17 +1254,20 @@ type DataPropertyBoolean implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyBooleanValue {
   booleanValue: Boolean
 }
 
-""""""
+"""
+"""
 input DataPropertyBooleanValueInput {
   value: Boolean
 }
 
-""""""
+"""
+"""
 type DataPropertyDate implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1192,7 +1298,8 @@ type DataPropertyDate implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyDateTime implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1224,27 +1331,32 @@ type DataPropertyDateTime implements DataProperty & MetadataObject {
   useTimeZone: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyDateTimeValue {
   dateTimeValue: Date
 }
 
-""""""
+"""
+"""
 input DataPropertyDateTimeValueInput {
   value: Date
 }
 
-""""""
+"""
+"""
 type DataPropertyDateValue {
   dateValue: LocalDate
 }
 
-""""""
+"""
+"""
 input DataPropertyDateValueInput {
   value: LocalDate
 }
 
-""""""
+"""
+"""
 type DataPropertyDecimal implements DataProperty & MetadataObject {
   JSON_SCHEMA: Map_String_StringScalar
   creationDate: Date!
@@ -1279,17 +1391,20 @@ type DataPropertyDecimal implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyDecimalValue {
   decimalValue: BigDecimal
 }
 
-""""""
+"""
+"""
 input DataPropertyDecimalValueInput {
   value: BigDecimal
 }
 
-""""""
+"""
+"""
 type DataPropertyFile implements DataProperty & MetadataObject {
   JSON_SCHEMA: Map_String_StringScalar
   creationDate: Date!
@@ -1318,17 +1433,20 @@ type DataPropertyFile implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyFileValue {
   fileValue: File
 }
 
-""""""
+"""
+"""
 input DataPropertyFileValueInput {
   value: FileInput
 }
 
-""""""
+"""
+"""
 type DataPropertyFiles implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1356,17 +1474,20 @@ type DataPropertyFiles implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyFilesValue {
   filesValue: [File!]!
 }
 
-""""""
+"""
+"""
 input DataPropertyFilesValueInput {
   value: FilesInput
 }
 
-""""""
+"""
+"""
 type DataPropertyInteger implements DataProperty & MetadataObject {
   JSON_INTEGER_SCHEMA: Map_String_StringScalar
   creationDate: Date!
@@ -1400,17 +1521,20 @@ type DataPropertyInteger implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyIntegerValue {
   integerValue: Int
 }
 
-""""""
+"""
+"""
 input DataPropertyIntegerValueInput {
   value: Int
 }
 
-""""""
+"""
+"""
 type DataPropertyMultiSelection implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1440,18 +1564,21 @@ type DataPropertyMultiSelection implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyMultiSelectionValue {
   multiSelectionValue: [DataObject!]!
   selectedDate: String
 }
 
-""""""
+"""
+"""
 input DataPropertyMultiSelectionValueInput {
   value: [String!]
 }
 
-""""""
+"""
+"""
 type DataPropertyObject implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1482,7 +1609,8 @@ type DataPropertyObject implements DataProperty & MetadataObject {
   viewJson: String
 }
 
-""""""
+"""
+"""
 type DataPropertyObjectFilter implements DataProperty & MetadataObject {
   bindingJson: String
   creationDate: Date!
@@ -1516,23 +1644,27 @@ type DataPropertyObjectFilter implements DataProperty & MetadataObject {
   viewJson: String
 }
 
-""""""
+"""
+"""
 type DataPropertyObjectFilterValue {
   objectFilterValue: [DataObject!]!
   rawValue: [String]
 }
 
-""""""
+"""
+"""
 type DataPropertyObjectValue {
   objectValue: DataObject
 }
 
-""""""
+"""
+"""
 input DataPropertyObjectValueInput {
   value: String
 }
 
-""""""
+"""
+"""
 type DataPropertyObjects implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1563,17 +1695,20 @@ type DataPropertyObjects implements DataProperty & MetadataObject {
   viewJson: String
 }
 
-""""""
+"""
+"""
 type DataPropertyObjectsValue {
   objectsValue: [DataObject!]!
 }
 
-""""""
+"""
+"""
 input DataPropertyObjectsValueInput {
   value: [String!]
 }
 
-""""""
+"""
+"""
 type DataPropertySelection implements DataProperty & MetadataObject {
   JSON_SCHEMA: Map_String_StringScalar
   creationDate: Date!
@@ -1605,18 +1740,21 @@ type DataPropertySelection implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertySelectionValue {
   selectedDate: String
   selectionValue: DataObject
 }
 
-""""""
+"""
+"""
 input DataPropertySelectionValueInput {
   value: String
 }
 
-""""""
+"""
+"""
 type DataPropertySequence implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1647,12 +1785,14 @@ type DataPropertySequence implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertySequenceValue {
   sequenceValue: Int
 }
 
-""""""
+"""
+"""
 type DataPropertyStatus implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1679,12 +1819,14 @@ type DataPropertyStatus implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyStatusValue {
   statusValue: LifecycleState
 }
 
-""""""
+"""
+"""
 type DataPropertyString implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1720,17 +1862,20 @@ type DataPropertyString implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyStringValue {
   stringValue(multilanguage: Boolean = false): String
 }
 
-""""""
+"""
+"""
 input DataPropertyStringValueInput {
   value: String
 }
 
-""""""
+"""
+"""
 type DataPropertyText implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1761,17 +1906,20 @@ type DataPropertyText implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyTextValue {
   textValue(multilanguage: Boolean = false): String
 }
 
-""""""
+"""
+"""
 input DataPropertyTextValueInput {
   value: String
 }
 
-""""""
+"""
+"""
 type DataPropertyTime implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1802,17 +1950,20 @@ type DataPropertyTime implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyTimeValue {
   timeValue: LocalTime
 }
 
-""""""
+"""
+"""
 input DataPropertyTimeValueInput {
   value: LocalTime
 }
 
-""""""
+"""
+"""
 type DataPropertyUser implements DataProperty & MetadataObject {
   JSON_SCHEMA: Map_String_StringScalar
   creationDate: Date!
@@ -1844,7 +1995,8 @@ type DataPropertyUser implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyUserCommon implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1875,17 +2027,21 @@ type DataPropertyUserCommon implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyUserValue {
   userValue: User
 }
 
-"""User name (login name) should be used as a value."""
+"""
+User name (login name) should be used as a value.
+"""
 input DataPropertyUserValueInput {
   value: String
 }
 
-""""""
+"""
+"""
 type DataPropertyUsers implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1916,20 +2072,46 @@ type DataPropertyUsers implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyUsersValue {
   usersValue: [User!]!
 }
 
-"""User name (login name) should be used as a value."""
+"""
+User name (login name) should be used as a value.
+"""
 input DataPropertyUsersValueInput {
   value: [String!]
 }
 
-""""""
-union DataPropertyValue = DataPropertyAttributesValue | DataPropertyBooleanValue | DataPropertyDateTimeValue | DataPropertyDateValue | DataPropertyDecimalValue | DataPropertyFileValue | DataPropertyFilesValue | DataPropertyIntegerValue | DataPropertyMultiSelectionValue | DataPropertyObjectFilterValue | DataPropertyObjectValue | DataPropertyObjectsValue | DataPropertySelectionValue | DataPropertySequenceValue | DataPropertyStatusValue | DataPropertyStringValue | DataPropertyTextValue | DataPropertyTimeValue | DataPropertyUserValue | DataPropertyUsersValue | DataPropertyVersionValue
+"""
+"""
+union DataPropertyValue =
+  | DataPropertyAttributesValue
+  | DataPropertyBooleanValue
+  | DataPropertyDateTimeValue
+  | DataPropertyDateValue
+  | DataPropertyDecimalValue
+  | DataPropertyFileValue
+  | DataPropertyFilesValue
+  | DataPropertyIntegerValue
+  | DataPropertyMultiSelectionValue
+  | DataPropertyObjectFilterValue
+  | DataPropertyObjectValue
+  | DataPropertyObjectsValue
+  | DataPropertySelectionValue
+  | DataPropertySequenceValue
+  | DataPropertyStatusValue
+  | DataPropertyStringValue
+  | DataPropertyTextValue
+  | DataPropertyTimeValue
+  | DataPropertyUserValue
+  | DataPropertyUsersValue
+  | DataPropertyVersionValue
 
-""""""
+"""
+"""
 type DataPropertyVersion implements DataProperty & MetadataObject {
   creationDate: Date!
   customizationRef: String
@@ -1957,12 +2139,14 @@ type DataPropertyVersion implements DataProperty & MetadataObject {
   useInSearchOrSort: Boolean!
 }
 
-""""""
+"""
+"""
 type DataPropertyVersionValue {
   versionValue: Version
 }
 
-""""""
+"""
+"""
 type DataType implements MetadataObject {
   baseType: DataType
   bpmnMessages: [BpmnMessageGroup!]!
@@ -2015,23 +2199,28 @@ type DataType implements MetadataObject {
   views(includeArchived: Boolean, viewType: ViewTypeEnum): [View!]!
 }
 
-"""Built-in scalar representing an instant in time"""
+"""
+Built-in scalar representing an instant in time
+"""
 scalar Date
 
-""""""
+"""
+"""
 type DateDisplayFormat {
   displayFormatEnum: DateDisplayFormatEnum!
   displayName: String!
 }
 
-""""""
+"""
+"""
 enum DateDisplayFormatEnum {
   FULL
   LONG
   SHORT
 }
 
-""""""
+"""
+"""
 type DefaultResources {
   favicon: String!
   logo: String!
@@ -2040,7 +2229,8 @@ type DefaultResources {
   workspace: String!
 }
 
-""""""
+"""
+"""
 type DiscussionDirectMessagesRoom {
   hasUnreadMessages: Boolean!
   hidden: Boolean!
@@ -2050,13 +2240,15 @@ type DiscussionDirectMessagesRoom {
   type: String!
 }
 
-""""""
+"""
+"""
 type DiscussionDirectMessagesRoomList {
   items: [DiscussionDirectMessagesRoom!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 type DiscussionMessage {
   attachments: [File]
   created: String!
@@ -2072,28 +2264,36 @@ type DiscussionMessage {
   whoRead: [User!]!
 }
 
-""""""
+"""
+"""
 type DiscussionMessageInfo {
   key: String!
   value: String!
 }
 
-""""""
-union DiscussionMessageParent = DiscussionDirectMessagesRoom | DiscussionRoom | DiscussionThread
+"""
+"""
+union DiscussionMessageParent =
+  | DiscussionDirectMessagesRoom
+  | DiscussionRoom
+  | DiscussionThread
 
-""""""
+"""
+"""
 type DiscussionMessageParentStatus {
   displayName: String!
   status: DiscussionMessageParentStatusEnum!
 }
 
-""""""
+"""
+"""
 enum DiscussionMessageParentStatusEnum {
   ACTUAL
   ARCHIVED
 }
 
-""""""
+"""
+"""
 type DiscussionRoom {
   dataObject: DataObject
   description: String
@@ -2110,13 +2310,15 @@ type DiscussionRoom {
   type: String!
 }
 
-""""""
+"""
+"""
 type DiscussionRoomList {
   items: [DiscussionRoom!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 type DiscussionThread {
   color: String
   hasUnreadMessages: Boolean!
@@ -2129,13 +2331,15 @@ type DiscussionThread {
   type: String!
 }
 
-""""""
+"""
+"""
 type DiscussionThreadList {
   items: [DiscussionThread!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 type Document {
   DEFAULT_FILE_CONTENT: String
   changeToken: String
@@ -2168,32 +2372,37 @@ type Document {
   versionableId: String
 }
 
-""""""
+"""
+"""
 type ExternalGroup {
   externalGroupDescription: String
   externalGroupDisplayName: String!
   externalGroupName: String!
 }
 
-""""""
+"""
+"""
 type ExternalGroupList {
   items: [ExternalGroup!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 input ExternalGroupListParametersInput {
   pagination: PaginationInput
   search: String
 }
 
-""""""
+"""
+"""
 type ExternalGroupMapping {
   externalGroup: Group
   mappedRoles: [Role]
 }
 
-""""""
+"""
+"""
 type File {
   defaultResource: Boolean
   encoding: String
@@ -2205,24 +2414,28 @@ type File {
   url: String!
 }
 
-""""""
+"""
+"""
 input FileInput {
   batchId: String!
 }
 
-""""""
+"""
+"""
 input FileModifiedInput {
   batchId: String!
   index: Int!
 }
 
-""""""
+"""
+"""
 input FilePropertyKeyInput {
   filePropertyKey: String!
   objectPropertyKey: String
 }
 
-""""""
+"""
+"""
 input FilesInput {
   added: [FileInput!]
   defaultValueOnForm: Boolean
@@ -2230,7 +2443,8 @@ input FilesInput {
   modified: [FileModifiedInput!]
 }
 
-""""""
+"""
+"""
 enum FilterDefaultViewEnum {
   calendarView
   kanbanView
@@ -2238,32 +2452,37 @@ enum FilterDefaultViewEnum {
   tileView
 }
 
-""""""
+"""
+"""
 input FilterViewParametersInput {
   bindingJson: String
   filterId: String!
   route: String!
 }
 
-""""""
+"""
+"""
 type GenericValidationResult {
   messages: [String]
   severity: String!
 }
 
-""""""
+"""
+"""
 type GrantedPermissions {
   permissions: [Permission!]!
   role: Role!
 }
 
-""""""
+"""
+"""
 type GrantedPrivileges {
   privileges: [Privilege!]!
   role: Role!
 }
 
-""""""
+"""
+"""
 type Group {
   description(multilanguage: Boolean = false): String
   displayName(multilanguage: Boolean = false): String!
@@ -2280,13 +2499,15 @@ type Group {
   uid: ID!
 }
 
-""""""
+"""
+"""
 type GroupList {
   items: [Group!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 type HtmlWidget implements MetadataObject {
   creationDate: Date!
   css: String
@@ -2304,7 +2525,8 @@ type HtmlWidget implements MetadataObject {
   widgetJson: String
 }
 
-""""""
+"""
+"""
 type HtmlWidgetGroup implements MetadataObject {
   creationDate: Date!
   description(multilanguage: Boolean = false): String
@@ -2320,7 +2542,8 @@ type HtmlWidgetGroup implements MetadataObject {
   type: HtmlWidgetGroupTypeEnum!
 }
 
-""""""
+"""
+"""
 enum HtmlWidgetGroupTypeEnum {
   APPLICATION
   DATATYPE
@@ -2328,14 +2551,16 @@ enum HtmlWidgetGroupTypeEnum {
   WORKSPACE
 }
 
-""""""
+"""
+"""
 input ImportToAssetsInput {
   filePropertyKeys: [FilePropertyKeyInput!]
   sourceId: String
   targetId: String
 }
 
-""""""
+"""
+"""
 type Lifecycle implements MetadataObject {
   creationDate: Date!
   description(multilanguage: Boolean = false): String
@@ -2350,7 +2575,8 @@ type Lifecycle implements MetadataObject {
   status: MetadataObjectStatusEnum!
 }
 
-""""""
+"""
+"""
 type LifecycleState {
   allowedStateTransitions: [String!]!
   backgroundColor: String
@@ -2364,7 +2590,8 @@ type LifecycleState {
   textColor: String
 }
 
-""""""
+"""
+"""
 type LifecycleTransition {
   customJson: String
   description: String
@@ -2374,7 +2601,8 @@ type LifecycleTransition {
   speculative: Boolean
 }
 
-""""""
+"""
+"""
 input ListParametersInput {
   filterJson: String
   hints: String
@@ -2383,28 +2611,40 @@ input ListParametersInput {
   sortingJson: String
 }
 
-"""Built-in scalar representing a local date"""
+"""
+Built-in scalar representing a local date
+"""
 scalar LocalDate
 
-"""Built-in scalar representing a local time"""
+"""
+Built-in scalar representing a local time
+"""
 scalar LocalTime
 
-""""""
+"""
+"""
 type LocaleOption {
   key: String
   label: String
 }
 
-"""A 64-bit signed integer"""
+"""
+A 64-bit signed integer
+"""
 scalar Long
 
-"""Built-in scalar for map-like structures"""
+"""
+Built-in scalar for map-like structures
+"""
 scalar Map_String_ObjectScalar
 
-"""Built-in scalar for map-like structures"""
+"""
+Built-in scalar for map-like structures
+"""
 scalar Map_String_StringScalar
 
-""""""
+"""
+"""
 type Member {
   displayName(multilanguage: Boolean = false): String!
   groups: [Group!]!
@@ -2417,26 +2657,30 @@ type Member {
   uid: ID!
 }
 
-""""""
+"""
+"""
 input MemberInput {
   name: String!
   type: MemberTypeEnum!
 }
 
-""""""
+"""
+"""
 type MemberType {
   displayName: String!
   value: MemberTypeEnum!
 }
 
-""""""
+"""
+"""
 enum MemberTypeEnum {
   GROUP
   ROLE
   USER
 }
 
-""""""
+"""
+"""
 interface MetadataObject {
   creationDate: Date!
   description(multilanguage: Boolean = false): String
@@ -2450,14 +2694,16 @@ interface MetadataObject {
   status: MetadataObjectStatusEnum!
 }
 
-""""""
+"""
+"""
 enum MetadataObjectChangeStatusActionsEnum {
   ARCHIVE
   DELETE
   UNARCHIVE
 }
 
-""""""
+"""
+"""
 enum MetadataObjectStatusEnum {
   ACTUAL
   ARCHIVED
@@ -2465,7 +2711,8 @@ enum MetadataObjectStatusEnum {
   NOT_PUBLISHED
 }
 
-""""""
+"""
+"""
 type Module implements MetadataObject {
   apiSpecsGroups: [ApiSpecsGroup!]!
   brandingJson: String
@@ -2503,35 +2750,55 @@ type Module implements MetadataObject {
   workspaces: [Workspace!]!
 }
 
-""""""
+"""
+"""
 input MoveReferenceMetadataObjectInput {
   metadataObjectId: String!
   newParentId: String!
 }
 
-"""Mutation root"""
+"""
+Mutation root
+"""
 type Mutation {
   setMembersForGroup(members: [MemberInput!]!, name: String!): Boolean!
-  createDataPropertyFiles(dataProperty: CreateDataPropertyFilesInput!): DataProperty!
+  createDataPropertyFiles(
+    dataProperty: CreateDataPropertyFilesInput!
+  ): DataProperty!
   deleteOauth2ServiceTokens(ids: [ID!]!, serviceName: String!): Boolean!
   updateWorkbench(workbench: UpdateWorkbenchInput!): Workbench!
-  createReferenceDataGroup(referenceDataGroup: CreateReferenceDataGroupInput!): ReferenceDataGroup!
+  createReferenceDataGroup(
+    referenceDataGroup: CreateReferenceDataGroupInput!
+  ): ReferenceDataGroup!
   createRole(role: CreateRoleInput!): Role!
   deleteRoom(id: ID!): Boolean!
-  updateDataPropertyBoolean(dataProperty: UpdateDataPropertyBooleanInput!): DataProperty!
+  updateDataPropertyBoolean(
+    dataProperty: UpdateDataPropertyBooleanInput!
+  ): DataProperty!
   removeObjectFromFavorites(objectId: String!): Boolean
   startImportMetadataTool: Boolean!
   deleteAssetUploads(assetUploadIds: [String!]!): Boolean!
   logout: Boolean!
   changeRoomOwner(owner: String!, id: ID!): Boolean!
-  createDataPropertySequence(dataProperty: CreateDataPropertySequenceInput!): DataProperty!
-  updateDataPropertyDateTime(dataProperty: UpdateDataPropertyDateTimeInput!): DataProperty!
+  createDataPropertySequence(
+    dataProperty: CreateDataPropertySequenceInput!
+  ): DataProperty!
+  updateDataPropertyDateTime(
+    dataProperty: UpdateDataPropertyDateTimeInput!
+  ): DataProperty!
   updateTypeFilter(filter: UpdateTypeFilterInput!): TypeFilter!
   requestPasswordReset(username: String!): Boolean!
-  createAssetUploads(targetFolderId: String!, items: [AssetUploadInput!]!): [AssetUpload!]!
-  updateDataPropertyFiles(dataProperty: UpdateDataPropertyFilesInput!): DataProperty!
+  createAssetUploads(
+    targetFolderId: String!
+    items: [AssetUploadInput!]!
+  ): [AssetUpload!]!
+  updateDataPropertyFiles(
+    dataProperty: UpdateDataPropertyFilesInput!
+  ): DataProperty!
   updateRoom(room: UpdateDiscussionRoomInput!): DiscussionRoom!
-  moveReferenceMetadataObject(moveInput: MoveReferenceMetadataObjectInput!): Boolean!
+  moveReferenceMetadataObject(
+    moveInput: MoveReferenceMetadataObjectInput!
+  ): Boolean!
   enablePublishing(moduleId: String!): Boolean!
   reindexRepository: Boolean!
   disablePublishing(moduleId: String!): Boolean!
@@ -2543,155 +2810,288 @@ type Mutation {
   deleteThread(id: ID!): Boolean!
   addObjectToFavorites(objectId: String!): Boolean
   createSavedSearch(savedSearch: CreateSavedSearchInput!): SavedSearch!
-  createDataPropertyText(dataProperty: CreateDataPropertyTextInput!): DataProperty!
-  createDataPropertyBoolean(dataProperty: CreateDataPropertyBooleanInput!): DataProperty!
+  createDataPropertyText(
+    dataProperty: CreateDataPropertyTextInput!
+  ): DataProperty!
+  createDataPropertyBoolean(
+    dataProperty: CreateDataPropertyBooleanInput!
+  ): DataProperty!
   updateThread(thread: UpdateDiscussionThreadInput!): DiscussionThread!
-  updateUserPassword(oldPassword: String!, name: String!, newPassword: String!): Boolean!
+  updateUserPassword(
+    oldPassword: String!
+    name: String!
+    newPassword: String!
+  ): Boolean!
   leaveRoom(id: ID!): Boolean!
   deleteDataObject(id: ID!): Boolean!
   readMessages(messageIds: [String!]!): [DiscussionMessage]!
-  updateDataPropertyDecimal(dataProperty: UpdateDataPropertyDecimalInput!): DataProperty!
+  updateDataPropertyDecimal(
+    dataProperty: UpdateDataPropertyDecimalInput!
+  ): DataProperty!
   deleteUser(name: String!): Boolean!
   createWorkspace(workspace: CreateWorkspaceInput!): Workspace!
   updateMessage(message: UpdateDiscussionMessageInput!): DiscussionMessage!
   updateWorkspace(workspace: UpdateWorkspaceInput!): Workspace!
-  createDataPropertyString(dataProperty: CreateDataPropertyStringInput!): DataProperty!
-  createOrUpdateBpmnProcessType(dataProperty: CreateOrUpdateBpmnProcessTypeInput!): String
-  removeObjectsFromCollection(collectionId: String!, objectIds: [String]!): [DataObject!]
+  createDataPropertyString(
+    dataProperty: CreateDataPropertyStringInput!
+  ): DataProperty!
+  createOrUpdateBpmnProcessType(
+    dataProperty: CreateOrUpdateBpmnProcessTypeInput!
+  ): String
+  removeObjectsFromCollection(
+    collectionId: String!
+    objectIds: [String]!
+  ): [DataObject!]
   updateGroup(group: UpdateGroupInput!): Group!
   login(password: String!, username: String!): String!
   moveDataObject(targetId: ID!, id: ID!): Boolean!
   updateView(view: UpdateViewInput!): View!
-  createBpmnProcessDataType(dataType: CreateBpmnProcessDataTypeInput!): DataType!
+  createBpmnProcessDataType(
+    dataType: CreateBpmnProcessDataTypeInput!
+  ): DataType!
   createTypeFilter(filter: CreateTypeFilterInput!): TypeFilter!
   deleteGroup(name: String!): Boolean!
   createView(view: CreateViewInput!): View!
-  createDataPropertyUsers(dataProperty: CreateDataPropertyUsersInput!): DataProperty!
-  createDataPropertyObject(dataProperty: CreateDataPropertyObjectInput!): DataProperty!
-  createFilterView(filterId: String!, defaultListViewType: FilterDefaultViewEnum!): View!
+  createDataPropertyUsers(
+    dataProperty: CreateDataPropertyUsersInput!
+  ): DataProperty!
+  createDataPropertyObject(
+    dataProperty: CreateDataPropertyObjectInput!
+  ): DataProperty!
+  createFilterView(
+    filterId: String!
+    defaultListViewType: FilterDefaultViewEnum!
+  ): View!
   createApiSpec(apiSpec: CreateApiSpecInput!): ApiSpec!
   createLifecycle(lifecycle: CreateLifecycleInput!): Lifecycle!
-  updateDataPropertyObjectFilter(dataProperty: UpdateDataPropertyObjectFilterInput!): DataProperty!
+  updateDataPropertyObjectFilter(
+    dataProperty: UpdateDataPropertyObjectFilterInput!
+  ): DataProperty!
   updateUser(user: UpdateUserInput!): User!
   deleteMessage(id: ID!): Boolean!
-  createHtmlWidgetGroup(htmlWidgetGroup: CreateHtmlWidgetGroupInput!): HtmlWidgetGroup!
+  createHtmlWidgetGroup(
+    htmlWidgetGroup: CreateHtmlWidgetGroupInput!
+  ): HtmlWidgetGroup!
   createRoom(room: CreateDiscussionRoomInput!): DiscussionRoom!
   updateSettings(settings: [UpdateSettingInput!]!): Boolean!
   updateDataType(dataType: UpdateDataTypeInput!): DataType!
   token(code: String!): String!
-  updateDataPropertyText(dataProperty: UpdateDataPropertyTextInput!): DataProperty!
+  updateDataPropertyText(
+    dataProperty: UpdateDataPropertyTextInput!
+  ): DataProperty!
   archiveRoom(id: ID!): Boolean!
-  createReferenceDataType(referenceDataType: CreateReferenceDataTypeInput!): ReferenceDataType!
+  createReferenceDataType(
+    referenceDataType: CreateReferenceDataTypeInput!
+  ): ReferenceDataType!
   updateApplication(application: UpdateApplicationInput!): Application!
   addObjectsToFavorites(objectIds: [String]!): [DataObject!]
   deleteSavedSearch(id: ID!): Boolean!
   updateSetting(setting: UpdateSettingInput!): Setting!
-  createDataObjectsFromLiveConnect(providerId: String!, user: String!, items: [AssetDropboxInput!]!): [DataObject!]!
+  createDataObjectsFromLiveConnect(
+    providerId: String!
+    user: String!
+    items: [AssetDropboxInput!]!
+  ): [DataObject!]!
   updateUserProfile(profile: UpdateUserProfileInput!): User!
   updateLifecycle(lifecycle: UpdateLifecycleInput!): Lifecycle!
   changeDataObjectStatusBulk(status: String!, objectIds: [ID!]!): Boolean!
   hideDirectMessagesRoom(id: ID!): DiscussionDirectMessagesRoom!
-  createDataPropertyFile(dataProperty: CreateDataPropertyFileInput!): DataProperty!
+  createDataPropertyFile(
+    dataProperty: CreateDataPropertyFileInput!
+  ): DataProperty!
   deleteDataObjectBulk(ids: [ID!]!): Boolean!
   createUser(user: CreateUserInput!): User!
   removeObjectFromCollection(collectionId: String!, objectId: String!): Boolean
   unarchiveRoom(id: ID!): Boolean!
   createDataType(dataType: CreateDataTypeInput!): DataType!
   resetPassword(password: String!, key: String!): Boolean!
-  createDataPropertyUser(dataProperty: CreateDataPropertyUserInput!): DataProperty!
-  createDataPropertyDateTime(dataProperty: CreateDataPropertyDateTimeInput!): DataProperty!
+  createDataPropertyUser(
+    dataProperty: CreateDataPropertyUserInput!
+  ): DataProperty!
+  createDataPropertyDateTime(
+    dataProperty: CreateDataPropertyDateTimeInput!
+  ): DataProperty!
   updateRole(role: UpdateRoleInput!): Role!
   addObjectToCollection(collectionId: String!, objectId: String!): Boolean
 
-  """Create data template from data object with GUID = dataObjectId."""
+  """
+  Create data template from data object with GUID = dataObjectId.
+  """
   saveDataObjectAsTemplate(dataObjectId: String!): DataObject!
   createModule(module: CreateModuleInput!): Module!
   updateFilter(filter: UpdateSystemFilterInput!): SystemFilter!
   clearCache: Boolean!
   updateAsset(assetUpload: AssetUploadInput!): AssetUpload!
-  updateModulePrivileges(privileges: [UpdateGrantedPrivilegesInput!], metadataObjectId: String!): Module!
-  createDataPropertyTime(dataProperty: CreateDataPropertyTimeInput!): DataProperty!
-  updateDataPropertyFile(dataProperty: UpdateDataPropertyFileInput!): DataProperty!
-  updateDataPropertyMultiSelection(dataProperty: UpdateDataPropertyMultiSelectionInput!): DataProperty!
+  updateModulePrivileges(
+    privileges: [UpdateGrantedPrivilegesInput!]
+    metadataObjectId: String!
+  ): Module!
+  createDataPropertyTime(
+    dataProperty: CreateDataPropertyTimeInput!
+  ): DataProperty!
+  updateDataPropertyFile(
+    dataProperty: UpdateDataPropertyFileInput!
+  ): DataProperty!
+  updateDataPropertyMultiSelection(
+    dataProperty: UpdateDataPropertyMultiSelectionInput!
+  ): DataProperty!
   archiveThread(id: ID!): Boolean!
-  updateDataPropertyVersion(dataProperty: UpdateDataPropertyVersionInput!): DataProperty!
-  updateDataPropertyObject(dataProperty: UpdateDataPropertyObjectInput!): DataProperty!
-  createDataPropertyDate(dataProperty: CreateDataPropertyDateInput!): DataProperty!
-  updateDataPropertySequence(dataProperty: UpdateDataPropertySequenceInput!): DataProperty!
-  updateReferenceMetadataObjectPermissions(referenceMetadataObjectId: String!, permissions: [UpdateGrantedPermissionsInput!]): ReferenceMetadataObject!
+  updateDataPropertyVersion(
+    dataProperty: UpdateDataPropertyVersionInput!
+  ): DataProperty!
+  updateDataPropertyObject(
+    dataProperty: UpdateDataPropertyObjectInput!
+  ): DataProperty!
+  createDataPropertyDate(
+    dataProperty: CreateDataPropertyDateInput!
+  ): DataProperty!
+  updateDataPropertySequence(
+    dataProperty: UpdateDataPropertySequenceInput!
+  ): DataProperty!
+  updateReferenceMetadataObjectPermissions(
+    referenceMetadataObjectId: String!
+    permissions: [UpdateGrantedPermissionsInput!]
+  ): ReferenceMetadataObject!
   joinToPublicRoom(id: ID!): DiscussionRoom!
   archiveMetaDataObject(id: String!): Boolean!
-  updateDataPropertySelection(dataProperty: UpdateDataPropertySelectionInput!): DataProperty!
+  updateDataPropertySelection(
+    dataProperty: UpdateDataPropertySelectionInput!
+  ): DataProperty!
   republishDataObject(publishDataObjectInput: PublishDataObjectInput!): Boolean!
   createGroup(group: CreateGroupInput!): Group!
-  updateDataPropertyStatus(dataProperty: UpdateDataPropertyStatusInput!): DataProperty!
+  updateDataPropertyStatus(
+    dataProperty: UpdateDataPropertyStatusInput!
+  ): DataProperty!
   unarchiveMetaDataObject(id: String!): Boolean!
   changeDataObjectOwner(owner: String!, id: ID!): Boolean!
-  updateDataPropertyObjects(dataProperty: UpdateDataPropertyObjectsInput!): DataProperty!
+  updateDataPropertyObjects(
+    dataProperty: UpdateDataPropertyObjectsInput!
+  ): DataProperty!
   deleteMetaDataObject(id: String!): Boolean!
   updatePostTemplate(postTemplate: UpdatePostTemplateInput!): PostTemplate!
   updateTheme(theme: UpdateThemeInput!): Theme!
   createThread(thread: CreateDiscussionThreadInput!): DiscussionThread!
   createApiSpecsGroup(apiSpecsGroup: CreateApiSpecsGroupInput!): ApiSpecsGroup!
-  createDataPropertyInteger(dataProperty: CreateDataPropertyIntegerInput!): DataProperty!
-  createDataObjectVersion(createVersionInput: CreateDataObjectVersionInput!): DataObject!
+  createDataPropertyInteger(
+    dataProperty: CreateDataPropertyIntegerInput!
+  ): DataProperty!
+  createDataObjectVersion(
+    createVersionInput: CreateDataObjectVersionInput!
+  ): DataObject!
   createMessage(message: CreateDiscussionMessageInput!): DiscussionMessage!
   updateHtmlWidget(htmlWidget: UpdateHtmlWidgetInput!): HtmlWidget!
   updateApiSpecsGroup(apiSpecsGroup: UpdateApiSpecsGroupInput!): ApiSpecsGroup!
   createDataObject(object: CreateDataObjectInput!): DataObject!
-  createCollection(collectionPath: String!, collectionDescription: String): String!
+  createCollection(
+    collectionPath: String!
+    collectionDescription: String
+  ): String!
   restoreDataObjectVersion(versionId: ID!): DataObject!
-  updateDataPropertyAttributes(dataProperty: UpdateDataPropertyAttributesInput!): DataProperty!
-  createDataObjectFromTemplate(object: CreateDataObjectFromTemplateInput!): DataObject!
+  updateDataPropertyAttributes(
+    dataProperty: UpdateDataPropertyAttributesInput!
+  ): DataProperty!
+  createDataObjectFromTemplate(
+    object: CreateDataObjectFromTemplateInput!
+  ): DataObject!
   updateBpmnMessage(dataProperty: UpdateBpmnMessageInput!): BpmnMessage!
-  updateDataPropertyUser(dataProperty: UpdateDataPropertyUserInput!): DataProperty!
-  updateDataPropertyUsers(dataProperty: UpdateDataPropertyUsersInput!): DataProperty!
+  updateDataPropertyUser(
+    dataProperty: UpdateDataPropertyUserInput!
+  ): DataProperty!
+  updateDataPropertyUsers(
+    dataProperty: UpdateDataPropertyUsersInput!
+  ): DataProperty!
   moveDataObjectBulk(targetId: ID!, ids: [ID!]!): Boolean!
   setMembersForRole(members: [MemberInput!]!, name: String!): Boolean!
-  createDataPropertyObjects(dataProperty: CreateDataPropertyObjectsInput!): DataProperty!
+  createDataPropertyObjects(
+    dataProperty: CreateDataPropertyObjectsInput!
+  ): DataProperty!
   removeObjectsFromFavorites(objectIds: [String]!): [DataObject!]
-  updateDataPropertyTime(dataProperty: UpdateDataPropertyTimeInput!): DataProperty!
+  updateDataPropertyTime(
+    dataProperty: UpdateDataPropertyTimeInput!
+  ): DataProperty!
   stopImportMetadataTool: Boolean!
-  updateReferenceDataGroup(referenceDataGroup: UpdateReferenceDataGroupInput!): ReferenceDataGroup!
+  updateReferenceDataGroup(
+    referenceDataGroup: UpdateReferenceDataGroupInput!
+  ): ReferenceDataGroup!
   sendEmail(sendEmailInput: SendEmailInput!): Boolean!
   restoreUser(uid: String!): User!
   saveViewCustomization(customization: ViewCustomizationInput!): Boolean!
   failAssetUploads: Boolean!
   changeDataObjectOwnerBulk(owner: String!, objectIds: [ID!]!): Boolean!
-  createDirectMessagesRoom(room: CreateDiscussionDirectMessagesRoomInput!): DiscussionDirectMessagesRoom!
-  createDataPropertyObjectFilter(dataProperty: CreateDataPropertyObjectFilterInput!): DataProperty!
-  changeStatusAndUpdateDataObject(currentState: String, object: UpdateDataObjectInput!, status: [String]!): Boolean!
+  createDirectMessagesRoom(
+    room: CreateDiscussionDirectMessagesRoomInput!
+  ): DiscussionDirectMessagesRoom!
+  createDataPropertyObjectFilter(
+    dataProperty: CreateDataPropertyObjectFilterInput!
+  ): DataProperty!
+  changeStatusAndUpdateDataObject(
+    currentState: String
+    object: UpdateDataObjectInput!
+    status: [String]!
+  ): Boolean!
   updateSavedSearch(savedSearch: UpdateSavedSearchInput!): SavedSearch!
-  unpublishDataObject(unpublishDataObjectInput: UnpublishDataObjectInput!): Boolean!
-  updateReferenceDataType(referenceDataType: UpdateReferenceDataTypeInput!): ReferenceDataType!
+  unpublishDataObject(
+    unpublishDataObjectInput: UnpublishDataObjectInput!
+  ): Boolean!
+  updateReferenceDataType(
+    referenceDataType: UpdateReferenceDataTypeInput!
+  ): ReferenceDataType!
   unarchiveThread(id: ID!): Boolean!
   publishDataObject(publishDataObjectInput: PublishDataObjectInput!): Boolean!
   createPostTemplate(postTemplate: CreatePostTemplateInput!): PostTemplate!
-  createDataPropertySelection(dataProperty: CreateDataPropertySelectionInput!): DataProperty!
-  updateDataPropertyDate(dataProperty: UpdateDataPropertyDateInput!): DataProperty!
-  updateWorkspacePermissions(permissions: [UpdateGrantedPermissionsInput!], metadataObjectId: String!): Workspace!
-  createDataPropertyMultiSelection(dataProperty: CreateDataPropertyMultiSelectionInput!): DataProperty!
+  createDataPropertySelection(
+    dataProperty: CreateDataPropertySelectionInput!
+  ): DataProperty!
+  updateDataPropertyDate(
+    dataProperty: UpdateDataPropertyDateInput!
+  ): DataProperty!
+  updateWorkspacePermissions(
+    permissions: [UpdateGrantedPermissionsInput!]
+    metadataObjectId: String!
+  ): Workspace!
+  createDataPropertyMultiSelection(
+    dataProperty: CreateDataPropertyMultiSelectionInput!
+  ): DataProperty!
   readAllMessages(parentId: String!): [DiscussionMessage]!
   createWorkbench(workbench: CreateWorkbenchInput!): Workbench!
-  addObjectsToCollection(collectionId: String!, objectIds: [String]!): [DataObject!]
-  updateDataTypePrivileges(privileges: [UpdateGrantedPrivilegesInput!], metadataObjectId: String!): DataType!
-  updateDataPropertyInteger(dataProperty: UpdateDataPropertyIntegerInput!): DataProperty!
+  addObjectsToCollection(
+    collectionId: String!
+    objectIds: [String]!
+  ): [DataObject!]
+  updateDataTypePrivileges(
+    privileges: [UpdateGrantedPrivilegesInput!]
+    metadataObjectId: String!
+  ): DataType!
+  updateDataPropertyInteger(
+    dataProperty: UpdateDataPropertyIntegerInput!
+  ): DataProperty!
   updateApiSpec(apiSpec: UpdateApiSpecInput!): ApiSpec!
-  updateHtmlWidgetGroup(htmlWidgetGroup: UpdateHtmlWidgetGroupInput!): HtmlWidgetGroup!
+  updateHtmlWidgetGroup(
+    htmlWidgetGroup: UpdateHtmlWidgetGroupInput!
+  ): HtmlWidgetGroup!
   deleteGroupBulk(names: [String!]!): Boolean!
   updateDataObject(object: UpdateDataObjectInput!): DataObject!
   publish(comment: String!): Boolean!
-  createDataPropertyAttributes(dataProperty: CreateDataPropertyAttributesInput!): DataProperty!
-  createExternalGroup(externalGroup: CreateOrUpdateExternalGroupInput!): ExternalGroupMapping!
-  createDataPropertyDecimal(dataProperty: CreateDataPropertyDecimalInput!): DataProperty!
+  createDataPropertyAttributes(
+    dataProperty: CreateDataPropertyAttributesInput!
+  ): DataProperty!
+  createExternalGroup(
+    externalGroup: CreateOrUpdateExternalGroupInput!
+  ): ExternalGroupMapping!
+  createDataPropertyDecimal(
+    dataProperty: CreateDataPropertyDecimalInput!
+  ): DataProperty!
   recalcDataObjectFormulas(id: String!): DataObject!
   updateModule(module: UpdateModuleInput!): Module!
   createHtmlWidget(htmlWidget: CreateHtmlWidgetInput!): HtmlWidget!
   deleteUserBulk(names: [String!]!): Boolean!
-  updateDataPropertyString(dataProperty: UpdateDataPropertyStringInput!): DataProperty!
+  updateDataPropertyString(
+    dataProperty: UpdateDataPropertyStringInput!
+  ): DataProperty!
 }
 
-""""""
+"""
+"""
 type OAuth2ServiceProvider {
   authorizationServerUrl: String!
   clientId: String
@@ -2705,7 +3105,8 @@ type OAuth2ServiceProvider {
   userAuthorizationUrl: String
 }
 
-""""""
+"""
+"""
 type OAuth2ServiceToken {
   accessToken: String!
   clientId: String
@@ -2720,10 +3121,13 @@ type OAuth2ServiceToken {
   username: String!
 }
 
-"""Built-in scalar for dynamic values"""
+"""
+Built-in scalar for dynamic values
+"""
 scalar ObjectScalar
 
-""""""
+"""
+"""
 type PageInfo {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -2732,19 +3136,22 @@ type PageInfo {
   totalCount: Int!
 }
 
-""""""
+"""
+"""
 input PaginationInput {
   pageIndex: Int!
   pageSize: Int!
 }
 
-""""""
+"""
+"""
 type Permission {
   displayName: String!
   value: PermissionEnum!
 }
 
-""""""
+"""
+"""
 enum PermissionEnum {
   CREATE
   MANAGE
@@ -2753,7 +3160,8 @@ enum PermissionEnum {
   WRITE
 }
 
-""""""
+"""
+"""
 type PostTemplate implements MetadataObject {
   bodyTemplate: String!
   creationDate: Date!
@@ -2769,19 +3177,22 @@ type PostTemplate implements MetadataObject {
   subjectTemplate: String!
 }
 
-""""""
+"""
+"""
 enum PrivacyStatusEnum {
   PRIVATE
   PUBLIC
 }
 
-""""""
+"""
+"""
 type Privilege {
   displayName: String!
   value: PrivilegeEnum!
 }
 
-""""""
+"""
+"""
 enum PrivilegeEnum {
   CAN_CHANGE_OWNER
   CAN_CHANGE_STATE
@@ -2801,7 +3212,8 @@ enum PrivilegeEnum {
   CAN_SEE_HISTORY
 }
 
-""""""
+"""
+"""
 type PropertyGroup {
   description: String
   displayName: String!
@@ -2811,14 +3223,16 @@ type PropertyGroup {
   status: MetadataObjectStatusEnum
 }
 
-""""""
+"""
+"""
 type PropertyType {
   displayName: String!
   propertyTypeEnum: PropertyTypeEnum!
   systemOnly: Boolean!
 }
 
-""""""
+"""
+"""
 enum PropertyTypeEnum {
   ATTRIBUTES
   BOOLEAN
@@ -2843,7 +3257,8 @@ enum PropertyTypeEnum {
   VERSION
 }
 
-""""""
+"""
+"""
 input PublishDataObjectInput {
   objectId: String!
   privacyStatus: PrivacyStatusEnum!
@@ -2852,7 +3267,8 @@ input PublishDataObjectInput {
   tags: String
 }
 
-""""""
+"""
+"""
 type PublishedApplication {
   displayName: String!
   htmlWidgets: [PublishedHtmlWidget!]!
@@ -2863,7 +3279,8 @@ type PublishedApplication {
   workbenches: [PublishedWorkbench!]!
 }
 
-""""""
+"""
+"""
 type PublishedApplicationVersion {
   comment: String!
   id: String!
@@ -2872,13 +3289,15 @@ type PublishedApplicationVersion {
   version: String!
 }
 
-""""""
+"""
+"""
 type PublishedApplicationVersionList {
   items: [PublishedApplicationVersion!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 type PublishedDataType {
   brandingJson: String
   canCreateAnother: Boolean!
@@ -2893,7 +3312,8 @@ type PublishedDataType {
   stateMachine: String
 }
 
-""""""
+"""
+"""
 type PublishedExportView {
   description(multilanguage: Boolean = false): String
   displayName(multilanguage: Boolean = false): String!
@@ -2907,7 +3327,8 @@ type PublishedExportView {
   viewTypeEnum: ViewTypeEnum
 }
 
-""""""
+"""
+"""
 type PublishedFilter {
   description: String
   displayName: String!
@@ -2916,7 +3337,8 @@ type PublishedFilter {
   route: String!
 }
 
-""""""
+"""
+"""
 type PublishedHtmlWidget {
   css: String
   html: String
@@ -2926,12 +3348,14 @@ type PublishedHtmlWidget {
   widgetJson: String
 }
 
-""""""
+"""
+"""
 type PublishedLifecycle {
   lifecycleJson: String
 }
 
-""""""
+"""
+"""
 type PublishedModule {
   availableUsers: [User!]
   brandingJson: String
@@ -2952,7 +3376,8 @@ type PublishedModule {
   workspaces: [PublishedWorkspace!]!
 }
 
-""""""
+"""
+"""
 type PublishedView {
   childrenTypes: [PublishedDataType!]!
   contextId: String!
@@ -2972,7 +3397,8 @@ type PublishedView {
   viewType: ViewTypeEnum!
 }
 
-""""""
+"""
+"""
 type PublishedWorkbench {
   creationDate: Date!
   description: String
@@ -2988,7 +3414,8 @@ type PublishedWorkbench {
   status: MetadataObjectStatusEnum!
 }
 
-""""""
+"""
+"""
 type PublishedWorkspace {
   brandingJson: String
   description: String
@@ -3002,16 +3429,23 @@ type PublishedWorkspace {
   userPrivileges: [PrivilegeEnum!]!
 }
 
-"""Query root"""
+"""
+Query root
+"""
 type Query {
   publishedTypeFilters(dataTypeId: String): [TypeFilter!]!
   setting(key: String!): Setting!
   fixWorkbenches: Boolean!
   module(id: String!): Module!
   profile(username: String): User!
-  dataObjectStatusOptions(currentState: String, objectId: ID!): [LifecycleTransition!]!
+  dataObjectStatusOptions(
+    currentState: String
+    objectId: ID!
+  ): [LifecycleTransition!]!
   aggredatedDataObjects(params: ListParametersInput!): DataObjectList!
-  userSelectionOptions(selectionParameters: UserSelectionOptionsInput!): [User!]!
+  userSelectionOptions(
+    selectionParameters: UserSelectionOptionsInput!
+  ): [User!]!
   isApiSpecValid(apiSpec: ValidateApiSpecInput!): Boolean!
   dateDisplayFormats: [DateDisplayFormat!]!
   role(id: String!): Role!
@@ -3020,7 +3454,9 @@ type Query {
   publishedApplication: PublishedApplication!
   validationResults(severity: String): [ValidationResults]!
 
-  """Get template by id if user has privileges to data type."""
+  """
+  Get template by id if user has privileges to data type.
+  """
   dataObjectTemplate(id: String!): DataObject!
   userCollections(searchTerm: String!): [Collection]
   serviceDtoJson(id: String!): String!
@@ -3036,8 +3472,14 @@ type Query {
   workbench(id: String!): Workbench!
   isDataObjectValid(dataObject: ValidateDataObjectInput!): Boolean!
   isRoleValid(role: ValidateRoleInput!): Boolean!
-  availableMembersForGroup(name: String, params: ListParametersInput!): [Member!]!
-  dataObjectSelectionView(customContextJson: String, key: String!): PublishedView!
+  availableMembersForGroup(
+    name: String
+    params: ListParametersInput!
+  ): [Member!]!
+  dataObjectSelectionView(
+    customContextJson: String
+    key: String!
+  ): PublishedView!
   passwordResetKeyValid(key: String!): Boolean!
   dataType(id: String!): DataType!
   externalGroups(params: ExternalGroupListParametersInput): ExternalGroupList!
@@ -3054,9 +3496,14 @@ type Query {
   postTemplate(id: String!): PostTemplate!
   textFormatTypes: [TextFormatType!]!
   isGroupValid(group: ValidateGroupInput!): Boolean!
-  isReferenceDataTypeValid(referenceDataType: ValidateReferenceDataTypeInput!): Boolean!
+  isReferenceDataTypeValid(
+    referenceDataType: ValidateReferenceDataTypeInput!
+  ): Boolean!
   workbenches: [Workbench!]!
-  canChangeMetadataObjectStatus(action: MetadataObjectChangeStatusActionsEnum!, ids: [String!]): Boolean!
+  canChangeMetadataObjectStatus(
+    action: MetadataObjectChangeStatusActionsEnum!
+    ids: [String!]
+  ): Boolean!
   savedSearches(moduleId: String): [SavedSearch!]!
   getCollection(collectionPath: String!): String!
   isObjectInFavorites(objectId: String!): Boolean
@@ -3074,9 +3521,16 @@ type Query {
   dataObjectTemplates(dataTypeIds: [String!], parentId: String!): [DataObject!]!
   propertyTypes: [PropertyType!]!
   isTypeFilterValid(filter: ValidateTypeFilterInput!): Boolean!
-  availableSelections(referenceDataTypeId: String!, parentId: String!): [DataProperty!]!
+  availableSelections(
+    referenceDataTypeId: String!
+    parentId: String!
+  ): [DataProperty!]!
   publishedViews(params: ViewParametersInput!): [PublishedView!]!
-  referenceMetadataObjects(includeArchived: Boolean, parentId: String, objectType: ReferenceMetadataObjectTypeEnum): [ReferenceMetadataObject!]!
+  referenceMetadataObjects(
+    includeArchived: Boolean
+    parentId: String
+    objectType: ReferenceMetadataObjectTypeEnum
+  ): [ReferenceMetadataObject!]!
   isDataPropertyValid(property: ValidateDataPropertyInput!): Boolean!
   currentUserRooms(params: ListParametersInput): DiscussionRoomList!
   nextMessages(count: Int!, messageId: String!): [DiscussionMessage]!
@@ -3092,20 +3546,35 @@ type Query {
   dataObjectVersionOptions(id: ID!): [VersionIncrement!]!
   objectsFromCollection(params: ListParametersInput!): DataObjectList
   analyzerMap: Map_String_StringScalar!
-  assetUploads(batchIds: [String!], params: ListParametersInput): AssetUploadList!
+  assetUploads(
+    batchIds: [String!]
+    params: ListParametersInput
+  ): AssetUploadList!
   isDataObjectValid2(dataObject: ValidateDataObjectInput!): DataObjectChanges!
   isModuleValid(module: ValidateModuleInput!): Boolean!
   theme: Theme!
   isDataTypeValid(dataType: ValidateDataTypeInput!): Boolean!
-  isReferenceDataGroupValid(referenceDataGroup: ValidateReferenceDataGroupInput!): Boolean!
+  isReferenceDataGroupValid(
+    referenceDataGroup: ValidateReferenceDataGroupInput!
+  ): Boolean!
   isApiSpecsGroupValid(apiSpecsGroup: ValidateApiSpecsGroupInput!): Boolean!
-  publishedApplicationVersions(params: ListParametersInput): PublishedApplicationVersionList!
+  publishedApplicationVersions(
+    params: ListParametersInput
+  ): PublishedApplicationVersionList!
   filter(id: String!): SystemFilter!
   viewTypes: [ViewType!]!
   canDeleteLifecycleState(state: String!, lifecycleId: String!): Boolean!
   previousMessages(count: Int!, messageId: String!): [DiscussionMessage]!
-  validateUpdateUserPassword(oldPassword: String!, name: String!, newPassword: String!): Boolean!
-  translate(sourceLocale: String!, targetLocales: [String]!, value: String!): Translate!
+  validateUpdateUserPassword(
+    oldPassword: String!
+    name: String!
+    newPassword: String!
+  ): Boolean!
+  translate(
+    sourceLocale: String!
+    targetLocales: [String]!
+    value: String!
+  ): Translate!
   publishedModuleFilters(moduleId: String): [SystemFilter!]!
   routes: [Route!]!
   publishedFilterViews(params: FilterViewParametersInput!): [PublishedView!]!
@@ -3113,7 +3582,10 @@ type Query {
   group(name: String!): Group!
   oauth2ServiceProviders: [OAuth2ServiceProvider]!
   settings(key: String!): [Setting!]!
-  availableMembersForRole(name: String, params: ListParametersInput!): [Member!]!
+  availableMembersForRole(
+    name: String
+    params: ListParametersInput!
+  ): [Member!]!
   isBpmnProcessValid(property: CreateOrUpdateBpmnProcessTypeInput!): Boolean!
   directMessagesRoom(id: ID!): DiscussionDirectMessagesRoom!
   dataObjectGenericStatus(id: ID!): DataObjectGenericStatus!
@@ -3126,10 +3598,18 @@ type Query {
   publishedReportingViews(dataTypeIds: [String!]): [PublishedView!]!
   oauth2ServiceTokens: [OAuth2ServiceToken]!
   offsetMessages(count: Int!, messageId: String!): [DiscussionMessage]!
-  offsetMessagesFromFirstUnread(count: Int!, parentId: String!): [DiscussionMessage]!
+  offsetMessagesFromFirstUnread(
+    count: Int!
+    parentId: String!
+  ): [DiscussionMessage]!
   referenceDataType(id: String!): ReferenceDataType!
-  directMessagesRooms(params: ListParametersInput): DiscussionDirectMessagesRoomList!
-  attributesSelectionOptions(referenceDataTypeId: String!, parentValues: [String!]): [Attribute!]!
+  directMessagesRooms(
+    params: ListParametersInput
+  ): DiscussionDirectMessagesRoomList!
+  attributesSelectionOptions(
+    referenceDataTypeId: String!
+    parentValues: [String!]
+  ): [Attribute!]!
   isWorkspaceValid(workspace: ValidateWorkspaceInput!): Boolean!
   threads(params: ListParametersInput, roomId: String!): DiscussionThreadList!
   groups(params: ListParametersInput): GroupList!
@@ -3156,16 +3636,22 @@ type Query {
     objectIds: [ID!]
   ): [DataObjectHierarchy!]!
   application: Application!
-  dataObjectSelectionOptions(referenceDataTypeId: String!, selectedDate: DataPropertyDateTimeValueInput, parentValues: [String!]): [DataObject!]!
+  dataObjectSelectionOptions(
+    referenceDataTypeId: String!
+    selectedDate: DataPropertyDateTimeValueInput
+    parentValues: [String!]
+  ): [DataObject!]!
   user(name: String!): User!
 }
 
-""""""
+"""
+"""
 type RdmContentPayload {
   referenceDataTypeId: String
 }
 
-""""""
+"""
+"""
 type ReferenceDataGroup implements MetadataObject & ReferenceMetadataObject {
   creationDate: Date!
   description(multilanguage: Boolean = false): String
@@ -3179,11 +3665,15 @@ type ReferenceDataGroup implements MetadataObject & ReferenceMetadataObject {
   parentId: String!
   permissionsInherited: Boolean
   referenceMetadataObjectType: ReferenceMetadataObjectTypeEnum!
-  referenceMetadataObjects(includeArchived: Boolean, objectType: ReferenceMetadataObjectTypeEnum): [ReferenceMetadataObject!]!
+  referenceMetadataObjects(
+    includeArchived: Boolean
+    objectType: ReferenceMetadataObjectTypeEnum
+  ): [ReferenceMetadataObject!]!
   status: MetadataObjectStatusEnum!
 }
 
-""""""
+"""
+"""
 type ReferenceDataType implements MetadataObject & ReferenceMetadataObject {
   createRecordView: String
   creationDate: Date!
@@ -3211,7 +3701,8 @@ type ReferenceDataType implements MetadataObject & ReferenceMetadataObject {
   views(includeArchived: Boolean, viewType: ViewTypeEnum): [View!]!
 }
 
-""""""
+"""
+"""
 interface ReferenceMetadataObject {
   creationDate: Date!
   description(multilanguage: Boolean = false): String
@@ -3228,13 +3719,15 @@ interface ReferenceMetadataObject {
   status: MetadataObjectStatusEnum!
 }
 
-""""""
+"""
+"""
 enum ReferenceMetadataObjectTypeEnum {
   DATA_TYPE
   GROUP
 }
 
-""""""
+"""
+"""
 type Role implements MetadataObject {
   creationDate: Date!
   description(multilanguage: Boolean = false): String
@@ -3251,13 +3744,15 @@ type Role implements MetadataObject {
   visible: Boolean
 }
 
-""""""
+"""
+"""
 type RoleList {
   items: [Role!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 type Route {
   description: String!
   displayName: String!
@@ -3265,7 +3760,8 @@ type Route {
   routes: [Route!]!
 }
 
-""""""
+"""
+"""
 type SavedSearch {
   displayName: String!
   filterJson: String!
@@ -3277,27 +3773,31 @@ type SavedSearch {
   viewJson: String!
 }
 
-""""""
+"""
+"""
 input SendEmailInput {
   body: String!
   subject: String!
   to: [String!]!
 }
 
-""""""
+"""
+"""
 enum SequenceRestartInterval {
   month
   never
   year
 }
 
-""""""
+"""
+"""
 type Setting {
   key: String!
   value: String!
 }
 
-""""""
+"""
+"""
 type StaticContentFile {
   defaultResource: Boolean
   encoding: String
@@ -3310,7 +3810,9 @@ type StaticContentFile {
   url: String!
 }
 
-"""Subscription root"""
+"""
+Subscription root
+"""
 type Subscription {
   messages(topics: [String]!): SubscriptionMessage
   unspecifiedPayloadMessages(topics: [String]!): SubscriptionUnspecifiedMessage
@@ -3320,50 +3822,58 @@ type Subscription {
   rdmContentChanges(topics: [String]!): SubscriptionRdmContentChanges
 }
 
-""""""
+"""
+"""
 type SubscriptionAction {
   payload: SubscriptionActionPayload!
   topic: String!
 }
 
-""""""
+"""
+"""
 type SubscriptionActionPayload {
   actionKey: String!
   relatedObjects: Map_String_StringScalar
 }
 
-""""""
+"""
+"""
 type SubscriptionCsvImportStatus {
   payload: CsvImportStatus!
   topic: String!
 }
 
-""""""
+"""
+"""
 type SubscriptionMessage {
   payload: DiscussionMessage!
   topic: String!
 }
 
-""""""
+"""
+"""
 type SubscriptionRdmContentChanges {
   payload: RdmContentPayload!
   topic: String!
 }
 
-""""""
+"""
+"""
 type SubscriptionUnspecifiedMessage {
   payload: ObjectScalar!
   topic: String!
 }
 
-""""""
+"""
+"""
 type SystemDefaults {
   locale: String!
   passwordSettings: [Setting!]!
   timezone: String!
 }
 
-""""""
+"""
+"""
 type SystemFilter implements MetadataObject {
   calendarView: String
   childrenTypes: [DataType!]!
@@ -3388,7 +3898,8 @@ type SystemFilter implements MetadataObject {
   tileView: String
 }
 
-""""""
+"""
+"""
 type SystemPage {
   calendarView: String
   enabled: Boolean!
@@ -3397,7 +3908,8 @@ type SystemPage {
   tileView: String
 }
 
-""""""
+"""
+"""
 input SystemPageInput {
   calendarView: String
   enabled: Boolean
@@ -3406,19 +3918,22 @@ input SystemPageInput {
   tileView: String
 }
 
-""""""
+"""
+"""
 type TextFormatType {
   displayName: String!
   textFormatTypeEnum: TextFormatTypeEnum!
 }
 
-""""""
+"""
+"""
 enum TextFormatTypeEnum {
   HTML
   PLAIN
 }
 
-""""""
+"""
+"""
 type Theme {
   applicationTitle: String!
   favicon: File!
@@ -3430,18 +3945,21 @@ type Theme {
   uid: String
 }
 
-""""""
+"""
+"""
 type Translate {
   items: [TranslateOption]
 }
 
-""""""
+"""
+"""
 type TranslateOption {
   locale: String
   value: String
 }
 
-""""""
+"""
+"""
 input TrashableListParametersInput {
   hints: String
   pagination: PaginationInput
@@ -3450,7 +3968,8 @@ input TrashableListParametersInput {
   trashed: Boolean!
 }
 
-""""""
+"""
+"""
 type TypeFilter implements MetadataObject {
   calendarView: String
   childrenTypes: [DataType!]!
@@ -3474,13 +3993,15 @@ type TypeFilter implements MetadataObject {
   tileView: String
 }
 
-""""""
+"""
+"""
 input UnpublishDataObjectInput {
   objectId: String!
   serviceName: String!
 }
 
-""""""
+"""
+"""
 input UpdateApiSpecInput {
   authMethod: AuthMethod
   basicAuthLogin: String
@@ -3494,21 +4015,24 @@ input UpdateApiSpecInput {
   serviceUrl: String
 }
 
-""""""
+"""
+"""
 input UpdateApiSpecsGroupInput {
   description: String
   displayName: String
   id: String!
 }
 
-""""""
+"""
+"""
 input UpdateApplicationInput {
   displayName: String
   notificationJson: String
   toolbarJson: String
 }
 
-""""""
+"""
+"""
 input UpdateBpmnMessageInput {
   dataJson: String
   description: String
@@ -3516,13 +4040,15 @@ input UpdateBpmnMessageInput {
   id: String!
 }
 
-""""""
+"""
+"""
 input UpdateDataObjectInput {
   id: ID!
   properties: [DataObjectPropertyInput!]
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyAttributesInput {
   customizationRef: String
   dateDataPropertyKey: String
@@ -3538,7 +4064,8 @@ input UpdateDataPropertyAttributesInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyBooleanInput {
   customizationRef: String
   defaultValue: DataPropertyBooleanValueInput
@@ -3556,7 +4083,8 @@ input UpdateDataPropertyBooleanInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyDateInput {
   customizationRef: String
   defaultValue: DataPropertyDateValueInput
@@ -3572,7 +4100,8 @@ input UpdateDataPropertyDateInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyDateTimeInput {
   customizationRef: String
   defaultValue: DataPropertyDateTimeValueInput
@@ -3588,7 +4117,8 @@ input UpdateDataPropertyDateTimeInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyDecimalInput {
   customizationRef: String
   defaultValue: DataPropertyDecimalValueInput
@@ -3607,7 +4137,8 @@ input UpdateDataPropertyDecimalInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyFileInput {
   customizationRef: String
   description: String
@@ -3620,7 +4151,8 @@ input UpdateDataPropertyFileInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyFilesInput {
   customizationRef: String
   description: String
@@ -3633,7 +4165,8 @@ input UpdateDataPropertyFilesInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyIntegerInput {
   customizationRef: String
   defaultValue: DataPropertyIntegerValueInput
@@ -3650,7 +4183,8 @@ input UpdateDataPropertyIntegerInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyMultiSelectionInput {
   customizationRef: String
   dateDataPropertyKey: String
@@ -3666,7 +4200,8 @@ input UpdateDataPropertyMultiSelectionInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyObjectFilterInput {
   bindingJson: String
   customizationRef: String
@@ -3683,7 +4218,8 @@ input UpdateDataPropertyObjectFilterInput {
   viewJson: String
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyObjectInput {
   customizationRef: String
   description: String
@@ -3698,7 +4234,8 @@ input UpdateDataPropertyObjectInput {
   viewJson: String
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyObjectsInput {
   customizationRef: String
   description: String
@@ -3713,7 +4250,8 @@ input UpdateDataPropertyObjectsInput {
   viewJson: String
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertySelectionInput {
   customizationRef: String
   dateDataPropertyKey: String
@@ -3729,7 +4267,8 @@ input UpdateDataPropertySelectionInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertySequenceInput {
   customizationRef: String
   description: String
@@ -3745,7 +4284,8 @@ input UpdateDataPropertySequenceInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyStatusInput {
   customizationRef: String
   description: String
@@ -3755,7 +4295,8 @@ input UpdateDataPropertyStatusInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyStringInput {
   customizationRef: String
   defaultValue: DataPropertyStringValueInput
@@ -3776,7 +4317,8 @@ input UpdateDataPropertyStringInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyTextInput {
   customizationRef: String
   defaultValue: DataPropertyTextValueInput
@@ -3792,7 +4334,8 @@ input UpdateDataPropertyTextInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyTimeInput {
   customizationRef: String
   defaultValue: DataPropertyTimeValueInput
@@ -3808,7 +4351,8 @@ input UpdateDataPropertyTimeInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyUserInput {
   customizationRef: String
   description: String
@@ -3824,7 +4368,8 @@ input UpdateDataPropertyUserInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyUsersInput {
   customizationRef: String
   description: String
@@ -3840,7 +4385,8 @@ input UpdateDataPropertyUsersInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataPropertyVersionInput {
   customizationRef: String
   description: String
@@ -3851,7 +4397,8 @@ input UpdateDataPropertyVersionInput {
   useInSearchOrSort: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDataTypeInput {
   brandingJson: String
   calendarView: String
@@ -3880,14 +4427,16 @@ input UpdateDataTypeInput {
   versionable: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDiscussionMessageInput {
   attachmentsValueInput: FilesInput
   id: String!
   message: String
 }
 
-""""""
+"""
+"""
 input UpdateDiscussionRoomInput {
   description: String
   iconBatchId: String
@@ -3897,39 +4446,45 @@ input UpdateDiscussionRoomInput {
   private: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateDiscussionThreadInput {
   color: String
   id: String!
   name: String
 }
 
-""""""
+"""
+"""
 input UpdateGrantedPermissionsInput {
   permissions: [PermissionEnum!]!
   role: String!
 }
 
-""""""
+"""
+"""
 input UpdateGrantedPrivilegesInput {
   privileges: [PrivilegeEnum!]!
   role: String!
 }
 
-""""""
+"""
+"""
 input UpdateGroupInput {
   description: String
   displayName: String
   name: String!
 }
 
-""""""
+"""
+"""
 input UpdateHtmlWidgetGroupInput {
   description: String!
   id: String!
 }
 
-""""""
+"""
+"""
 input UpdateHtmlWidgetInput {
   css: String
   html: String
@@ -3938,7 +4493,8 @@ input UpdateHtmlWidgetInput {
   widgetJson: String
 }
 
-""""""
+"""
+"""
 input UpdateLifecycleInput {
   description: String
   displayName: String
@@ -3946,7 +4502,8 @@ input UpdateLifecycleInput {
   lifecycleJson: String
 }
 
-""""""
+"""
+"""
 input UpdateModuleInput {
   brandingJson: String
   calendarView: String
@@ -3967,7 +4524,8 @@ input UpdateModuleInput {
   tileView: String
 }
 
-""""""
+"""
+"""
 input UpdatePostTemplateInput {
   bodyTemplate: String
   description: String
@@ -3976,14 +4534,16 @@ input UpdatePostTemplateInput {
   subjectTemplate: String
 }
 
-""""""
+"""
+"""
 input UpdateReferenceDataGroupInput {
   description: String
   displayName: String
   referenceDataGroupId: String!
 }
 
-""""""
+"""
+"""
 input UpdateReferenceDataTypeInput {
   createRecordView: String
   dataFileBatchId: String
@@ -3996,7 +4556,8 @@ input UpdateReferenceDataTypeInput {
   referenceDataTypeId: String!
 }
 
-""""""
+"""
+"""
 input UpdateRoleInput {
   description: String
   displayName: String
@@ -4004,7 +4565,8 @@ input UpdateRoleInput {
   visible: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateSavedSearchInput {
   displayName: String
   filterJson: String
@@ -4013,13 +4575,15 @@ input UpdateSavedSearchInput {
   viewJson: String
 }
 
-""""""
+"""
+"""
 input UpdateSettingInput {
   key: String!
   value: String!
 }
 
-""""""
+"""
+"""
 input UpdateSystemFilterInput {
   calendarView: String
   childrenTypes: [String!]
@@ -4034,7 +4598,8 @@ input UpdateSystemFilterInput {
   tileView: String
 }
 
-""""""
+"""
+"""
 input UpdateThemeInput {
   applicationTitle: String
   faviconBatchId: String
@@ -4044,7 +4609,8 @@ input UpdateThemeInput {
   primaryColor: String
 }
 
-""""""
+"""
+"""
 input UpdateTypeFilterInput {
   calendarView: String
   childrenTypes: [String!]
@@ -4060,7 +4626,8 @@ input UpdateTypeFilterInput {
   tileView: String
 }
 
-""""""
+"""
+"""
 input UpdateUserInput {
   email: String
   firstName: String
@@ -4072,7 +4639,8 @@ input UpdateUserInput {
   visible: Boolean
 }
 
-""""""
+"""
+"""
 input UpdateUserProfileInput {
   avatarBatchId: String
   birthdate: Date
@@ -4086,7 +4654,8 @@ input UpdateUserProfileInput {
   timezone: String
 }
 
-""""""
+"""
+"""
 input UpdateViewInput {
   description: String
   displayName: String
@@ -4100,7 +4669,8 @@ input UpdateViewInput {
   viewMode: String
 }
 
-""""""
+"""
+"""
 input UpdateWorkbenchInput {
   description: String
   displayName: String
@@ -4109,7 +4679,8 @@ input UpdateWorkbenchInput {
   roles: [String]
 }
 
-""""""
+"""
+"""
 input UpdateWorkspaceInput {
   brandingJson: String
   calendarView: String
@@ -4130,7 +4701,8 @@ input UpdateWorkspaceInput {
   tileView: String
 }
 
-""""""
+"""
+"""
 type User {
   allGroups: [Group!]
   allRoles: [Role!]
@@ -4148,13 +4720,15 @@ type User {
   visible: Boolean
 }
 
-""""""
+"""
+"""
 type UserList {
   items: [User!]!
   pageInfo: PageInfo!
 }
 
-""""""
+"""
+"""
 type UserProfile {
   avatar: File
   birthdate: Date
@@ -4167,33 +4741,38 @@ type UserProfile {
   timezone: String
 }
 
-""""""
+"""
+"""
 input UserSelectionOptionsInput {
   dataObjectId: String
   dataTypeId: String
   propertyId: String!
 }
 
-""""""
+"""
+"""
 input ValidateApiSpecInput {
   openApiJson: String!
   parentId: String!
 }
 
-""""""
+"""
+"""
 input ValidateApiSpecsGroupInput {
   name: String!
   parentId: String!
 }
 
-""""""
+"""
+"""
 input ValidateBpmnMessageInput {
   id: String
   name: String!
   parentId: String!
 }
 
-""""""
+"""
+"""
 input ValidateDataObjectInput {
   objectId: String
   parentId: String
@@ -4202,40 +4781,46 @@ input ValidateDataObjectInput {
   typeId: String
 }
 
-""""""
+"""
+"""
 input ValidateDataPropertyInput {
   id: String
   name: String!
   parentId: String!
 }
 
-""""""
+"""
+"""
 input ValidateDataTypeInput {
   id: String
   name: String!
   parentId: String!
 }
 
-""""""
+"""
+"""
 input ValidateGroupInput {
   isNew: Boolean!
   name: String!
 }
 
-""""""
+"""
+"""
 input ValidateLifecycleInput {
   id: String
   name: String!
   parentId: String!
 }
 
-""""""
+"""
+"""
 input ValidateModuleInput {
   id: String
   name: String!
 }
 
-""""""
+"""
+"""
 input ValidatePostTemplateInput {
   bodyTemplate: String!
   id: String
@@ -4243,51 +4828,59 @@ input ValidatePostTemplateInput {
   subjectTemplate: String!
 }
 
-""""""
+"""
+"""
 input ValidateReferenceDataGroupInput {
   isNew: Boolean!
   name: String!
 }
 
-""""""
+"""
+"""
 input ValidateReferenceDataTypeInput {
   isNew: Boolean!
   name: String!
 }
 
-""""""
+"""
+"""
 input ValidateRoleInput {
   id: String
   name: String!
 }
 
-""""""
+"""
+"""
 input ValidateSystemFilterInput {
   id: String
   name: String!
   parentId: String!
 }
 
-""""""
+"""
+"""
 input ValidateTypeFilterInput {
   id: String
   name: String!
   parentId: String!
 }
 
-""""""
+"""
+"""
 input ValidateUserInput {
   isNew: Boolean!
   name: String!
 }
 
-""""""
+"""
+"""
 input ValidateViewInput {
   name: String!
   parentId: String!
 }
 
-""""""
+"""
+"""
 input ValidateWorkbenchInput {
   id: String
   menuJson: String
@@ -4295,14 +4888,16 @@ input ValidateWorkbenchInput {
   roles: [String]
 }
 
-""""""
+"""
+"""
 input ValidateWorkspaceInput {
   id: String
   name: String!
   parentId: String!
 }
 
-""""""
+"""
+"""
 type ValidationResults {
   dataType: DataType
   isValid: Boolean!
@@ -4310,7 +4905,8 @@ type ValidationResults {
   validation: [GenericValidationResult]
 }
 
-""""""
+"""
+"""
 type Version {
   majorVersion: Int!
   minorVersion: Int!
@@ -4318,32 +4914,37 @@ type Version {
   versionInfo: VersionInfo
 }
 
-""""""
+"""
+"""
 type VersionDisplayFormat {
   displayFormatEnum: VersionDisplayFormatEnum
   displayName: String
 }
 
-""""""
+"""
+"""
 enum VersionDisplayFormatEnum {
   LONG
   SHORT
 }
 
-""""""
+"""
+"""
 type VersionIncrement {
   displayName: String!
   version: String!
   versionIncrementEnum: VersionIncrementEnum!
 }
 
-""""""
+"""
+"""
 enum VersionIncrementEnum {
   MAJOR
   MINOR
 }
 
-""""""
+"""
+"""
 type VersionInfo {
   comment: String
   creationDate: Date
@@ -4351,19 +4952,22 @@ type VersionInfo {
   user: User
 }
 
-""""""
+"""
+"""
 type VersionQualifier {
   displayName: String!
   versionQualifierEnum: VersionQualifierEnum!
 }
 
-""""""
+"""
+"""
 enum VersionQualifierEnum {
   ACTUAL
   DRAFT
 }
 
-""""""
+"""
+"""
 type View implements MetadataObject {
   creationDate: Date!
   description(multilanguage: Boolean = false): String
@@ -4386,7 +4990,8 @@ type View implements MetadataObject {
   viewType: ViewType!
 }
 
-""""""
+"""
+"""
 input ViewCustomizationInput {
   contextId: String!
   filterJson: String
@@ -4394,13 +4999,15 @@ input ViewCustomizationInput {
   tableViewJson: String
 }
 
-""""""
+"""
+"""
 enum ViewManagementModeEnum {
   AUTO_MANAGEMENT
   USER_MANAGEMENT
 }
 
-""""""
+"""
+"""
 input ViewParametersInput {
   action: ActionEnum!
   dataTypeId: ID
@@ -4410,13 +5017,15 @@ input ViewParametersInput {
   viewId: String
 }
 
-""""""
+"""
+"""
 type ViewType {
   displayName: String!
   viewTypeEnum: ViewTypeEnum!
 }
 
-""""""
+"""
+"""
 enum ViewTypeEnum {
   CALENDAR
   CARD
@@ -4429,7 +5038,8 @@ enum ViewTypeEnum {
   TILE
 }
 
-""""""
+"""
+"""
 enum WorkStateEnum {
   COMPLETED
   ERROR
@@ -4437,7 +5047,8 @@ enum WorkStateEnum {
   SCHEDULED
 }
 
-""""""
+"""
+"""
 type Workbench implements MetadataObject {
   creationDate: Date!
   description(multilanguage: Boolean = false): String
@@ -4453,7 +5064,8 @@ type Workbench implements MetadataObject {
   status: MetadataObjectStatusEnum!
 }
 
-""""""
+"""
+"""
 type Workspace implements MetadataObject {
   brandingJson: String
   calendarView: String
@@ -4484,10 +5096,12 @@ type Workspace implements MetadataObject {
   views(includeArchived: Boolean, viewType: ViewTypeEnum): [View!]!
 }
 
-""""""
+"""
+"""
 type XmlAndModelDecoration {
   bpmnXml: String
   decorJson: String
   valid: Boolean!
   validationResultsJson: String
 }
+//

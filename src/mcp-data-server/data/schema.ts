@@ -21,7 +21,6 @@ export const BaseLowCodeSchema = z.object({
 
 export const CreateModuleSchema = BaseLowCodeSchema.extend({});
 
-// СХЕМА ДЛЯ ОБЫЧНОГО/ДОЧЕРНЕГО ТИПА ДАННЫХ
 export const CreateDataTypeSchema = BaseLowCodeSchema.extend({
   parentId: z
     .string()
