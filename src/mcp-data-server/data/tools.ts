@@ -1,84 +1,35 @@
 import { McpServer } from '@modelcontextprotocol/server';
-import {
-  handleCreateBpmnDataType,
-  handleCreateDataType,
-  handleCreateDataTypeField,
-  handleCreateModule,
-  handleCreateModuleField,
-} from './handlers.js';
-import {
-  CreateBpmnDataTypeSchema,
-  CreateDataTypeFieldSchema,
-  CreateDataTypeSchema,
-  CreateModuleFieldSchema,
-  CreateModuleSchema,
-} from './schema.js';
-import { defineTool } from '../../shared/utils/base.js';
+import { moduleTools } from './module/handlers.js';
+import { datatypeTools } from './datatype/handlers.js';
+import { lifecycleTools } from './lifecycle/handlers.js';
+import { workspaceTools } from './workspace/handlers.js';
+import { fieldTools } from './fields/handlers.js';
+import { referenceTools } from './references/handlers.js';
+import { coreTools } from './core/handlers.js';
 import { ChatSessionReportSchema, ChatSessionSchema } from './agent/schema.js';
 import { historyService } from '../services/history.service.js';
 
-const tools = [
-  defineTool(
-    'data_create_module',
-    {
-      title: 'Create Module',
-      description:
-        'Создает новый модуль (верхнеуровневый контейнер). При создании модуля автоматически создается дефолтная рабочая область. Не создавай несколько модулей за раз.',
-      inputSchema: CreateModuleSchema,
-    },
-    handleCreateModule,
-  ),
-  defineTool(
-    'data_create_data_type',
-    {
-      title: 'Create DataType',
-      description:
-        'Создает новый тип данных (сущность) внутри модуля. Помни: тип не существует отдельно от модуля. Укажи parentId созданного модуля.',
-      inputSchema: CreateDataTypeSchema,
-    },
-    handleCreateDataType,
-  ),
-  defineTool(
-    'data_create_bpmn_data_type',
-    {
-      title: 'Create BpmnDataType',
-      description:
-        'Создает новый BPMN бизнес-процесс (автоматизацию логики, воркфлоу) внутри указанного модуля. Помни: тип не существует отдельно от модуля. Укажи parentId созданного модуля.',
-      inputSchema: CreateBpmnDataTypeSchema,
-    },
-    handleCreateBpmnDataType,
-  ),
-  defineTool(
-    'data_create_data_type_field',
-    {
-      title: 'Create DataTypeField',
-      description:
-        'Создает специфичное поле внутри конкретного Типа Данных. Вызывай для описания уникальных атрибутов объекта. Укажи dataTypeId и propertyType.',
-      inputSchema: CreateDataTypeFieldSchema,
-    },
-    handleCreateDataTypeField,
-  ),
-  defineTool(
-    'data_create_module_field',
-    {
-      title: 'Create Module(common) Field',
-      description:
-        'Создает ОБЩЕЕ (сквозное) поле на уровне Модуля. Все типы данных внутри этого модуля автоматически унаследуют это поле. Укажи moduleId и propertyType.',
-      inputSchema: CreateModuleFieldSchema,
-    },
-    handleCreateModuleField,
-  ),
-  defineTool(
-    'save_tasks_queue',
-    {
+const dataTools = [
+  ...moduleTools,
+  ...datatypeTools,
+  ...lifecycleTools,
+  ...workspaceTools,
+  ...fieldTools,
+  ...referenceTools,
+  ...coreTools,
+];
+
+const sessionTools = [
+  {
+    name: 'save_tasks_queue',
+    config: {
       title: 'Save Task Queue',
       description:
-        'Регистрирует текущую очередь задач и переключает ее в CHUNK_PROCESSING',
+        'Регистрирует текущую очередь задач и переключает сессию в CHUNK_PROCESSING',
       inputSchema: ChatSessionSchema as any,
     },
-    async ({ sessionId, tasks }) => {
+    cb: async ({ sessionId, tasks }: { sessionId: string; tasks: any[] }) => {
       await historyService.startChunkProcessing(sessionId, tasks);
-
       return {
         content: [
           {
@@ -88,19 +39,23 @@ const tools = [
         ],
       };
     },
-  ),
-  defineTool(
-    'complete_current_task',
-    {
+  },
+  {
+    name: 'complete_current_task',
+    config: {
       title: 'Report Current Step from Queue',
-      description: 'Делает отчет о проделанном шаге',
+      description:
+        'Делает отчет о проделанном шаге и переходит к следующему.',
       inputSchema: ChatSessionReportSchema as any,
     },
-    async ({ sessionId, summary }) => {
+    cb: async ({
+      sessionId,
+      summary,
+    }: {
+      sessionId: string;
+      summary: string;
+    }) => {
       const hasNext = await historyService.moveToNextStep(sessionId);
-
-      // 2. Вместо архивации всего чата, мы просто возвращаем ИИ инструкцию
-      // о том, что статус зафиксирован. OpenCode скормит этот текст модели.
       let statusText = `[УСПЕХ]: Задача успешно выполнена и зафиксирована: ${summary}.\n`;
 
       if (hasNext) {
@@ -114,11 +69,13 @@ const tools = [
         content: [{ type: 'text', text: statusText }],
       };
     },
-  ),
+  },
 ];
 
+const allTools = [...dataTools, ...sessionTools];
+
 export default function registerDataLayerTools(server: McpServer) {
-  tools.forEach((tool) => {
+  allTools.forEach((tool) => {
     server.registerTool(tool.name, tool.config, tool.cb as any);
   });
 }
