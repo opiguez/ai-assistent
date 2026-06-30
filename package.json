@@ -8,8 +8,7 @@
     "codegen": "bash codegen.sh",
     "build": "tsc",
     "start:server": "node dist/mcp-data-server/mcp-server.js",
-    "dev:server": "tsx src/mcp-data-server/mcp-server.ts",
-    "dev:agent": "cd src/openagent && opencode web --port 3000 --hostname 127.0.0.1"
+    "dev:server": "tsx src/mcp-data-server/mcp-server.ts"
   },
   "dependencies": {
     "@genql/runtime": "^2.10.0",
