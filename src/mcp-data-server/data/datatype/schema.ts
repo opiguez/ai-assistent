@@ -16,7 +16,9 @@ export const CreateDataTypeSchema = BaseLowCodeSchema.extend({
   canHaveChildren: z
     .boolean()
     .optional()
-    .describe('Флаг древовидной структуры. Если не указан — сервер устанавливает сам.'),
+    .describe(
+      'Флаг древовидной структуры. Могут ли на сущности создаваться дочерние сущности',
+    ),
   canHaveDiscussion: z
     .boolean()
     .default(false)
@@ -44,13 +46,13 @@ export const CreateBpmnDataTypeSchema = BaseLowCodeSchema.extend({
   baseType: z
     .string()
     .optional()
-    .describe(
-      'ID базового BPMN-типа для наследования общих полей.',
-    ),
+    .describe('ID базового BPMN-типа для наследования общих полей.'),
   canHaveChildren: z
     .boolean()
     .optional()
-    .describe('Флаг древовидной структуры. Если не указан — сервер устанавливает сам.'),
+    .describe(
+      'Флаг древовидной структуры. Если не указан — сервер устанавливает сам.',
+    ),
   canHaveDiscussion: z
     .boolean()
     .default(false)
@@ -75,6 +77,12 @@ export const UpdateDataTypeSchema = z.object({
   description: z.string().optional().describe('Новое описание'),
   canHaveDiscussion: z.boolean().optional(),
   versionable: z.boolean().optional(),
+  childrenTypes: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Массив ID разрешенных типов данных для создания внутри. Пустой массив — разрешены все типы.',
+    ),
 });
 
 export const GetDataTypeFieldsSchema = z.object({

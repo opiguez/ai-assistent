@@ -21,4 +21,10 @@ export const UpdateWorkspaceSchema = z.object({
   id: z.string().describe('ID рабочей области'),
   displayName: z.string().optional().describe('Новое название'),
   description: z.string().optional().describe('Новое описание'),
+  childrenTypes: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Массив ID разрешенных типов данных для создания внутри рабочей области. Пустой массив — разрешены все типы.',
+    ),
 });

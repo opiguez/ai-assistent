@@ -25,7 +25,7 @@ const entityTools = buildEntityTools({
     name: true,
     displayName: true,
     description: true,
-    canHaveChildren: true,
+    canHaveChildren: false,
     versionable: true,
     properties: {
       id: true,
@@ -108,7 +108,7 @@ const handleCreateDataType = async (args: CreateDataTypeArgs) => {
     }
     const res = await rabisClient.chain.mutation
       .createDataType({
-        dataType: dataTypeInput,
+        dataType: dataTypeInput as any,
       })
       .get({ id: true, name: true });
     return success(res.id, 'Тип данных успешно создан');
@@ -133,11 +133,11 @@ const handleCreateBpmnDataType = async (args: CreateBpmnDataTypeArgs) => {
       brandingJson: args.brandingJson,
     };
     if (args.canHaveChildren !== undefined) {
-      bpmnInput.canHaveChildren = args.canHaveChildren;
+      bpmnInput.canHaveChildren = true;
     }
     const res = await rabisClient.chain.mutation
       .createBpmnProcessDataType({
-        dataType: bpmnInput,
+        dataType: bpmnInput as any,
       })
       .get({ id: true, name: true });
     return success(res.id, 'BPMN-тип данных успешно создан');
