@@ -16,45 +16,13 @@ import type { ToolDef } from '../core/entity-builder.js';
 type CreateRefGroupArgs = z.infer<typeof CreateReferenceDataGroupSchema>;
 const handleCreateRefGroup = async (args: CreateRefGroupArgs) => {
   try {
-    let effectiveParentGroupId = args.parentGroupId;
-
-    // Если указан parentModuleId, резолвим _rdm workspace модуля
-    if (args.parentModuleId && !args.parentGroupId) {
-      try {
-        const moduleData = await rabisClient.chain.query
-          .module({ id: args.parentModuleId })
-          .get({ name: true, workspaces: { id: true, name: true } });
-
-        let rdmWorkspace = (moduleData.workspaces || []).find(
-          (w: any) => w.name === '_rdm',
-        );
-
-        if (!rdmWorkspace) {
-          // Создаём workspace _rdm в модуле
-          rdmWorkspace = await rabisClient.chain.mutation
-            .createWorkspace({
-              workspace: {
-                displayName: 'Справочники',
-                name: '_rdm',
-                description: 'Рабочая область для справочников модуля',
-                parentId: args.parentModuleId,
-              },
-            })
-            .get({ id: true, name: true });
-        }
-        effectiveParentGroupId = rdmWorkspace.id;
-      } catch {
-        // Если не удалось зарезолвить — используем переданный parentGroupId как есть
-      }
-    }
-
     const res = await rabisClient.chain.mutation
       .createReferenceDataGroup({
         referenceDataGroup: {
           displayName: toLocalizedJson(args.displayName),
           name: args.name,
           description: toLocalizedJson(args.description),
-          parentGroupId: effectiveParentGroupId,
+          parentGroupId: args.parentGroupId,
         },
       })
       .get({ id: true, name: true });
@@ -221,7 +189,7 @@ export const referenceTools: ToolDef[] = [
     {
       title: 'Create Reference Data Group',
       description:
-        'Создаёт группу справочников. parentGroupId — ID родительской группы (получи через data_get_reference_groups).',
+        'Создаёт группу справочников. parentGroupId — ID родительской группы. Для корневой группы модуля всегда используй "/modules/_rdm/workspaces/_rdm_workspace". Для подгрупп — ID корневой группы.',
       inputSchema: CreateReferenceDataGroupSchema,
     },
     handleCreateRefGroup,

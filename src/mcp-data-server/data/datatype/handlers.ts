@@ -209,7 +209,7 @@ export const datatypeTools: ToolDef[] = [
     {
       title: 'Create DataType',
       description:
-        'Создаёт новый тип данных (сущность) внутри модуля. Lifecycle резолвится автоматически из модуля.',
+        'Создаёт новый ОБЫЧНЫЙ тип данных (не BPMN) внутри модуля. Lifecycle резолвится автоматически из модуля. Для BPMN-типа используй data_create_bpmn_data_type. Обычный тип — без workflow, для простых справочных сущностей.',
       inputSchema: CreateDataTypeSchema,
     },
     handleCreateDataType,
@@ -219,7 +219,7 @@ export const datatypeTools: ToolDef[] = [
     {
       title: 'Create Bpmn DataType',
       description:
-        'Создаёт новый BPMN бизнес-процесс (автоматизацию логики, workflow) внутри указанного модуля.',
+        'Создаёт новый BPMN-тип данных (с бизнес-процессами и workflow) внутри указанного модуля. Для обычного типа данных (без workflow) используй data_create_data_type.',
       inputSchema: CreateBpmnDataTypeSchema,
     },
     handleCreateBpmnDataType,

@@ -82,5 +82,5 @@
      - Для update-инструментов (data_update_*) displayName и description можно передавать как plain-строкой (инструмент сам обернёт в JSON с локалями), так и готовым JSON для указания конкретных локалей:
        {"de":null,"ru":"Русское название","en":null,"es":null}
      - Для справочников (data_create_reference_data_group, data_create_reference_data_type):
-       • parentGroupId по умолчанию — корневой workspace справочников: `/modules/_rdm/workspaces/_rdm_workspace`
+        • parentGroupId для корневой группы модуля: `/modules/_rdm/workspaces/_rdm_workspace`. Для подгрупп — ID корневой группы (полученный при её создании)
        • Группу называй именем модуля (напр. spaOrderAccountingData)
