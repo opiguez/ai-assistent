@@ -38,17 +38,21 @@ export const error = (e: any, fallback: string) => {
   };
 };
 
-/** 
+/**
  * Преобразует строку в JSON с локалями для Nuxeo.
  * Nuxeo ожидает displayName/description в формате: {"de":null,"ru":"значение","en":null,"es":null}
  * Если передана уже строка JSON с полями de/ru/en/es — возвращается as-is.
  */
-export function toLocalizedJson(value: string | undefined): string | undefined {
-  if (!value) return undefined;
+export function toLocalizedJson(value: string | undefined): string {
+  if (!value) return '';
   // Если уже передан JSON-объект с локалями — не оборачиваем повторно
   try {
     const parsed = JSON.parse(value);
-    if (parsed && typeof parsed === 'object' && ('ru' in parsed || 'de' in parsed)) {
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      ('ru' in parsed || 'de' in parsed)
+    ) {
       return value;
     }
   } catch {}
@@ -57,7 +61,10 @@ export function toLocalizedJson(value: string | undefined): string | undefined {
 
 export function deriveUpdateSchema<T extends z.ZodRawShape>(
   createSchema: z.ZodObject<T>,
-  options?: { omitFields?: string[]; extraFields?: Record<string, z.ZodTypeAny> },
+  options?: {
+    omitFields?: string[];
+    extraFields?: Record<string, z.ZodTypeAny>;
+  },
 ) {
   const omit = new Set(options?.omitFields || ['parentId']);
   const shape = createSchema.shape as any as Record<string, z.ZodTypeAny>;
