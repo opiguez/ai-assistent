@@ -45,3 +45,18 @@ export const FieldTypeEnum = z
     'ATTRIBUTES',
   ])
   .describe('Системный тип данных поля согласно GraphQL PropertyTypeEnum.');
+
+export const ModuleIdSchema = z.object({
+  moduleId: z.string().describe('ID модуля'),
+});
+
+export const ValidationResultsSchema = z.object({
+  severity: z
+    .string()
+    .optional()
+    .describe('Фильтр по severity (опционально)'),
+});
+
+export const PublishSchema = z.object({
+  comment: z.string().describe('Комментарий к публикации'),
+});
