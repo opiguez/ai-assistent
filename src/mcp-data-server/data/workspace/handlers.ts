@@ -2,8 +2,9 @@ import { z } from 'zod';
 import { CreateWorkspaceSchema, UpdateWorkspaceSchema } from './schema.js';
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
 import { success, error } from '../core/utils.js';
+import { DeleteByIdSchema } from '../core/schema.js';
 import { defineTool } from '../../../shared/utils/base.js';
-import { buildEntityTools, type ToolDef } from '../core/entity-builder.js';
+import { buildEntityTools, buildDeleteHandler, type ToolDef } from '../core/entity-builder.js';
 
 // ─────── Entity tools (GET, LIST, UPDATE) ───────
 const entityTools = buildEntityTools({
@@ -50,6 +51,8 @@ const handleCreateWorkspace = async (args: CreateWorkspaceArgs) => {
   }
 };
 
+const handleDeleteWorkspace = buildDeleteHandler('Рабочая область');
+
 export const workspaceTools: ToolDef[] = [
   ...entityTools,
   defineTool(
@@ -62,4 +65,9 @@ export const workspaceTools: ToolDef[] = [
     },
     handleCreateWorkspace,
   ),
+  defineTool('data_delete_workspace', {
+    title: 'Delete Workspace',
+    description: 'Удаляет рабочую область по её ID.',
+    inputSchema: DeleteByIdSchema,
+  }, handleDeleteWorkspace),
 ];

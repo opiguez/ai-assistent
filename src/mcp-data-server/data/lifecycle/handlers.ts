@@ -2,8 +2,9 @@ import { z } from 'zod';
 import { CreateLifecycleSchema, UpdateLifecycleSchema } from './schema.js';
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
 import { success, error } from '../core/utils.js';
+import { DeleteByIdSchema } from '../core/schema.js';
 import { defineTool } from '../../../shared/utils/base.js';
-import { buildEntityTools, type ToolDef } from '../core/entity-builder.js';
+import { buildEntityTools, buildDeleteHandler, type ToolDef } from '../core/entity-builder.js';
 
 // ─────── Entity tools (GET, LIST, UPDATE) ───────
 const entityTools = buildEntityTools({
@@ -48,6 +49,8 @@ const handleCreateLifecycle = async (args: CreateLifecycleArgs) => {
   }
 };
 
+const handleDeleteLifecycle = buildDeleteHandler('Жизненный цикл');
+
 export const lifecycleTools: ToolDef[] = [
   ...entityTools,
   defineTool(
@@ -60,4 +63,9 @@ export const lifecycleTools: ToolDef[] = [
     },
     handleCreateLifecycle,
   ),
+  defineTool('data_delete_lifecycle', {
+    title: 'Delete Lifecycle',
+    description: 'Удаляет жизненный цикл по его ID.',
+    inputSchema: DeleteByIdSchema,
+  }, handleDeleteLifecycle),
 ];

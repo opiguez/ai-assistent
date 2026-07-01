@@ -1,7 +1,9 @@
 import { CreateModuleSchema, UpdateModuleSchema } from './schema.js';
-import { buildEntityTools, type ToolDef } from '../core/entity-builder.js';
+import { DeleteByIdSchema } from '../core/schema.js';
+import { defineTool } from '../../../shared/utils/base.js';
+import { buildEntityTools, buildDeleteHandler, type ToolDef } from '../core/entity-builder.js';
 
-export const moduleTools: ToolDef[] = buildEntityTools({
+const entityTools = buildEntityTools({
   key: 'module',
   displayName: 'Module',
   displayNameRu: 'Модуль',
@@ -27,3 +29,14 @@ export const moduleTools: ToolDef[] = buildEntityTools({
   },
   listConfig: { type: 'applicationQuery', parentField: 'modules' },
 });
+
+const handleDeleteModule = buildDeleteHandler('Модуль');
+
+export const moduleTools: ToolDef[] = [
+  ...entityTools,
+  defineTool('data_delete_module', {
+    title: 'Delete Module',
+    description: 'Удаляет модуль по его ID.',
+    inputSchema: DeleteByIdSchema,
+  }, handleDeleteModule),
+];

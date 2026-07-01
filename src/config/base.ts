@@ -25,8 +25,8 @@ if (!process.env.OLLAMA_MODEL) {
 }
 
 const envSchema = z.object({
-  OLLAMA_URL: z.string().min(1, 'Адрес Ollama сервера обязателен'),
-  OLLAMA_MODEL: z.string().min(1, 'Модель Ollama обязательна'),
+  //OLLAMA_URL: z.string().min(1, 'Адрес Ollama сервера обязателен'),
+  //OLLAMA_MODEL: z.string().min(1, 'Модель Ollama обязательна'),
   PLATFORM_USERNAME: z.string().min(1),
   PLATFORM_PASSWORD: z.string().min(1),
   GRAPHQL_ADRESS: z.url('Некорректный URL для GRAPHQL_URL'),

@@ -15,8 +15,8 @@ export const CreateDataTypeSchema = BaseLowCodeSchema.extend({
     ),
   canHaveChildren: z
     .boolean()
-    .default(false)
-    .describe('Флаг древовидной структуры.'),
+    .optional()
+    .describe('Флаг древовидной структуры. Если не указан — сервер устанавливает сам.'),
   canHaveDiscussion: z
     .boolean()
     .default(false)
@@ -49,8 +49,8 @@ export const CreateBpmnDataTypeSchema = BaseLowCodeSchema.extend({
     ),
   canHaveChildren: z
     .boolean()
-    .default(false)
-    .describe('Флаг древовидной структуры.'),
+    .optional()
+    .describe('Флаг древовидной структуры. Если не указан — сервер устанавливает сам.'),
   canHaveDiscussion: z
     .boolean()
     .default(false)
@@ -63,6 +63,10 @@ export const CreateBpmnDataTypeSchema = BaseLowCodeSchema.extend({
     .boolean()
     .default(false)
     .describe('Наследовать BPMN-схему от родительского типа.'),
+  brandingJson: z
+    .string()
+    .optional()
+    .describe('JSON кастомизации брендинга BPMN-типа данных.'),
 });
 
 export const UpdateDataTypeSchema = z.object({
@@ -78,5 +82,9 @@ export const GetDataTypeFieldsSchema = z.object({
 });
 
 export const DeleteFieldSchema = z.object({
-  fieldId: z.string().describe('ID поля для удаления'),
+  id: z.string().describe('ID поля для удаления'),
+});
+
+export const DeleteDataTypeSchema = z.object({
+  id: z.string().describe('ID типа данных для удаления'),
 });

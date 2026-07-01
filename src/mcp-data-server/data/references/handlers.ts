@@ -7,7 +7,7 @@ import {
   UpdateReferenceDataTypeSchema,
 } from './schema.js';
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
-import { success, error, successList } from '../core/utils.js';
+import { success, error, successList, toLocalizedJson } from '../core/utils.js';
 import { defineTool } from '../../../shared/utils/base.js';
 import type { ToolDef } from '../core/entity-builder.js';
 
@@ -16,13 +16,45 @@ import type { ToolDef } from '../core/entity-builder.js';
 type CreateRefGroupArgs = z.infer<typeof CreateReferenceDataGroupSchema>;
 const handleCreateRefGroup = async (args: CreateRefGroupArgs) => {
   try {
+    let effectiveParentGroupId = args.parentGroupId;
+
+    // Если указан parentModuleId, резолвим _rdm workspace модуля
+    if (args.parentModuleId && !args.parentGroupId) {
+      try {
+        const moduleData = await rabisClient.chain.query
+          .module({ id: args.parentModuleId })
+          .get({ name: true, workspaces: { id: true, name: true } });
+
+        let rdmWorkspace = (moduleData.workspaces || []).find(
+          (w: any) => w.name === '_rdm',
+        );
+
+        if (!rdmWorkspace) {
+          // Создаём workspace _rdm в модуле
+          rdmWorkspace = await rabisClient.chain.mutation
+            .createWorkspace({
+              workspace: {
+                displayName: 'Справочники',
+                name: '_rdm',
+                description: 'Рабочая область для справочников модуля',
+                parentId: args.parentModuleId,
+              },
+            })
+            .get({ id: true, name: true });
+        }
+        effectiveParentGroupId = rdmWorkspace.id;
+      } catch {
+        // Если не удалось зарезолвить — используем переданный parentGroupId как есть
+      }
+    }
+
     const res = await rabisClient.chain.mutation
       .createReferenceDataGroup({
         referenceDataGroup: {
           displayName: args.displayName,
           name: args.name,
           description: args.description,
-          parentGroupId: args.parentGroupId,
+          parentGroupId: effectiveParentGroupId,
         },
       })
       .get({ id: true, name: true });
@@ -35,9 +67,12 @@ const handleCreateRefGroup = async (args: CreateRefGroupArgs) => {
 type UpdateRefGroupArgs = z.infer<typeof UpdateReferenceDataGroupSchema>;
 const handleUpdateRefGroup = async (args: UpdateRefGroupArgs) => {
   try {
+    const localized = { ...args };
+    if (localized.displayName) localized.displayName = toLocalizedJson(args.displayName);
+    if (localized.description) localized.description = toLocalizedJson(args.description);
     const res = await rabisClient.chain.mutation
       .updateReferenceDataGroup({
-        referenceDataGroup: args,
+        referenceDataGroup: localized,
       })
       .get({ id: true, name: true });
     return success(res.id, 'Группа справочников обновлена');
@@ -73,9 +108,12 @@ const handleCreateRefDataType = async (args: CreateRefDataTypeArgs) => {
 type UpdateRefDataTypeArgs = z.infer<typeof UpdateReferenceDataTypeSchema>;
 const handleUpdateRefDataType = async (args: UpdateRefDataTypeArgs) => {
   try {
+    const localized = { ...args };
+    if (localized.displayName) localized.displayName = toLocalizedJson(args.displayName);
+    if (localized.description) localized.description = toLocalizedJson(args.description);
     const res = await rabisClient.chain.mutation
       .updateReferenceDataType({
-        referenceDataType: args,
+        referenceDataType: localized,
       })
       .get({ id: true, name: true });
     return success(res.id, 'Справочник обновлён');

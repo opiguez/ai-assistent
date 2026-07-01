@@ -6,7 +6,7 @@
   "mcp": {
     "web-mcp_data": {
       "type": "remote",
-      "url": "http://localhost:3001/mcp",
+      "url": "http://127.0.0.1:3002/mcp",
       "enabled": true
     }
   },
@@ -16,19 +16,20 @@
       "mode": "primary",
       "default": true,
       "agents": ["plan-execute", "build-execute"],
+      "allowedTools": ["data_*", "save_tasks_queue", "complete_current_task"],
       "prompt": "Ты — координатор проектов low-code системы.\nТвой workflow:\n1. Выслушай задачу пользователя.\n2. Вызови @plan-execute для декомпозиции ТЗ в очередь задач (он сохранит её через MCP).\n3. Дождись ответа plan-execute и покажи пользователю готовый план:\n   - список задач по слоям (DATA, BPMN, UI)\n   - спроси утверждения\n4. Если пользователь утвердил — вызови @build-execute.\n   Передай ему контекст: какие задачи из очереди нужно выполнить.\n5. Если пользователь внёс правки — вернись к @plan-execute с уточнениями.\n6. После завершения build-execute покажи пользователю итоговый отчёт."
     },
     "plan-execute": {
       "description": "Веб-Архитектор. Декомпозиция ТЗ в очередь задач",
       "mode": "subagent",
       "prompt": "{file:./src/promts/planner.md}",
-      "allowedTools": ["web-mcp_data_*"]
+      "allowedTools": ["data_*", "save_tasks_queue"]
     },
     "build-execute": {
       "description": "Веб-Инженер. Выполняет задачи из очереди по HTTP",
       "mode": "subagent",
       "prompt": "{file:./src/promts/engineer.md}",
-      "allowedTools": ["web-mcp_data_*"]
+      "allowedTools": ["data_*", "complete_current_task"]
     }
   },
   "default_agent": "orchestrator"

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
 import { defineTool } from '../../../shared/utils/base.js';
-import { success, error, successList, deriveUpdateSchema } from './utils.js';
+import { success, error, successList, deriveUpdateSchema, toLocalizedJson } from './utils.js';
 
 export type ToolDef = {
   name: string;
@@ -38,6 +38,17 @@ export interface EntityConfig {
 
 function mutationInputKey(mutation: string): string {
   return mutation.replace(/^(create|update)/, '').replace(/^./, (c) => c.toLowerCase());
+}
+
+export function buildDeleteHandler(labelRu: string) {
+  return async (args: { id: string }) => {
+    try {
+      await rabisClient.chain.mutation.deleteMetaDataObject({ id: args.id });
+      return success(args.id, `${labelRu} удалён`);
+    } catch (e) {
+      return error(e, `Ошибка удаления ${labelRu.toLowerCase()}`);
+    }
+  };
 }
 
 export function buildEntityTools(config: EntityConfig): ToolDef[] {
@@ -140,7 +151,10 @@ export function buildEntityTools(config: EntityConfig): ToolDef[] {
           },
           async (args: any) => {
             try {
-              const res = await (rabisClient.chain.mutation as any)[config.updateMutation!]({ [inputKey]: args }).get({ id: true, name: true });
+              const localizedArgs = { ...args };
+              if (localizedArgs.displayName) localizedArgs.displayName = toLocalizedJson(args.displayName);
+              if (localizedArgs.description) localizedArgs.description = toLocalizedJson(args.description);
+              const res = await (rabisClient.chain.mutation as any)[config.updateMutation!]({ [inputKey]: localizedArgs }).get({ id: true, name: true });
               return success(res.id, `${config.displayNameRu} обновлён`);
             } catch (e) {
               return error(e, `Ошибка обновления ${config.displayNameRu}`);

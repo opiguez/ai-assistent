@@ -50,7 +50,8 @@ const resources = [
     uri: 'lowcode://schema/state' as const,
     config: {
       title: 'GraphQL Schema State',
-      description: 'Актуальный слепок структуры системы: модули, типы данных, поля, жизненные циклы, рабочие области.',
+      description:
+        'Актуальный слепок структуры системы: модули, типы данных, поля, жизненные циклы, рабочие области.',
       mimeType: 'application/json',
     },
     read: async (uri: URL) => {
@@ -69,7 +70,14 @@ const resources = [
           contents: [
             {
               uri: uri.href,
-              text: JSON.stringify({ error: 'Failed to fetch schema state', details: (e as Error).message }, null, 2),
+              text: JSON.stringify(
+                {
+                  error: 'Failed to fetch schema state',
+                  details: (e as Error).message,
+                },
+                null,
+                2,
+              ),
             },
           ],
         };

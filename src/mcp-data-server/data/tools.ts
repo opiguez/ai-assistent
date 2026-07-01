@@ -60,7 +60,7 @@ const sessionTools = [
 
       if (hasNext) {
         const nextTask = await historyService.getCurrentTask(sessionId);
-        statusText += `Очередь продолжается. Следующая задача: ${nextTask?.description}. Вызови инструмент prepare_task_context для обновления контекста инженера.`;
+        statusText += `Очередь продолжается. Следующая задача: ${nextTask?.description}. Используй $prompt:prepare_task_context для обновления контекста инженера.`;
       } else {
         statusText += `Ура! Все задачи из очереди ТЗ полностью выполнены. Система возвращена в режим NORMAL_CHAT.`;
       }

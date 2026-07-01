@@ -14,7 +14,7 @@ import {
   UpdateUsersFieldSchema, UpdateSequenceFieldSchema, UpdateAttributesFieldSchema,
 } from './schema.js';
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
-import { success, error } from '../core/utils.js';
+import { success, error, toLocalizedJson } from '../core/utils.js';
 import { defineTool } from '../../../shared/utils/base.js';
 import type { ToolDef } from '../core/entity-builder.js';
 
@@ -23,7 +23,10 @@ function buildFieldUpdateHandler(mutation: string, label: string) {
   const inputKey = 'dataProperty';
   return async (a: any) => {
     try {
-      const r = await (rabisClient.chain.mutation as any)[mutation]({ [inputKey]: a }).get({ id: true, name: true });
+      const localized = { ...a };
+      if (localized.displayName) localized.displayName = toLocalizedJson(a.displayName);
+      if (localized.description) localized.description = toLocalizedJson(a.description);
+      const r = await (rabisClient.chain.mutation as any)[mutation]({ [inputKey]: localized }).get({ id: true, name: true });
       return success(r.id, `${label} обновлено`);
     } catch (e) { return error(e, `Ошибка обновления ${label.toLowerCase()}`); }
   };

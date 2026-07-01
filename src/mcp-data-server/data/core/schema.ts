@@ -19,6 +19,10 @@ export const BaseLowCodeSchema = z.object({
     ),
 });
 
+export const DeleteByIdSchema = z.object({
+  id: z.string().describe('ID сущности для удаления'),
+});
+
 export const FieldTypeEnum = z
   .enum([
     'STRING',

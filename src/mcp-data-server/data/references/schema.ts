@@ -7,6 +7,12 @@ export const CreateReferenceDataGroupSchema = BaseLowCodeSchema.extend({
     .describe(
       'ID родительской группы справочников. Получи корневые группы через data_get_reference_groups.',
     ),
+  parentModuleId: z
+    .string()
+    .optional()
+    .describe(
+      'ID модуля, к которому привязать группу справочников. Если указан, группа создаётся в workspace _rdm модуля.',
+    ),
 });
 
 export const CreateReferenceDataTypeSchema = BaseLowCodeSchema.extend({

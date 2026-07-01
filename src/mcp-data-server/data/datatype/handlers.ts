@@ -5,6 +5,7 @@ import {
   UpdateDataTypeSchema,
   GetDataTypeFieldsSchema,
   DeleteFieldSchema,
+  DeleteDataTypeSchema,
 } from './schema.js';
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
 import { success, error, successList } from '../core/utils.js';
@@ -90,21 +91,24 @@ const handleCreateDataType = async (args: CreateDataTypeArgs) => {
         ],
       };
     }
+    const dataTypeInput: Record<string, any> = {
+      displayName: args.displayName,
+      name: args.name,
+      description: args.description,
+      parentId: args.parentId,
+      baseType: args.baseType,
+      canHaveDiscussion: args.canHaveDiscussion,
+      rootVersionable: args.rootVersionable,
+      inheritBpmnScheme: args.inheritBpmnScheme,
+      brandingJson: args.brandingJson,
+      lifecycle: lifecyclePath,
+    };
+    if (args.canHaveChildren !== undefined) {
+      dataTypeInput.canHaveChildren = args.canHaveChildren;
+    }
     const res = await rabisClient.chain.mutation
       .createDataType({
-        dataType: {
-          displayName: args.displayName,
-          name: args.name,
-          description: args.description,
-          parentId: args.parentId,
-          baseType: args.baseType,
-          canHaveChildren: args.canHaveChildren,
-          canHaveDiscussion: args.canHaveDiscussion,
-          rootVersionable: args.rootVersionable,
-          inheritBpmnScheme: args.inheritBpmnScheme,
-          brandingJson: args.brandingJson,
-          lifecycle: lifecyclePath,
-        },
+        dataType: dataTypeInput,
       })
       .get({ id: true, name: true });
     return success(res.id, 'Тип данных успешно создан');
@@ -117,19 +121,23 @@ const handleCreateDataType = async (args: CreateDataTypeArgs) => {
 type CreateBpmnDataTypeArgs = z.infer<typeof CreateBpmnDataTypeSchema>;
 const handleCreateBpmnDataType = async (args: CreateBpmnDataTypeArgs) => {
   try {
+    const bpmnInput: Record<string, any> = {
+      displayName: args.displayName,
+      name: args.name,
+      description: args.description,
+      parentId: args.parentId,
+      baseType: args.baseType,
+      canHaveDiscussion: args.canHaveDiscussion,
+      rootVersionable: args.rootVersionable,
+      inheritBpmnScheme: args.inheritBpmnScheme,
+      brandingJson: args.brandingJson,
+    };
+    if (args.canHaveChildren !== undefined) {
+      bpmnInput.canHaveChildren = args.canHaveChildren;
+    }
     const res = await rabisClient.chain.mutation
       .createBpmnProcessDataType({
-        dataType: {
-          displayName: args.displayName,
-          name: args.name,
-          description: args.description,
-          parentId: args.parentId,
-          baseType: args.baseType,
-          canHaveChildren: args.canHaveChildren,
-          canHaveDiscussion: args.canHaveDiscussion,
-          rootVersionable: args.rootVersionable,
-          inheritBpmnScheme: args.inheritBpmnScheme,
-        },
+        dataType: bpmnInput,
       })
       .get({ id: true, name: true });
     return success(res.id, 'BPMN-тип данных успешно создан');
@@ -168,14 +176,27 @@ const handleGetDataTypeFields = async (args: GetDataTypeFieldsArgs) => {
   }
 };
 
+// ─────── DELETE DataType ───────
+type DeleteDataTypeArgs = z.infer<typeof DeleteDataTypeSchema>;
+const handleDeleteDataType = async (args: DeleteDataTypeArgs) => {
+  try {
+    await rabisClient.chain.mutation.deleteMetaDataObject({
+      id: args.id,
+    });
+    return success(args.id, 'Тип данных удалён');
+  } catch (e) {
+    return error(e, 'Ошибка удаления типа данных');
+  }
+};
+
 // ─────── DELETE Field ───────
 type DeleteFieldArgs = z.infer<typeof DeleteFieldSchema>;
 const handleDeleteField = async (args: DeleteFieldArgs) => {
   try {
     await rabisClient.chain.mutation.deleteMetaDataObject({
-      id: args.fieldId,
+      id: args.id,
     });
-    return success(args.fieldId, 'Поле удалено');
+    return success(args.id, 'Поле удалено');
   } catch (e) {
     return error(e, 'Ошибка удаления поля');
   }
@@ -204,7 +225,7 @@ export const datatypeTools: ToolDef[] = [
     handleCreateBpmnDataType,
   ),
   defineTool(
-    'data_get_fields',
+    'data_get_data_type_fields',
     {
       title: 'Get DataType Fields',
       description: 'Возвращает список полей указанного типа данных.',
@@ -220,5 +241,14 @@ export const datatypeTools: ToolDef[] = [
       inputSchema: DeleteFieldSchema,
     },
     handleDeleteField,
+  ),
+  defineTool(
+    'data_delete_data_type',
+    {
+      title: 'Delete DataType',
+      description: 'Удаляет тип данных (обычный или BPMN) по его ID.',
+      inputSchema: DeleteDataTypeSchema,
+    },
+    handleDeleteDataType,
   ),
 ];
