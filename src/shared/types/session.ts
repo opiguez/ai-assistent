@@ -2,6 +2,8 @@ export interface Task {
   layer: 'DATA' | 'BPMN' | 'UI';
   task: string;
   description: string;
+  blocked?: boolean;
+  blocker?: string;
 }
 
 export interface ChatSession {

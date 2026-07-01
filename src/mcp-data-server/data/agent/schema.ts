@@ -8,6 +8,8 @@ export const ChatSessionSchema = z.object({
         layer: z.enum(['DATA', 'BPMN', 'UI']),
         task: z.string(),
         description: z.string(),
+        blocked: z.boolean().optional().describe('Задача заблокирована (нет инструментов)'),
+        blocker: z.string().optional().describe('Причина блокировки задачи'),
       }),
     )
     .describe('Массив декомпозированных задач от Архитектора'),
