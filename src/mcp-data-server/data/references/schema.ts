@@ -51,7 +51,5 @@ export const UpdateReferenceDataTypeSchema = z.object({
   referenceDataTypeId: z.string().describe('ID справочника'),
   displayName: z.string().optional().describe('Новое название'),
   description: z.string().optional().describe('Новое описание'),
-  isDateSpecific: z.boolean().optional(),
-  parentReferenceDataTypeId: z.string().optional(),
   dataFileBatchId: z.string().optional(),
 });

@@ -70,14 +70,17 @@
 10. ИТОГОВЫЙ ОТЧЕТ: Когда все действия успешно выполнены, сформируй для пользователя лаконичный, профессиональный отчет на человеческом языке. Напиши, что именно ты создал (какие модули, таблицы, поля) и подтверди успешное завершение шага.
 
 11. displayName, name И description ОБЯЗАТЕЛЬНЫ:
-    - При вызове любого create-инструмента (data_create_module, data_create_data_type, data_create_bpmn_data_type, data_create_*_field, data_create_reference_data_*) ВСЕГДА передавай параметры:
-      • displayName — русское название сущности (как в интерфейсе пользователя) в виде plain-строки (инструмент сам обернёт в JSON с локалями). Либо готовый JSON: {"de":null,"ru":"Название","en":null,"es":null}
-      • name — латинское системное имя (camelCase или snake_case)
-      • description — краткое описание (1 фраза), что делает эта сущность, в виде plain-строки (инструмент сам обернёт в JSON с локалями). Либо готовый JSON.
-    - НИКОГДА не передавай пустые строки в displayName, name или description.
-    - Если описание задачи не содержит явных displayName/name/description — сгенерируй их сам:
-      • displayName = русское название из контекста задачи
-      • name = латинизированная версия названия (camelCase)
-      • description = "Сущность для ..." / "Поле для ..."
-    - Для update-инструментов (data_update_*) displayName и description можно передавать как plain-строкой (инструмент сам обернёт в JSON с локалями), так и готовым JSON для указания конкретных локалей:
-      {"de":null,"ru":"Русское название","en":null,"es":null}
+     - При вызове любого create-инструмента (data_create_module, data_create_data_type, data_create_bpmn_data_type, data_create_*_field, data_create_reference_data_*) ВСЕГДА передавай параметры:
+       • displayName — русское название сущности (как в интерфейсе пользователя) в виде plain-строки (инструмент сам обернёт в JSON с локалями). Либо готовый JSON: {"de":null,"ru":"Название","en":null,"es":null}
+       • name — латинское системное имя (camelCase или snake_case)
+       • description — краткое описание (1 фраза), что делает эта сущность, в виде plain-строки (инструмент сам обернёт в JSON с локалями). Либо готовый JSON. Для справочников и групп можно передавать null (пустое описание).
+     - НИКОГДА не передавай пустые строки в displayName, name или description.
+     - Если описание задачи не содержит явных displayName/name/description — сгенерируй их сам:
+       • displayName = русское название из контекста задачи
+       • name = латинизированная версия названия (camelCase)
+       • description = "Сущность для ..." / "Поле для ..."
+     - Для update-инструментов (data_update_*) displayName и description можно передавать как plain-строкой (инструмент сам обернёт в JSON с локалями), так и готовым JSON для указания конкретных локалей:
+       {"de":null,"ru":"Русское название","en":null,"es":null}
+     - Для справочников (data_create_reference_data_group, data_create_reference_data_type):
+       • parentGroupId по умолчанию — корневой workspace справочников: `/modules/_rdm/workspaces/_rdm_workspace`
+       • Группу называй именем модуля (напр. spaOrderAccountingData)
