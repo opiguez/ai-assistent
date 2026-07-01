@@ -20,16 +20,16 @@
 ### 1. Установить зависимости
 
 ```bash
-npm install
+npm install  --legacy-peer-deps
 ```
 
 ### 2. Настроить окружение
 
 ```bash
-cp .env.dev .env
+touch .env.dev
 ```
 
-Отредактировать `.env`:
+Отредактировать `.env.dev`:
 ```
 PLATFORM_USERNAME=admin
 PLATFORM_PASSWORD=admin
