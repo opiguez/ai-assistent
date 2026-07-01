@@ -2,5 +2,34 @@
   "$schema": "https://opencode.ai/config.json",
   "watcher": {
     "ignore": ["node_modules/**", "src/agent(archived)/**"]
-  }
+  },
+  "mcp": {
+    "web-mcp_data": {
+      "type": "remote",
+      "url": "http://localhost:3001/mcp",
+      "enabled": true
+    }
+  },
+  "agent": {
+    "orchestrator": {
+      "description": "Координатор: сперва план, после утверждения — реализация",
+      "mode": "primary",
+      "default": true,
+      "agents": ["plan-execute", "build-execute"],
+      "prompt": "Ты — координатор проектов low-code системы.\nТвой workflow:\n1. Выслушай задачу пользователя.\n2. Вызови @plan-execute для декомпозиции ТЗ в очередь задач (он сохранит её через MCP).\n3. Дождись ответа plan-execute и покажи пользователю готовый план:\n   - список задач по слоям (DATA, BPMN, UI)\n   - спроси утверждения\n4. Если пользователь утвердил — вызови @build-execute.\n   Передай ему контекст: какие задачи из очереди нужно выполнить.\n5. Если пользователь внёс правки — вернись к @plan-execute с уточнениями.\n6. После завершения build-execute покажи пользователю итоговый отчёт."
+    },
+    "plan-execute": {
+      "description": "Веб-Архитектор. Декомпозиция ТЗ в очередь задач",
+      "mode": "subagent",
+      "prompt": "{file:./src/promts/planner.md}",
+      "allowedTools": ["web-mcp_data_*"]
+    },
+    "build-execute": {
+      "description": "Веб-Инженер. Выполняет задачи из очереди по HTTP",
+      "mode": "subagent",
+      "prompt": "{file:./src/promts/engineer.md}",
+      "allowedTools": ["web-mcp_data_*"]
+    }
+  },
+  "default_agent": "orchestrator"
 }
