@@ -39,8 +39,8 @@ const handleString = async (a: StringArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyString({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
           formula: a.formula, maxLength: a.maxLength, minLength: a.minLength,
@@ -61,8 +61,8 @@ const handleText = async (a: TextArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyText({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           formatType: a.formatType, defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
           maxLength: a.maxLength, minLength: a.minLength, multilanguage: a.multilanguage,
@@ -81,8 +81,8 @@ const handleInteger = async (a: IntegerArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyInteger({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
           minValue: a.minValue ? { value: a.minValue } : undefined,
@@ -103,8 +103,8 @@ const handleDecimal = async (a: DecimalArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyDecimal({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
           minValue: a.minValue ? { value: a.minValue } : undefined,
@@ -125,8 +125,8 @@ const handleBoolean = async (a: BooleanArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyBoolean({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
           displayTrueAs: a.displayTrueAs, displayFalseAs: a.displayFalseAs,
@@ -147,8 +147,8 @@ const handleDate = async (a: DateArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyDate({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
           displayFormat: a.displayFormat,
@@ -169,8 +169,8 @@ const handleDateTime = async (a: DateTimeArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyDateTime({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
           displayFormat: a.displayFormat,
@@ -192,8 +192,8 @@ const handleTime = async (a: TimeArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyTime({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
           displayFormat: a.displayFormat,
@@ -214,8 +214,8 @@ const handleFile = async (a: FileArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyFile({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           downloadable: a.downloadable,
         },
@@ -233,8 +233,8 @@ const handleFiles = async (a: FilesArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyFiles({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           downloadable: a.downloadable,
         },
@@ -252,8 +252,8 @@ const handleSelection = async (a: SelArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertySelection({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           referenceDataTypeId: a.referenceDataTypeId,
           parentSelection: a.parentSelection, dateDataPropertyKey: a.dateDataPropertyKey,
@@ -273,8 +273,8 @@ const handleMultiSelection = async (a: MultiSelArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyMultiSelection({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           referenceDataTypeId: a.referenceDataTypeId,
           parentSelection: a.parentSelection, dateDataPropertyKey: a.dateDataPropertyKey,
@@ -293,8 +293,8 @@ const handleDataObject = async (a: ObjArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyObject({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           relationModuleId: a.relationModuleId, relationObjectProperty: a.relationObjectProperty,
           relationTypes: a.relationTypes, viewJson: a.viewJson,
@@ -313,8 +313,8 @@ const handleDataObjects = async (a: ObjsArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyObjects({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           relationModuleId: a.relationModuleId, relationObjectProperty: a.relationObjectProperty,
           relationTypes: a.relationTypes, viewJson: a.viewJson,
@@ -333,8 +333,8 @@ const handleUser = async (a: UserArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyUser({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           filterByRoles: a.filterByRoles, filterByDataObjectPermissions: a.filterByDataObjectPermissions,
           filterByDataTypePrivileges: a.filterByDataTypePrivileges, sortingFullName: a.sortingFullName,
@@ -353,8 +353,8 @@ const handleUsers = async (a: UsersArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyUsers({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           filterByRoles: a.filterByRoles, filterByDataObjectPermissions: a.filterByDataObjectPermissions,
           filterByDataTypePrivileges: a.filterByDataTypePrivileges, sortingFullName: a.sortingFullName,
@@ -373,8 +373,8 @@ const handleSequence = async (a: SeqArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertySequence({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           initialValue: a.initialValue, prefix: a.prefix, suffix: a.suffix,
           restartInterval: a.restartInterval,
@@ -393,8 +393,8 @@ const handleAttributes = async (a: AttrArgs) => {
     const r = await rabisClient.chain.mutation
       .createDataPropertyAttributes({
         dataProperty: {
-          displayName: a.displayName, name: a.name, parentId: a.parentId,
-          description: a.description, required: a.required, readonly: a.readonly,
+          displayName: toLocalizedJson(a.displayName), name: a.name, parentId: a.parentId,
+          description: toLocalizedJson(a.description), required: a.required, readonly: a.readonly,
           useInSearchOrSort: a.useInSearchOrSort,
           referenceDataTypeId: a.referenceDataTypeId,
           parentSelection: a.parentSelection, dateDataPropertyKey: a.dateDataPropertyKey,

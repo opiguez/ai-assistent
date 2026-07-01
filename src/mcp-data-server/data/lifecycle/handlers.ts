@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { CreateLifecycleSchema, UpdateLifecycleSchema } from './schema.js';
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
-import { success, error } from '../core/utils.js';
+import { success, error, toLocalizedJson } from '../core/utils.js';
 import { DeleteByIdSchema } from '../core/schema.js';
 import { defineTool } from '../../../shared/utils/base.js';
 import { buildEntityTools, buildDeleteHandler, type ToolDef } from '../core/entity-builder.js';
@@ -36,9 +36,9 @@ const handleCreateLifecycle = async (args: CreateLifecycleArgs) => {
     const res = await rabisClient.chain.mutation
       .createLifecycle({
         lifecycle: {
-          displayName: args.displayName,
+          displayName: toLocalizedJson(args.displayName),
           name: args.name,
-          description: args.description,
+          description: toLocalizedJson(args.description),
           parentId: args.parentId,
         },
       })

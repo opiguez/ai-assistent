@@ -124,7 +124,10 @@ export function buildEntityTools(config: EntityConfig): ToolDef[] {
         },
         async (args: any) => {
           try {
-            const res = await (rabisClient.chain.mutation as any)[config.createMutation!]({ [inputKey]: args }).get({ id: true, name: true });
+            const localizedArgs = { ...args };
+            if (localizedArgs.displayName) localizedArgs.displayName = toLocalizedJson(args.displayName);
+            if (localizedArgs.description) localizedArgs.description = toLocalizedJson(args.description);
+            const res = await (rabisClient.chain.mutation as any)[config.createMutation!]({ [inputKey]: localizedArgs }).get({ id: true, name: true });
             if (config.afterCreate) await config.afterCreate(res, args);
             return success(res.id, `${config.displayNameRu} успешно создан`);
           } catch (e) {

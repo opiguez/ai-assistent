@@ -51,9 +51,9 @@ const handleCreateRefGroup = async (args: CreateRefGroupArgs) => {
     const res = await rabisClient.chain.mutation
       .createReferenceDataGroup({
         referenceDataGroup: {
-          displayName: args.displayName,
+          displayName: toLocalizedJson(args.displayName),
           name: args.name,
-          description: args.description,
+          description: toLocalizedJson(args.description),
           parentGroupId: effectiveParentGroupId,
         },
       })
@@ -89,9 +89,9 @@ const handleCreateRefDataType = async (args: CreateRefDataTypeArgs) => {
     const res = await rabisClient.chain.mutation
       .createReferenceDataType({
         referenceDataType: {
-          displayName: args.displayName,
+          displayName: toLocalizedJson(args.displayName),
           name: args.name,
-          description: args.description,
+          description: toLocalizedJson(args.description),
           parentGroupId: args.parentGroupId,
           isDateSpecific: args.isDateSpecific,
           parentReferenceDataTypeId: args.parentReferenceDataTypeId,

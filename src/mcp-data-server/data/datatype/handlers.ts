@@ -8,7 +8,7 @@ import {
   DeleteDataTypeSchema,
 } from './schema.js';
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
-import { success, error, successList } from '../core/utils.js';
+import { success, error, successList, toLocalizedJson } from '../core/utils.js';
 import { defineTool } from '../../../shared/utils/base.js';
 import { buildEntityTools, type ToolDef } from '../core/entity-builder.js';
 
@@ -92,9 +92,9 @@ const handleCreateDataType = async (args: CreateDataTypeArgs) => {
       };
     }
     const dataTypeInput: Record<string, any> = {
-      displayName: args.displayName,
+      displayName: toLocalizedJson(args.displayName),
       name: args.name,
-      description: args.description,
+      description: toLocalizedJson(args.description),
       parentId: args.parentId,
       baseType: args.baseType,
       canHaveDiscussion: args.canHaveDiscussion,
@@ -122,9 +122,9 @@ type CreateBpmnDataTypeArgs = z.infer<typeof CreateBpmnDataTypeSchema>;
 const handleCreateBpmnDataType = async (args: CreateBpmnDataTypeArgs) => {
   try {
     const bpmnInput: Record<string, any> = {
-      displayName: args.displayName,
+      displayName: toLocalizedJson(args.displayName),
       name: args.name,
-      description: args.description,
+      description: toLocalizedJson(args.description),
       parentId: args.parentId,
       baseType: args.baseType,
       canHaveDiscussion: args.canHaveDiscussion,
