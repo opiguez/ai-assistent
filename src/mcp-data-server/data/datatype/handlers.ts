@@ -57,39 +57,25 @@ type CreateDataTypeArgs = z.infer<typeof CreateDataTypeSchema>;
 const handleCreateDataType = async (args: CreateDataTypeArgs) => {
   try {
     let lifecyclePath: string | undefined;
-    try {
-      const moduleData = await rabisClient.chain.query
-        .module({ id: args.parentId })
-        .get({ name: true, lifecycles: { id: true, name: true } });
-      if (moduleData.lifecycles && moduleData.lifecycles.length > 0) {
-        lifecyclePath = `/modules/${moduleData.name}/lifecycles/${moduleData.lifecycles[0].name}`;
+    if (args.parentId === 'PENDING_MODULE_ID') {
+      lifecyclePath = 'PENDING_MODULE_ID/lifecycles/default';
+    } else {
+      try {
+        const moduleData = await rabisClient.chain.query
+          .module({ id: args.parentId })
+          .get({ name: true, lifecycles: { id: true, name: true } });
+        if (moduleData.lifecycles && moduleData.lifecycles.length > 0) {
+          lifecyclePath = `/modules/${moduleData.name}/lifecycles/${moduleData.lifecycles[0].name}`;
+        }
+      } catch (e) {
+        return error(e, `Не удалось зарезолвить lifecycle для модуля ${args.parentId}`);
       }
-    } catch {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: 'PENDING_MODULE_ID — не можем зарезолвить lifecycle',
-            }),
-          },
-        ],
-      };
-    }
-    if (!lifecyclePath) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message:
-                'Не удалось определить lifecycle для модуля. Убедись, что модуль существует и имеет хотя бы один жизненный цикл. Создай lifecycle через data_create_lifecycle.',
-            }),
-          },
-        ],
-      };
+      if (!lifecyclePath) {
+        return error(
+          undefined,
+          'Не удалось определить lifecycle для модуля. Убедись, что модуль существует и имеет хотя бы один жизненный цикл.',
+        );
+      }
     }
     const dataTypeInput: Record<string, any> = {
       displayName: toLocalizedJson(args.displayName),
