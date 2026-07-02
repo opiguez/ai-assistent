@@ -40,20 +40,54 @@ import {
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
 import { success, error, toLocalizedJson } from '../core/utils.js';
 import { defineTool } from '../../../shared/utils/base.js';
-import type { ToolDef } from '../core/entity-builder.js';
+import type { ToolDef } from '../core/schema.js';
 
-// ─── Helper to build update handler ───
-function buildFieldUpdateHandler(mutation: string, label: string) {
+// ─── Factory: build create handler ───
+// required НЕ передаётся в мутацию — контролируется UI-слоем.
+function buildCreateHandler(
+  mutation: string,
+  fieldLabel: string,
+  getTypeArgs: (a: Record<string, any>) => Record<string, any>,
+) {
+  return async (a: Record<string, any>) => {
+    try {
+      const r = await (rabisClient.chain.mutation as any)
+        [mutation]({
+          dataProperty: {
+            displayName: toLocalizedJson(a.displayName),
+            name: a.name,
+            parentId: a.parentId,
+            description: toLocalizedJson(a.description),
+            readonly: a.readonly,
+            useInSearchOrSort: a.useInSearchOrSort,
+            ...getTypeArgs(a),
+          },
+        })
+        .get({ id: true, name: true });
+      return success(r.id, `${fieldLabel} создано`);
+    } catch (e) {
+      return error(e, `Ошибка создания ${fieldLabel.toLowerCase()}`);
+    }
+  };
+}
+
+// ─── Factory: build update handler ───
+// required НЕ передаётся в мутацию — контролируется UI-слоем.
+function buildUpdateHandler(mutation: string, label: string) {
   const inputKey = 'dataProperty';
-  return async (a: any) => {
+  return async (a: Record<string, any>) => {
     try {
       const localized: Record<string, any> = { id: a.id };
-      if (a.displayName)
-        localized.displayName = toLocalizedJson(a.displayName);
-      if (a.description)
-        localized.description = toLocalizedJson(a.description);
+      if (a.displayName) localized.displayName = toLocalizedJson(a.displayName);
+      if (a.description) localized.description = toLocalizedJson(a.description);
       for (const [key, value] of Object.entries(a)) {
-        if (key === 'id' || key === 'displayName' || key === 'description') continue;
+        if (
+          key === 'id' ||
+          key === 'displayName' ||
+          key === 'description' ||
+          key === 'required'
+        )
+          continue;
         if (value !== undefined && value !== null) {
           localized[key] = value;
         }
@@ -68,567 +102,284 @@ function buildFieldUpdateHandler(mutation: string, label: string) {
   };
 }
 
-// ─── 1. STRING ───
-type StringArgs = z.infer<typeof CreateStringFieldSchema>;
-const handleString = async (a: StringArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyString({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
-          formula: a.formula,
-          maxLength: a.maxLength,
-          minLength: a.minLength,
-          pattern: a.pattern,
-          unique: a.unique,
-          multilanguage: a.multilanguage,
-          icon: a.icon,
-          prefix: a.prefix,
-          suffix: a.suffix,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Строковое поле создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания строкового поля');
-  }
-};
-const handleUpdateString = buildFieldUpdateHandler(
+// ─── CREATE handlers (18) ───
+
+const handleString = buildCreateHandler(
+  'createDataPropertyString',
+  'Строковое поле',
+  (a) => ({
+    defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
+    formula: a.formula,
+    maxLength: a.maxLength,
+    minLength: a.minLength,
+    pattern: a.pattern,
+    unique: a.unique,
+    multilanguage: a.multilanguage,
+    icon: a.icon,
+    prefix: a.prefix,
+    suffix: a.suffix,
+  }),
+);
+
+const handleText = buildCreateHandler(
+  'createDataPropertyText',
+  'Текстовое поле',
+  (a) => ({
+    formatType: a.formatType,
+    defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
+    maxLength: a.maxLength,
+    minLength: a.minLength,
+    multilanguage: a.multilanguage,
+  }),
+);
+
+const handleInteger = buildCreateHandler(
+  'createDataPropertyInteger',
+  'Целочисленное поле',
+  (a) => ({
+    defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
+    minValue: a.minValue ? { value: a.minValue } : undefined,
+    maxValue: a.maxValue ? { value: a.maxValue } : undefined,
+    prefix: a.prefix,
+    suffix: a.suffix,
+    unique: a.unique,
+  }),
+);
+
+const handleDecimal = buildCreateHandler(
+  'createDataPropertyDecimal',
+  'Десятичное поле',
+  (a) => ({
+    defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
+    minValue: a.minValue ? { value: a.minValue } : undefined,
+    maxValue: a.maxValue ? { value: a.maxValue } : undefined,
+    precision: a.precision,
+    prefix: a.prefix,
+    suffix: a.suffix,
+    formula: a.formula,
+  }),
+);
+
+const handleBoolean = buildCreateHandler(
+  'createDataPropertyBoolean',
+  'Логическое поле',
+  (a) => ({
+    defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
+    displayTrueAs: a.displayTrueAs,
+    displayFalseAs: a.displayFalseAs,
+    displayTrueColor: a.displayTrueColor,
+    displayFalseColor: a.displayFalseColor,
+    displayFormat: a.displayFormat,
+  }),
+);
+
+const handleDate = buildCreateHandler(
+  'createDataPropertyDate',
+  'Поле даты',
+  (a) => ({
+    defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
+    displayFormat: a.displayFormat,
+    minValue: a.minValue ? { value: a.minValue } : undefined,
+    maxValue: a.maxValue ? { value: a.maxValue } : undefined,
+  }),
+);
+
+const handleDateTime = buildCreateHandler(
+  'createDataPropertyDateTime',
+  'Поле даты и времени',
+  (a) => ({
+    defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
+    displayFormat: a.displayFormat,
+    minValue: a.minValue ? { value: a.minValue } : undefined,
+    maxValue: a.maxValue ? { value: a.maxValue } : undefined,
+    useTimeZone: a.useTimeZone,
+  }),
+);
+
+const handleTime = buildCreateHandler(
+  'createDataPropertyTime',
+  'Поле времени',
+  (a) => ({
+    defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
+    displayFormat: a.displayFormat,
+    minValue: a.minValue ? { value: a.minValue } : undefined,
+    maxValue: a.maxValue ? { value: a.maxValue } : undefined,
+  }),
+);
+
+const handleFile = buildCreateHandler(
+  'createDataPropertyFile',
+  'Файловое поле',
+  (a) => ({
+    downloadable: a.downloadable,
+  }),
+);
+
+const handleFiles = buildCreateHandler(
+  'createDataPropertyFiles',
+  'Поле множественных файлов',
+  (a) => ({
+    downloadable: a.downloadable,
+  }),
+);
+
+const handleSelection = buildCreateHandler(
+  'createDataPropertySelection',
+  'Поле выбора (Selection)',
+  (a) => ({
+    referenceDataTypeId: a.referenceDataTypeId,
+    parentSelection: a.parentSelection,
+    dateDataPropertyKey: a.dateDataPropertyKey,
+    formula: a.formula,
+  }),
+);
+
+const handleMultiSelection = buildCreateHandler(
+  'createDataPropertyMultiSelection',
+  'Поле множественного выбора (MultiSelection)',
+  (a) => ({
+    referenceDataTypeId: a.referenceDataTypeId,
+    parentSelection: a.parentSelection,
+    dateDataPropertyKey: a.dateDataPropertyKey,
+  }),
+);
+
+const handleDataObject = buildCreateHandler(
+  'createDataPropertyObject',
+  'Поле-ссылка на объект (DataObject)',
+  (a) => ({
+    relationModuleId: a.relationModuleId,
+    relationObjectProperty: a.relationObjectProperty,
+    relationTypes: a.relationTypes,
+    viewJson: a.viewJson,
+  }),
+);
+
+const handleDataObjects = buildCreateHandler(
+  'createDataPropertyObjects',
+  'Поле-ссылка на объекты (DataObjects)',
+  (a) => ({
+    relationModuleId: a.relationModuleId,
+    relationObjectProperty: a.relationObjectProperty,
+    relationTypes: a.relationTypes,
+    viewJson: a.viewJson,
+  }),
+);
+
+const handleUser = buildCreateHandler(
+  'createDataPropertyUser',
+  'Поле пользователя (User)',
+  (a) => ({
+    filterByRoles: a.filterByRoles,
+    filterByDataObjectPermissions: a.filterByDataObjectPermissions,
+    filterByDataTypePrivileges: a.filterByDataTypePrivileges,
+    sortingFullName: a.sortingFullName,
+  }),
+);
+
+const handleUsers = buildCreateHandler(
+  'createDataPropertyUsers',
+  'Поле пользователей (Users)',
+  (a) => ({
+    filterByRoles: a.filterByRoles,
+    filterByDataObjectPermissions: a.filterByDataObjectPermissions,
+    filterByDataTypePrivileges: a.filterByDataTypePrivileges,
+    sortingFullName: a.sortingFullName,
+  }),
+);
+
+const handleSequence = buildCreateHandler(
+  'createDataPropertySequence',
+  'Поле-счётчик (Sequence)',
+  (a) => ({
+    initialValue: a.initialValue,
+    prefix: a.prefix,
+    suffix: a.suffix,
+    restartInterval: a.restartInterval,
+  }),
+);
+
+const handleAttributes = buildCreateHandler(
+  'createDataPropertyAttributes',
+  'Поле атрибутов (Attributes)',
+  (a) => ({
+    referenceDataTypeId: a.referenceDataTypeId,
+    parentSelection: a.parentSelection,
+    dateDataPropertyKey: a.dateDataPropertyKey,
+  }),
+);
+
+// ─── UPDATE handlers (18) ───
+
+const handleUpdateString = buildUpdateHandler(
   'updateDataPropertyString',
   'Строковое поле',
 );
-
-// ─── 2. TEXT ───
-type TextArgs = z.infer<typeof CreateTextFieldSchema>;
-const handleText = async (a: TextArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyText({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          formatType: a.formatType,
-          defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
-          maxLength: a.maxLength,
-          minLength: a.minLength,
-          multilanguage: a.multilanguage,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Текстовое поле создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания текстового поля');
-  }
-};
-const handleUpdateText = buildFieldUpdateHandler(
+const handleUpdateText = buildUpdateHandler(
   'updateDataPropertyText',
   'Текстовое поле',
 );
-
-// ─── 3. INTEGER ───
-type IntegerArgs = z.infer<typeof CreateIntegerFieldSchema>;
-const handleInteger = async (a: IntegerArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyInteger({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
-          minValue: a.minValue ? { value: a.minValue } : undefined,
-          maxValue: a.maxValue ? { value: a.maxValue } : undefined,
-          prefix: a.prefix,
-          suffix: a.suffix,
-          unique: a.unique,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Целочисленное поле создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания целочисленного поля');
-  }
-};
-const handleUpdateInteger = buildFieldUpdateHandler(
+const handleUpdateInteger = buildUpdateHandler(
   'updateDataPropertyInteger',
   'Целочисленное поле',
 );
-
-// ─── 4. DECIMAL ───
-type DecimalArgs = z.infer<typeof CreateDecimalFieldSchema>;
-const handleDecimal = async (a: DecimalArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyDecimal({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
-          minValue: a.minValue ? { value: a.minValue } : undefined,
-          maxValue: a.maxValue ? { value: a.maxValue } : undefined,
-          precision: a.precision,
-          prefix: a.prefix,
-          suffix: a.suffix,
-          formula: a.formula,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Десятичное поле создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания десятичного поля');
-  }
-};
-const handleUpdateDecimal = buildFieldUpdateHandler(
+const handleUpdateDecimal = buildUpdateHandler(
   'updateDataPropertyDecimal',
   'Десятичное поле',
 );
-
-// ─── 5. BOOLEAN ───
-type BooleanArgs = z.infer<typeof CreateBooleanFieldSchema>;
-const handleBoolean = async (a: BooleanArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyBoolean({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
-          displayTrueAs: a.displayTrueAs,
-          displayFalseAs: a.displayFalseAs,
-          displayTrueColor: a.displayTrueColor,
-          displayFalseColor: a.displayFalseColor,
-          displayFormat: a.displayFormat,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Логическое поле создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания логического поля');
-  }
-};
-const handleUpdateBoolean = buildFieldUpdateHandler(
+const handleUpdateBoolean = buildUpdateHandler(
   'updateDataPropertyBoolean',
   'Логическое поле',
 );
-
-// ─── 6. DATE ───
-type DateArgs = z.infer<typeof CreateDateFieldSchema>;
-const handleDate = async (a: DateArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyDate({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
-          displayFormat: a.displayFormat,
-          minValue: a.minValue ? { value: a.minValue } : undefined,
-          maxValue: a.maxValue ? { value: a.maxValue } : undefined,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле даты создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля даты');
-  }
-};
-const handleUpdateDate = buildFieldUpdateHandler(
+const handleUpdateDate = buildUpdateHandler(
   'updateDataPropertyDate',
   'Поле даты',
 );
-
-// ─── 7. DATETIME ───
-type DateTimeArgs = z.infer<typeof CreateDateTimeFieldSchema>;
-const handleDateTime = async (a: DateTimeArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyDateTime({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
-          displayFormat: a.displayFormat,
-          minValue: a.minValue ? { value: a.minValue } : undefined,
-          maxValue: a.maxValue ? { value: a.maxValue } : undefined,
-          useTimeZone: a.useTimeZone,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле даты и времени создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля даты и времени');
-  }
-};
-const handleUpdateDateTime = buildFieldUpdateHandler(
+const handleUpdateDateTime = buildUpdateHandler(
   'updateDataPropertyDateTime',
   'Поле даты и времени',
 );
-
-// ─── 8. TIME ───
-type TimeArgs = z.infer<typeof CreateTimeFieldSchema>;
-const handleTime = async (a: TimeArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyTime({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          defaultValue: a.defaultValue ? { value: a.defaultValue } : undefined,
-          displayFormat: a.displayFormat,
-          minValue: a.minValue ? { value: a.minValue } : undefined,
-          maxValue: a.maxValue ? { value: a.maxValue } : undefined,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле времени создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля времени');
-  }
-};
-const handleUpdateTime = buildFieldUpdateHandler(
+const handleUpdateTime = buildUpdateHandler(
   'updateDataPropertyTime',
   'Поле времени',
 );
-
-// ─── 9. FILE ───
-type FileArgs = z.infer<typeof CreateFileFieldSchema>;
-const handleFile = async (a: FileArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyFile({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          downloadable: a.downloadable,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Файловое поле создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания файлового поля');
-  }
-};
-const handleUpdateFile = buildFieldUpdateHandler(
+const handleUpdateFile = buildUpdateHandler(
   'updateDataPropertyFile',
   'Файловое поле',
 );
-
-// ─── 10. FILES ───
-type FilesArgs = z.infer<typeof CreateFilesFieldSchema>;
-const handleFiles = async (a: FilesArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyFiles({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          downloadable: a.downloadable,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле множественных файлов создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля множественных файлов');
-  }
-};
-const handleUpdateFiles = buildFieldUpdateHandler(
+const handleUpdateFiles = buildUpdateHandler(
   'updateDataPropertyFiles',
   'Поле множественных файлов',
 );
-
-// ─── 11. SELECTION ───
-type SelArgs = z.infer<typeof CreateSelectionFieldSchema>;
-const handleSelection = async (a: SelArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertySelection({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          referenceDataTypeId: a.referenceDataTypeId,
-          parentSelection: a.parentSelection,
-          dateDataPropertyKey: a.dateDataPropertyKey,
-          formula: a.formula,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле выбора (Selection) создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля выбора');
-  }
-};
-const handleUpdateSelection = buildFieldUpdateHandler(
+const handleUpdateSelection = buildUpdateHandler(
   'updateDataPropertySelection',
   'Поле выбора',
 );
-
-// ─── 12. MULTI_SELECTION ───
-type MultiSelArgs = z.infer<typeof CreateMultiSelectionFieldSchema>;
-const handleMultiSelection = async (a: MultiSelArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyMultiSelection({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          referenceDataTypeId: a.referenceDataTypeId,
-          parentSelection: a.parentSelection,
-          dateDataPropertyKey: a.dateDataPropertyKey,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле множественного выбора (MultiSelection) создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля множественного выбора');
-  }
-};
-const handleUpdateMultiSelection = buildFieldUpdateHandler(
+const handleUpdateMultiSelection = buildUpdateHandler(
   'updateDataPropertyMultiSelection',
   'Поле множественного выбора',
 );
-
-// ─── 13. DATA_OBJECT ───
-type ObjArgs = z.infer<typeof CreateDataObjectFieldSchema>;
-const handleDataObject = async (a: ObjArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyObject({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          relationModuleId: a.relationModuleId,
-          relationObjectProperty: a.relationObjectProperty,
-          relationTypes: a.relationTypes,
-          viewJson: a.viewJson,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле-ссылка на объект (DataObject) создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля-ссылки на объект');
-  }
-};
-const handleUpdateDataObject = buildFieldUpdateHandler(
+const handleUpdateDataObject = buildUpdateHandler(
   'updateDataPropertyObject',
   'Поле-ссылка на объект',
 );
-
-// ─── 14. DATA_OBJECTS ───
-type ObjsArgs = z.infer<typeof CreateDataObjectsFieldSchema>;
-const handleDataObjects = async (a: ObjsArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyObjects({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          relationModuleId: a.relationModuleId,
-          relationObjectProperty: a.relationObjectProperty,
-          relationTypes: a.relationTypes,
-          viewJson: a.viewJson,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле-ссылка на объекты (DataObjects) создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля-ссылки на объекты');
-  }
-};
-const handleUpdateDataObjects = buildFieldUpdateHandler(
+const handleUpdateDataObjects = buildUpdateHandler(
   'updateDataPropertyObjects',
   'Поле-ссылка на объекты',
 );
-
-// ─── 15. USER ───
-type UserArgs = z.infer<typeof CreateUserFieldSchema>;
-const handleUser = async (a: UserArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyUser({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          filterByRoles: a.filterByRoles,
-          filterByDataObjectPermissions: a.filterByDataObjectPermissions,
-          filterByDataTypePrivileges: a.filterByDataTypePrivileges,
-          sortingFullName: a.sortingFullName,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле пользователя (User) создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля пользователя');
-  }
-};
-const handleUpdateUser = buildFieldUpdateHandler(
+const handleUpdateUser = buildUpdateHandler(
   'updateDataPropertyUser',
   'Поле пользователя',
 );
-
-// ─── 16. USERS ───
-type UsersArgs = z.infer<typeof CreateUsersFieldSchema>;
-const handleUsers = async (a: UsersArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyUsers({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          filterByRoles: a.filterByRoles,
-          filterByDataObjectPermissions: a.filterByDataObjectPermissions,
-          filterByDataTypePrivileges: a.filterByDataTypePrivileges,
-          sortingFullName: a.sortingFullName,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле пользователей (Users) создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля пользователей');
-  }
-};
-const handleUpdateUsers = buildFieldUpdateHandler(
+const handleUpdateUsers = buildUpdateHandler(
   'updateDataPropertyUsers',
   'Поле пользователей',
 );
-
-// ─── 17. SEQUENCE ───
-type SeqArgs = z.infer<typeof CreateSequenceFieldSchema>;
-const handleSequence = async (a: SeqArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertySequence({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          initialValue: a.initialValue,
-          prefix: a.prefix,
-          suffix: a.suffix,
-          restartInterval: a.restartInterval,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле-счётчик (Sequence) создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля-счётчика');
-  }
-};
-const handleUpdateSequence = buildFieldUpdateHandler(
+const handleUpdateSequence = buildUpdateHandler(
   'updateDataPropertySequence',
   'Поле-счётчик',
 );
-
-// ─── 18. ATTRIBUTES ───
-type AttrArgs = z.infer<typeof CreateAttributesFieldSchema>;
-const handleAttributes = async (a: AttrArgs) => {
-  try {
-    const r = await rabisClient.chain.mutation
-      .createDataPropertyAttributes({
-        dataProperty: {
-          displayName: toLocalizedJson(a.displayName),
-          name: a.name,
-          parentId: a.parentId,
-          description: toLocalizedJson(a.description),
-          required: a.required,
-          readonly: a.readonly,
-          useInSearchOrSort: a.useInSearchOrSort,
-          referenceDataTypeId: a.referenceDataTypeId,
-          parentSelection: a.parentSelection,
-          dateDataPropertyKey: a.dateDataPropertyKey,
-        },
-      })
-      .get({ id: true, name: true });
-    return success(r.id, 'Поле атрибутов (Attributes) создано');
-  } catch (e) {
-    return error(e, 'Ошибка создания поля атрибутов');
-  }
-};
-const handleUpdateAttributes = buildFieldUpdateHandler(
+const handleUpdateAttributes = buildUpdateHandler(
   'updateDataPropertyAttributes',
   'Поле атрибутов',
 );

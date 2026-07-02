@@ -10,47 +10,7 @@ import {
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
 import { success, error, successList, toLocalizedJson } from '../core/utils.js';
 import { defineTool } from '../../../shared/utils/base.js';
-import { buildEntityTools, type ToolDef } from '../core/entity-builder.js';
-
-// ─────── Entity tools (GET, LIST, UPDATE) ───────
-const entityTools = buildEntityTools({
-  key: 'data_type',
-  displayName: 'DataType',
-  displayNameRu: 'Тип данных',
-  queryField: 'dataType',
-  updateMutation: 'updateDataType',
-  updateSchema: UpdateDataTypeSchema,
-  getSelection: {
-    id: true,
-    name: true,
-    displayName: true,
-    description: true,
-    canHaveChildren: false,
-    versionable: true,
-    properties: {
-      id: true,
-      name: true,
-      displayName: true,
-      properties: {
-        id: true,
-        key: true,
-        name: true,
-        displayName: true,
-        propertyType: { propertyTypeEnum: true },
-        required: true,
-        readonly: true,
-      },
-    },
-  },
-  listSelection: {
-    id: true,
-    name: true,
-    displayName: true,
-    description: true,
-  },
-  listConfig: { type: 'parentQuery', parentField: 'dataTypes' },
-  skipCreate: true,
-});
+import type { ToolDef } from '../core/schema.js';
 
 // ─────── CREATE DataType (custom — lifecycle resolution) ───────
 type CreateDataTypeArgs = z.infer<typeof CreateDataTypeSchema>;
@@ -164,16 +124,6 @@ const handleGetDataTypeFields = async (args: GetDataTypeFieldsArgs) => {
 
 // ─────── DELETE DataType ───────
 type DeleteDataTypeArgs = z.infer<typeof DeleteDataTypeSchema>;
-const handleDeleteDataType = async (args: DeleteDataTypeArgs) => {
-  try {
-    await rabisClient.chain.mutation.deleteMetaDataObject({
-      id: args.id,
-    });
-    return success(args.id, 'Тип данных удалён');
-  } catch (e) {
-    return error(e, 'Ошибка удаления типа данных');
-  }
-};
 
 // ─────── DELETE Field ───────
 type DeleteFieldArgs = z.infer<typeof DeleteFieldSchema>;
@@ -189,7 +139,80 @@ const handleDeleteField = async (args: DeleteFieldArgs) => {
 };
 
 export const datatypeTools: ToolDef[] = [
-  ...entityTools,
+  defineTool(
+    'data_get_data_type',
+    {
+      title: 'Get DataType',
+      description: 'Возвращает Тип данных по ID.',
+      inputSchema: z.object({ id: z.string().describe('ID типа данных') }),
+    },
+    async (args) => {
+      try {
+        const res = await rabisClient.chain.query.dataType({ id: args.id }).get({
+          id: true,
+          name: true,
+          displayName: true,
+          description: true,
+          canHaveChildren: false,
+          versionable: true,
+          properties: {
+            id: true,
+            name: true,
+            displayName: true,
+            properties: {
+              id: true,
+              key: true,
+              name: true,
+              displayName: true,
+              propertyType: { propertyTypeEnum: true },
+              required: true,
+              readonly: true,
+            },
+          },
+        });
+        return successList([res], 'Тип данных получен');
+      } catch (e) {
+        return error(e, 'Ошибка получения типа данных');
+      }
+    },
+  ),
+  defineTool(
+    'data_get_data_types',
+    {
+      title: 'Get All DataTypes',
+      description: 'Возвращает список всех Тип данных.',
+      inputSchema: z.object({ parentId: z.string().describe('ID родительского модуля') }),
+    },
+    async (args) => {
+      try {
+        const res = await rabisClient.chain.query.module({ id: args.parentId }).get({
+          dataTypes: { id: true, name: true, displayName: true, description: true },
+        });
+        return successList(res.dataTypes || [], 'Список типов данных получен');
+      } catch (e) {
+        return error(e, 'Ошибка получения списка типов данных');
+      }
+    },
+  ),
+  defineTool(
+    'data_update_data_type',
+    {
+      title: 'Update DataType',
+      description: 'Обновляет Тип данных.',
+      inputSchema: UpdateDataTypeSchema,
+    },
+    async (args) => {
+      try {
+        const localizedArgs = { ...args };
+        if (localizedArgs.displayName) localizedArgs.displayName = toLocalizedJson(args.displayName);
+        if (localizedArgs.description) localizedArgs.description = toLocalizedJson(args.description);
+        const res = await rabisClient.chain.mutation.updateDataType({ dataType: localizedArgs }).get({ id: true, name: true });
+        return success(res.id, 'Тип данных обновлён');
+      } catch (e) {
+        return error(e, 'Ошибка обновления типа данных');
+      }
+    },
+  ),
   defineTool(
     'data_create_data_type',
     {
@@ -235,6 +258,13 @@ export const datatypeTools: ToolDef[] = [
       description: 'Удаляет тип данных (обычный или BPMN) по его ID.',
       inputSchema: DeleteDataTypeSchema,
     },
-    handleDeleteDataType,
+    async (args) => {
+      try {
+        await rabisClient.chain.mutation.deleteMetaDataObject({ id: args.id });
+        return success(args.id, 'Тип данных удалён');
+      } catch (e) {
+        return error(e, 'Ошибка удаления типа данных');
+      }
+    },
   ),
 ];

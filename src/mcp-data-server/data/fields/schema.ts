@@ -3,13 +3,10 @@ import { BaseLowCodeSchema } from '../core/schema.js';
 import { deriveUpdateSchema } from '../core/utils.js';
 
 // ──────────────────────────────────────────────────
-// 18 типо-специфичных схем для полей
-// Base-поля (parentId, description, required, readonly, useInSearchOrSort)
-// инлайнятся напрямую вместо .merge() — Zod v4 compatibility
+// Base fields for all field types
+// parentId + description — общие для всех 18 типов
 // ──────────────────────────────────────────────────
-
-// 1. STRING
-export const CreateStringFieldSchema = BaseLowCodeSchema.extend({
+const BaseFieldSchema = z.object({
   parentId: z
     .string()
     .describe(
@@ -19,17 +16,28 @@ export const CreateStringFieldSchema = BaseLowCodeSchema.extend({
     .string()
     .optional()
     .describe('Описание назначения поля на русском языке.'),
+});
+
+// ──────────────────────────────────────────────────
+// 18 типо-специфичных схем для полей
+// required/readonly/useInSearchOrSort — .optional(),
+// сервер сбрасывает в false по умолчанию.
+// required НЕ передаётся в мутацию (контролируется UI-слоем).
+// ──────────────────────────────────────────────────
+
+// 1. STRING
+export const CreateStringFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   defaultValue: z.string().optional().describe('Значение по умолчанию.'),
   maxLength: z.number().optional().describe('Максимальная длина строки.'),
@@ -52,27 +60,18 @@ export const CreateStringFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 2. TEXT
-export const CreateTextFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateTextFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   formatType: z
     .enum(['PLAIN', 'HTML'])
@@ -85,27 +84,18 @@ export const CreateTextFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 3. INTEGER
-export const CreateIntegerFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateIntegerFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   defaultValue: z.number().int().optional().describe('Значение по умолчанию.'),
   minValue: z.number().int().optional().describe('Минимальное значение.'),
@@ -113,36 +103,21 @@ export const CreateIntegerFieldSchema = BaseLowCodeSchema.extend({
   prefix: z.string().optional().describe('Префикс.'),
   suffix: z.string().optional().describe('Суффикс.'),
   unique: z.boolean().optional().describe('Уникальное значение.'),
-  formula: z
-    .string()
-    .optional()
-    .describe(
-      'Формула вычислений. Синтаксис: `[ИМЯ_ТИПА:ИМЯ_ПОЛЯ]` - для дататипа или `[_common:ИМЯ_ПОЛЯ]` - для модульного. складываем только целые числа',
-    ),
 });
 
 // 4. DECIMAL
-export const CreateDecimalFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateDecimalFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   defaultValue: z.number().optional().describe('Значение по умолчанию.'),
   minValue: z.number().optional().describe('Минимальное значение.'),
@@ -163,27 +138,18 @@ export const CreateDecimalFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 5. BOOLEAN
-export const CreateBooleanFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateBooleanFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   defaultValue: z.boolean().optional().describe('Значение по умолчанию.'),
   displayTrueAs: z.string().optional().describe('Текст для значения true.'),
@@ -203,27 +169,18 @@ export const CreateBooleanFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 6. DATE
-export const CreateDateFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateDateFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   defaultValue: z
     .string()
@@ -238,27 +195,18 @@ export const CreateDateFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 7. DATETIME
-export const CreateDateTimeFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateDateTimeFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   defaultValue: z
     .string()
@@ -277,27 +225,18 @@ export const CreateDateTimeFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 8. TIME
-export const CreateTimeFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateTimeFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   defaultValue: z
     .string()
@@ -312,27 +251,18 @@ export const CreateTimeFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 9. FILE
-export const CreateFileFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateFileFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   downloadable: z
     .boolean()
@@ -341,27 +271,18 @@ export const CreateFileFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 10. FILES
-export const CreateFilesFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateFilesFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   downloadable: z
     .boolean()
@@ -370,27 +291,18 @@ export const CreateFilesFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 11. SELECTION
-export const CreateSelectionFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateSelectionFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   referenceDataTypeId: z
     .string()
@@ -414,27 +326,18 @@ export const CreateSelectionFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 12. MULTI_SELECTION
-export const CreateMultiSelectionFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateMultiSelectionFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   referenceDataTypeId: z
     .string()
@@ -454,27 +357,18 @@ export const CreateMultiSelectionFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 13. DATA_OBJECT
-export const CreateDataObjectFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateDataObjectFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   relationModuleId: z
     .string()
@@ -495,27 +389,18 @@ export const CreateDataObjectFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 14. DATA_OBJECTS
-export const CreateDataObjectsFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateDataObjectsFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   relationModuleId: z
     .string()
@@ -536,27 +421,18 @@ export const CreateDataObjectsFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 15. USER
-export const CreateUserFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateUserFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   filterByRoles: z
     .array(z.string())
@@ -577,27 +453,18 @@ export const CreateUserFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 16. USERS
-export const CreateUsersFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateUsersFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   filterByRoles: z
     .array(z.string())
@@ -618,27 +485,18 @@ export const CreateUsersFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 17. SEQUENCE
-export const CreateSequenceFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateSequenceFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   initialValue: z.number().int().describe('Начальное значение счетчика.'),
   prefix: z.string().optional().describe('Префикс номера.'),
@@ -650,27 +508,18 @@ export const CreateSequenceFieldSchema = BaseLowCodeSchema.extend({
 });
 
 // 18. ATTRIBUTES
-export const CreateAttributesFieldSchema = BaseLowCodeSchema.extend({
-  parentId: z
-    .string()
-    .describe(
-      "ID родительского типа данных или модуля. Если создается в рамках одного шага, передай 'PENDING_DATA_TYPE_ID' или 'PENDING_MODULE_ID'.",
-    ),
-  description: z
-    .string()
-    .optional()
-    .describe('Описание назначения поля на русском языке.'),
+export const CreateAttributesFieldSchema = BaseLowCodeSchema.merge(BaseFieldSchema).extend({
   required: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Является ли поле обязательным для заполнения.'),
   readonly: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Запрет на редактирование поля пользователем.'),
   useInSearchOrSort: z
     .boolean()
-    .default(false)
+    .optional()
     .describe('Использовать поле в поиске и сортировке.'),
   referenceDataTypeId: z
     .string()
@@ -699,7 +548,7 @@ export const UpdateTextFieldSchema = deriveUpdateSchema(CreateTextFieldSchema, {
 });
 export const UpdateIntegerFieldSchema = deriveUpdateSchema(
   CreateIntegerFieldSchema,
-  { omitFields: [...UPDATE_BASE_OMIT, 'unique', 'formula'] },
+  { omitFields: UPDATE_BASE_OMIT },
 );
 export const UpdateDecimalFieldSchema = deriveUpdateSchema(
   CreateDecimalFieldSchema,

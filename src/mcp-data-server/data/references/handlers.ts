@@ -9,7 +9,7 @@ import {
 import { rabisClient } from '../../../shared/services/rabisClient.service.js';
 import { success, error, successList, toLocalizedJson } from '../core/utils.js';
 import { defineTool } from '../../../shared/utils/base.js';
-import type { ToolDef } from '../core/entity-builder.js';
+import type { ToolDef } from '../core/schema.js';
 
 // ─────── Reference Data Group ───────
 

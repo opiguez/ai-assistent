@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+export type ToolDef = {
+  name: string;
+  config: { title: string; description: string; inputSchema: z.ZodObject<any> };
+  cb: (args: any) => Promise<any>;
+};
+
 export const BaseLowCodeSchema = z.object({
   displayName: z
     .string()
@@ -22,29 +28,6 @@ export const BaseLowCodeSchema = z.object({
 export const DeleteByIdSchema = z.object({
   id: z.string().describe('ID сущности для удаления'),
 });
-
-export const FieldTypeEnum = z
-  .enum([
-    'STRING',
-    'TEXT',
-    'INTEGER',
-    'DECIMAL',
-    'BOOLEAN',
-    'DATE',
-    'DATETIME',
-    'TIME',
-    'FILE',
-    'FILES',
-    'SELECTION',
-    'MULTI_SELECTION',
-    'DATA_OBJECT',
-    'DATA_OBJECTS',
-    'USER',
-    'USERS',
-    'SEQUENCE',
-    'ATTRIBUTES',
-  ])
-  .describe('Системный тип данных поля согласно GraphQL PropertyTypeEnum.');
 
 export const ModuleIdSchema = z.object({
   moduleId: z.string().describe('ID модуля'),
