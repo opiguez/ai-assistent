@@ -685,73 +685,75 @@ export const CreateAttributesFieldSchema = BaseLowCodeSchema.extend({
 
 // ──────────────────────────────────────────────────
 // Update schemas (derived from create schemas)
+// ВАЖНО: GraphQL Update*Input типы НЕ принимают поле `name`.
+// Каждый тип может иметь свои поля, которые есть в Create, но не в Update.
 // ──────────────────────────────────────────────────
-const UPDATE_FIELD_OMIT = ['parentId', 'iconBatchId', 'brandingJson'];
+const UPDATE_BASE_OMIT = ['parentId', 'iconBatchId', 'brandingJson', 'name'];
 
 export const UpdateStringFieldSchema = deriveUpdateSchema(
   CreateStringFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: [...UPDATE_BASE_OMIT, 'unique'] },
 );
 export const UpdateTextFieldSchema = deriveUpdateSchema(CreateTextFieldSchema, {
-  omitFields: UPDATE_FIELD_OMIT,
+  omitFields: [...UPDATE_BASE_OMIT, 'formatType'],
 });
 export const UpdateIntegerFieldSchema = deriveUpdateSchema(
   CreateIntegerFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: [...UPDATE_BASE_OMIT, 'unique', 'formula'] },
 );
 export const UpdateDecimalFieldSchema = deriveUpdateSchema(
   CreateDecimalFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: UPDATE_BASE_OMIT },
 );
 export const UpdateBooleanFieldSchema = deriveUpdateSchema(
   CreateBooleanFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: UPDATE_BASE_OMIT },
 );
 export const UpdateDateFieldSchema = deriveUpdateSchema(CreateDateFieldSchema, {
-  omitFields: UPDATE_FIELD_OMIT,
+  omitFields: UPDATE_BASE_OMIT,
 });
 export const UpdateDateTimeFieldSchema = deriveUpdateSchema(
   CreateDateTimeFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: [...UPDATE_BASE_OMIT, 'useTimeZone'] },
 );
 export const UpdateTimeFieldSchema = deriveUpdateSchema(CreateTimeFieldSchema, {
-  omitFields: UPDATE_FIELD_OMIT,
+  omitFields: UPDATE_BASE_OMIT,
 });
 export const UpdateFileFieldSchema = deriveUpdateSchema(CreateFileFieldSchema, {
-  omitFields: UPDATE_FIELD_OMIT,
+  omitFields: UPDATE_BASE_OMIT,
 });
 export const UpdateFilesFieldSchema = deriveUpdateSchema(
   CreateFilesFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: UPDATE_BASE_OMIT },
 );
 export const UpdateSelectionFieldSchema = deriveUpdateSchema(
   CreateSelectionFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: UPDATE_BASE_OMIT },
 );
 export const UpdateMultiSelectionFieldSchema = deriveUpdateSchema(
   CreateMultiSelectionFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: UPDATE_BASE_OMIT },
 );
 export const UpdateDataObjectFieldSchema = deriveUpdateSchema(
   CreateDataObjectFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: [...UPDATE_BASE_OMIT, 'relationModuleId'] },
 );
 export const UpdateDataObjectsFieldSchema = deriveUpdateSchema(
   CreateDataObjectsFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: [...UPDATE_BASE_OMIT, 'relationModuleId'] },
 );
 export const UpdateUserFieldSchema = deriveUpdateSchema(CreateUserFieldSchema, {
-  omitFields: UPDATE_FIELD_OMIT,
+  omitFields: UPDATE_BASE_OMIT,
 });
 export const UpdateUsersFieldSchema = deriveUpdateSchema(
   CreateUsersFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
-);
+  { omitFields: UPDATE_BASE_OMIT,
+  });
 export const UpdateSequenceFieldSchema = deriveUpdateSchema(
   CreateSequenceFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: UPDATE_BASE_OMIT },
 );
 export const UpdateAttributesFieldSchema = deriveUpdateSchema(
   CreateAttributesFieldSchema,
-  { omitFields: UPDATE_FIELD_OMIT },
+  { omitFields: UPDATE_BASE_OMIT },
 );

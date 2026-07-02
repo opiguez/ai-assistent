@@ -47,11 +47,17 @@ function buildFieldUpdateHandler(mutation: string, label: string) {
   const inputKey = 'dataProperty';
   return async (a: any) => {
     try {
-      const localized = { ...a };
-      if (localized.displayName)
+      const localized: Record<string, any> = { id: a.id };
+      if (a.displayName)
         localized.displayName = toLocalizedJson(a.displayName);
-      if (localized.description)
+      if (a.description)
         localized.description = toLocalizedJson(a.description);
+      for (const [key, value] of Object.entries(a)) {
+        if (key === 'id' || key === 'displayName' || key === 'description') continue;
+        if (value !== undefined && value !== null) {
+          localized[key] = value;
+        }
+      }
       const r = await (rabisClient.chain.mutation as any)
         [mutation]({ [inputKey]: localized })
         .get({ id: true, name: true });
