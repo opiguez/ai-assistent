@@ -30,8 +30,8 @@ const envSchema = z.object({
   PLATFORM_USERNAME: z.string().min(1),
   PLATFORM_PASSWORD: z.string().min(1),
   GRAPHQL_ADRESS: z.url('Некорректный URL для GRAPHQL_URL'),
-  RABIS_NUXEO_USERNAME: z.string().min(1),
-  RABIS_NUXEO_PASSWORD: z.string().min(1),
+  // RABIS_NUXEO_USERNAME: z.string().min(1),
+  // RABIS_NUXEO_PASSWORD: z.string().min(1),
   LOCAL_SERVER_URL_NO_PORT: z.url(
     'Некорректный URL для LOCAL_SERVER_URL_NO_PORT',
   ),
