@@ -52,7 +52,8 @@ class BpmnXmlService {
    * Парсит BPMN XML строку в объектный граф.
    */
   async fromXML(xml: string): Promise<ParsedProcess> {
-    const { rootElement, elementsById, warnings } = await this.moddle.fromXML(xml);
+    const { rootElement, elementsById, warnings } =
+      await this.moddle.fromXML(xml);
 
     return {
       definitions: rootElement,
@@ -155,9 +156,11 @@ class BpmnXmlService {
 
     // Event definitions
     if (el.get('eventDefinitions')?.length) {
-      properties.eventDefinitions = el.get('eventDefinitions').map((ed: any) => ({
-        $type: ed.$type,
-      }));
+      properties.eventDefinitions = el
+        .get('eventDefinitions')
+        .map((ed: any) => ({
+          $type: ed.$type,
+        }));
     }
 
     // Condition expression (для ConditionalEventDefinition)
@@ -177,7 +180,8 @@ class BpmnXmlService {
     // Task-specific properties
     if (el.$type === 'bpmn:ServiceTask') {
       if (el.topic) properties.topic = el.topic;
-      if (el.delegateExpression) properties.delegateExpression = el.delegateExpression;
+      if (el.delegateExpression)
+        properties.delegateExpression = el.delegateExpression;
     }
 
     if (el.$type === 'bpmn:SendTask') {
@@ -196,7 +200,10 @@ class BpmnXmlService {
     }
 
     // Gateway
-    if (el.$type === 'bpmn:ExclusiveGateway' || el.$type === 'bpmn:InclusiveGateway') {
+    if (
+      el.$type === 'bpmn:ExclusiveGateway' ||
+      el.$type === 'bpmn:InclusiveGateway'
+    ) {
       if (el.default) properties.default = el.default?.id;
     }
 
@@ -402,7 +409,10 @@ class BpmnXmlService {
     if (!process) return false;
 
     // Нельзя удалять StartEvent и EndEvent
-    if (element.$type === 'bpmn:StartEvent' || element.$type === 'bpmn:EndEvent') {
+    if (
+      element.$type === 'bpmn:StartEvent' ||
+      element.$type === 'bpmn:EndEvent'
+    ) {
       return false;
     }
 
@@ -518,7 +528,10 @@ class BpmnXmlService {
   /**
    * Удаляет BPMNShape для элемента из диаграммы.
    */
-  private removeShapeFromDiagram(parsed: ParsedProcess, elementId: string): void {
+  private removeShapeFromDiagram(
+    parsed: ParsedProcess,
+    elementId: string,
+  ): void {
     const plane = this.getPlane(parsed);
     if (!plane) return;
 
@@ -547,7 +560,7 @@ class BpmnXmlService {
     const moddle = (this as any).moddle;
     const edgeId = `${flowId}_di`;
 
-    const waypointObjects = waypoints.map(wp =>
+    const waypointObjects = waypoints.map((wp) =>
       moddle.create('di:Waypoint', { x: wp.x, y: wp.y }),
     );
 

@@ -20,24 +20,32 @@ const ELEMENT_SIZES: Record<string, { width: number; height: number }> = {
 
 function calculateNewElementPosition(
   model: Record<string, Record<string, any>>,
-  elementType: string,
+  _elementType: string,
 ): { x: number; y: number } {
-  const size = ELEMENT_SIZES[elementType] || { width: 100, height: 80 };
-  let maxX = 100;
+  const GAP = 150;
+  const MAX_X = 800; // порог для перехода на новую строку
 
+  let maxX = 100,
+    maxY = 100;
   for (const entry of Object.values(model)) {
     if (entry?.bpmndi?.bounds) {
       const right = entry.bpmndi.bounds.x + (entry.bpmndi.bounds.width || 100);
       if (right > maxX) maxX = right;
+      const bottom = entry.bpmndi.bounds.y + (entry.bpmndi.bounds.height || 80);
+      if (bottom > maxY) maxY = bottom;
     }
   }
 
-  return { x: maxX + 250, y: 159 };
+  let newX = maxX + GAP;
+  let newY = 159;
+  if (newX > MAX_X) {
+    newX = 100; // начинаем с начала
+    newY = maxY + GAP; // сдвигаем вниз
+  }
+  return { x: newX, y: newY };
 }
 
-function generateTaskName(
-  model: Record<string, Record<string, any>>,
-): string {
+function generateTaskName(model: Record<string, Record<string, any>>): string {
   let maxNum = 0;
   for (const entry of Object.values(model)) {
     if (entry?.name && /^Элемент \d+$/.test(entry.name)) {
@@ -172,12 +180,6 @@ const AddElementSchema = z.object({
     .describe(
       'ID вьюхи для редактирования (по умолчанию null). Используй "DISABLE_EDIT" если редактирование не нужно',
     ),
-  candidateUsers: z
-    .string()
-    .optional()
-    .describe(
-      'Выражение camunda:candidateUsers для UserTask (напр. "${S(bpmn__common__owner).prop(\'login\').stringValue()}")',
-    ),
   assignee: z
     .object({
       type: z
@@ -187,12 +189,10 @@ const AddElementSchema = z.object({
         ),
       value: z
         .string()
-        .optional()
         .describe(
           'Значение: для type=user — логин, для type=group — ID группы, для type=variable — имя переменной в формате moduleName:type:_varName',
         ),
     })
-    .optional()
     .nullable()
     .describe(
       'Настройка назначения UserTask. Если передан — генерирует camunda:candidateUsers/candidateGroups и require',
