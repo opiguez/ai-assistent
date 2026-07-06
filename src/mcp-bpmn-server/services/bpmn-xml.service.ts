@@ -331,9 +331,10 @@ class BpmnXmlService {
     parsed: ParsedProcess,
     elementType: string,
     name?: string,
+    parentId?: string,
   ): { elementId: string; element: any } | null {
-    const process = parsed.rootElement;
-    if (!process) return null;
+    const parent = parentId ? parsed.elementsById[parentId] : parsed.rootElement;
+    if (!parent) return null;
 
     const moddle = (this as any).moddle;
     const id = this.generateId(elementType.replace('bpmn:', '').toLowerCase());
@@ -342,7 +343,7 @@ class BpmnXmlService {
     if (name) elementProps.name = name;
 
     const element = moddle.create(elementType, elementProps);
-    process.get('flowElements').push(element);
+    parent.get('flowElements').push(element);
 
     // Обновляем elementsById
     parsed.elementsById[id] = element;
@@ -358,13 +359,14 @@ class BpmnXmlService {
     sourceId: string,
     targetId: string,
     conditionExpression?: string,
+    parentId?: string,
   ): { flowId: string; flow: any } | null {
     const source = parsed.elementsById[sourceId];
     const target = parsed.elementsById[targetId];
     if (!source || !target) return null;
 
-    const process = parsed.rootElement;
-    if (!process) return null;
+    const parent = parentId ? parsed.elementsById[parentId] : parsed.rootElement;
+    if (!parent) return null;
 
     const moddle = (this as any).moddle;
     const id = this.generateId('flow');
@@ -385,8 +387,8 @@ class BpmnXmlService {
       flow.set('conditionExpression', condition);
     }
 
-    // Добавляем в process
-    process.get('flowElements').push(flow);
+    // Добавляем в родительский элемент (process или subprocess)
+    parent.get('flowElements').push(flow);
 
     // Связываем source → outgoing и target → incoming
     source.get('outgoing').push(flow);

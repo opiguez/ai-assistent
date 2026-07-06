@@ -25,7 +25,7 @@ import { setSendTaskTemplateTools } from './set-send-task-template.js';
 import { toggleDecisionsTools } from './toggle-decisions.js';
 import { setRdmStructureTools } from './set-rdm-structure.js';
 import { setMessageEventTools } from './set-message-event.js';
-import { addElementTools } from './add-element.js';
+import { addElementTools } from './add-element/index.js';
 import { connectElementsTools } from './connect-elements.js';
 import { deleteElementTools } from './delete-element.js';
 
