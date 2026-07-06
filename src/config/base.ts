@@ -40,6 +40,11 @@ const envSchema = z.object({
     .transform(Number)
     .pipe(z.number().positive())
     .default(3002),
+  PORT_MCP_BPMN: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().positive())
+    .default(3003),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

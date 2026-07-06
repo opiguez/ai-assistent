@@ -2,9 +2,9 @@ import { McpServer } from '@modelcontextprotocol/server';
 import express from 'express';
 import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node';
 import { createMcpExpressApp } from '@modelcontextprotocol/express';
-import registerResources from './resources/resources.js';
-import registerHistoryPrompt from './prompts/history-prompt.js';
-import registerDataLayerTools from './tools/tools.js';
+import registerBpmnTools from './tools/index.js';
+import registerBpmnResources from './resources/index.js';
+import registerBpmnPrompts from './prompts/index.js';
 import { ENV } from '../config/base.js';
 
 const app = createMcpExpressApp();
@@ -12,17 +12,17 @@ const app = createMcpExpressApp();
 app.use(express.json());
 
 const server = new McpServer({
-  name: 'web-mcp_data',
+  name: 'web-mcp_bpmn',
   version: '1.0.0',
 });
+
 const transport = new NodeStreamableHTTPServerTransport({
   sessionIdGenerator: undefined,
 });
 
-//регистрация для MCP(dataLayer) tools/promts/resources
-registerDataLayerTools(server);
-registerResources(server);
-registerHistoryPrompt(server);
+registerBpmnTools(server);
+registerBpmnResources(server);
+registerBpmnPrompts(server);
 
 await server.connect(transport);
 
@@ -31,9 +31,10 @@ app.post('/mcp', (req, res) => {
 });
 
 const host = new URL(ENV.LOCAL_SERVER_URL_NO_PORT).hostname;
+const port = Number(ENV.PORT_MCP_BPMN) || 3003;
 
-app.listen(ENV.PORT_MCP1, host, () => {
+app.listen(port, host, () => {
   console.log(
-    `MCP сервер успешно запущен на ${ENV.LOCAL_SERVER_URL_NO_PORT}:${ENV.PORT_MCP1}`,
+    `BPMN MCP сервер успешно запущен на ${ENV.LOCAL_SERVER_URL_NO_PORT}:${port}`,
   );
 });
