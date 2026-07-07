@@ -3,7 +3,11 @@
  * Парсинг и генерация BPMN XML через bpmn-moddle (Node.js).
  * Работает с bpmn:Definitions — корневым элементом BPMN 2.0.
  */
-import BpmnModdle from 'bpmn-moddle';
+import { BpmnModdle } from 'bpmn-moddle';
+
+// Если TypeScript ругается на отсутствие типов,
+// можно дополнительно вытянуть тип (в зависимости от установленных @types)
+// Если типы не подхватились автоматически, импортируйте их отдельно:
 
 // ─── Types ────────────────────────────────────────────────
 
@@ -42,7 +46,7 @@ export interface ProcessConnection {
 // ─── Service ──────────────────────────────────────────────
 
 class BpmnXmlService {
-  private moddle: BpmnModdle;
+  private moddle;
 
   constructor() {
     this.moddle = new BpmnModdle();
@@ -333,7 +337,9 @@ class BpmnXmlService {
     name?: string,
     parentId?: string,
   ): { elementId: string; element: any } | null {
-    const parent = parentId ? parsed.elementsById[parentId] : parsed.rootElement;
+    const parent = parentId
+      ? parsed.elementsById[parentId]
+      : parsed.rootElement;
     if (!parent) return null;
 
     const moddle = (this as any).moddle;
@@ -365,7 +371,9 @@ class BpmnXmlService {
     const target = parsed.elementsById[targetId];
     if (!source || !target) return null;
 
-    const parent = parentId ? parsed.elementsById[parentId] : parsed.rootElement;
+    const parent = parentId
+      ? parsed.elementsById[parentId]
+      : parsed.rootElement;
     if (!parent) return null;
 
     const moddle = (this as any).moddle;

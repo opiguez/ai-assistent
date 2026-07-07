@@ -62,54 +62,52 @@ class BpmnSchemaService {
    * сообщения, шаблоны, группы пользователей, представления.
    */
   async loadProcessData(dataTypeId: string): Promise<BpmnProcessData> {
-    const res = await rabisClient.chain.query
-      .dataType({ id: dataTypeId })
-      .get({
+    const res = await rabisClient.chain.query.dataType({ id: dataTypeId }).get({
+      id: true,
+      name: true,
+      displayName: true,
+      bpmnProcessType: {
+        bpmnXml: true,
+        decorJson: true,
+      } as any,
+      bpmnMessages: {
         id: true,
         name: true,
         displayName: true,
-        bpmnProcessType: {
-          bpmnXml: true,
-          decorJson: true,
-        } as any,
-        bpmnMessages: {
-          id: true,
-          name: true,
-          displayName: true,
-          status: true,
-          properties: {
-            dataJson: true,
-          },
+        status: true,
+        properties: {
+          dataJson: true,
         },
+      },
+      properties: {
+        id: true,
+        displayName: true,
+        name: true,
         properties: {
           id: true,
+          key: true,
           displayName: true,
-          name: true,
-          properties: {
-            id: true,
-            key: true,
-            displayName: true,
-            jsonSchema: true,
-            propertyType: { propertyTypeEnum: true, displayName: true },
-            readonly: true,
-            required: true,
-            status: true,
-          },
-        },
-        postTemplates: {
-          id: true,
-          displayName: true,
-          name: true,
-          subjectTemplate: true,
-        },
-        views: {
-          id: true,
-          name: true,
-          displayName: true,
-          viewType: { viewTypeEnum: true, displayName: true },
+          jsonSchema: true,
+          propertyType: { propertyTypeEnum: true, displayName: true },
+          readonly: true,
+          required: true,
           status: true,
         },
-      } as any);
+      },
+      postTemplates: {
+        id: true,
+        displayName: true,
+        name: true,
+        subjectTemplate: true,
+      },
+      views: {
+        id: true,
+        name: true,
+        displayName: true,
+        viewType: { viewTypeEnum: true, displayName: true },
+        status: true,
+      },
+    } as any);
 
     const bpmnProcessType = (res as any).bpmnProcessType;
 
@@ -261,7 +259,11 @@ class BpmnSchemaService {
    * Быстрая проверка валидности процесса (dry-run).
    * Возвращает true если процесс валиден, false если есть ошибки.
    */
-  async isProcessValid(dataTypeId: string, xml: string, decor: string): Promise<boolean> {
+  async isProcessValid(
+    dataTypeId: string,
+    xml: string,
+    decor: string,
+  ): Promise<boolean> {
     try {
       const res = await rabisClient.chain.query
         .isBpmnProcessValid({
@@ -283,19 +285,17 @@ class BpmnSchemaService {
    * Загружает BPMN сообщения для процесса.
    */
   async loadBpmnMessages(dataTypeId: string): Promise<any[]> {
-    const res = await rabisClient.chain.query
-      .dataType({ id: dataTypeId })
-      .get({
-        bpmnMessages: {
-          id: true,
-          name: true,
-          displayName: true,
-          status: true,
-          properties: {
-            dataJson: true,
-          },
+    const res = await rabisClient.chain.query.dataType({ id: dataTypeId }).get({
+      bpmnMessages: {
+        id: true,
+        name: true,
+        displayName: true,
+        status: true,
+        properties: {
+          dataJson: true,
         },
-      } as any);
+      },
+    } as any);
 
     return (res as any).bpmnMessages || [];
   }
@@ -460,7 +460,9 @@ class BpmnSchemaService {
 
   // ─── UserGroups (READ-ONLY) ────────────────────────────────
 
-  async loadUserGroups(search?: string): Promise<Array<{ uid: string; name: string; displayName: string }>> {
+  async loadUserGroups(
+    search?: string,
+  ): Promise<Array<{ uid: string; name: string; displayName: string }>> {
     const res = await rabisClient.chain.query
       .groups({
         params: {
