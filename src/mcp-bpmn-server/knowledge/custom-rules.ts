@@ -10,20 +10,22 @@ export const BPMN_RULES = {
    * Запрет удаления элементов.
    */
   delete: {
-    neverDelete: [
-      'bpmn:Process',
-    ],
+    neverDelete: ['bpmn:Process'],
     subProcessRestrictions: {
       description: 'Внутри SubProcess нельзя удалять StartEvent/EndEvent',
       noDelete: ['bpmn:StartEvent', 'bpmn:EndEvent'],
-      cancelDeleteException: 'Если есть Cancel/Delete события — нельзя удалять их',
+      cancelDeleteException:
+        'Если есть Cancel/Delete события — нельзя удалять их',
     },
     decisionElements: {
-      description: 'Элементы决策 (UserTask с decisionsEnabled + ExclusiveGateway + SequenceFlow) нельзя удалять',
-      protected: 'UserTask с decisionsEnabled, ExclusiveGateway подключённый к нему, SequenceFlow между ними',
+      description:
+        'Элементы (UserTask с decisionsEnabled + ExclusiveGateway + SequenceFlow) нельзя удалять',
+      protected:
+        'UserTask с decisionsEnabled, ExclusiveGateway подключённый к нему, SequenceFlow между ними',
     },
     customStructureElements: {
-      description: 'Элементы custom structure (ExclusiveGateway/InclusiveGateway с DataTypeProperty + их SequenceFlow) нельзя удалять',
+      description:
+        'Элементы custom structure (ExclusiveGateway/InclusiveGateway с DataTypeProperty + их SequenceFlow) нельзя удалять',
       protected: 'Gateway с DataTypeProperty, SequenceFlow исходящая из него',
     },
     labels: {
@@ -36,7 +38,8 @@ export const BPMN_RULES = {
    */
   changeType: {
     exclusiveGatewayInDecisions: {
-      description: 'ExclusiveGateway, входящая в который идёт от UserTask с decisionsEnabled — нельзя менять тип',
+      description:
+        'ExclusiveGateway, входящая в который идёт от UserTask с decisionsEnabled — нельзя менять тип',
     },
   },
 
@@ -46,10 +49,12 @@ export const BPMN_RULES = {
   connection: {
     start: {
       taskSingleOutgoing: {
-        description: 'Task может иметь только одну исходящую non-Association связь',
+        description:
+          'Task может иметь только одну исходящую non-Association связь',
       },
       decisionsEnabled: {
-        description: 'Нельзя создавать исходящие связи из элемента с decisionsEnabled',
+        description:
+          'Нельзя создавать исходящие связи из элемента с decisionsEnabled',
       },
     },
     create: {
@@ -57,7 +62,8 @@ export const BPMN_RULES = {
         description: 'Нельзя создавать связи из элемента с decisionsEnabled',
       },
       boundaryEventNoIncoming: {
-        description: 'BoundaryEvent не может иметь входящих связей при создании',
+        description:
+          'BoundaryEvent не может иметь входящих связей при создании',
       },
     },
   },
@@ -71,7 +77,8 @@ export const BPMN_RULES = {
       allowedHosts: ['bpmn:ServiceTask'],
     },
     nonInterruptingStartEvent: {
-      description: 'Non-interrupting StartEvent в SubProcess нельзя создавать через drag',
+      description:
+        'Non-interrupting StartEvent в SubProcess нельзя создавать через drag',
     },
     dearchiveInSubProcess: {
       description: 'Dearchive Event нельзя создавать внутри SubProcess',
@@ -80,7 +87,8 @@ export const BPMN_RULES = {
       description: 'Cancel/Delete события нельзя создавать через drag',
     },
     intermediateEvents: {
-      description: 'IntermediateThrowEvent/CatchEvent можно прикрепить только к Process/SubProcess/SequenceFlow',
+      description:
+        'IntermediateThrowEvent/CatchEvent можно прикрепить только к Process/SubProcess/SequenceFlow',
       allowedTargets: ['bpmn:Process', 'bpmn:SubProcess', 'bpmn:SequenceFlow'],
     },
     boundaryReattach: {
@@ -159,17 +167,24 @@ export const STRUCTURAL_RULES = {
    */
   connectivity: {
     allElementsReachable: {
-      description: 'Все элементы должны быть связаны SequenceFlow от StartEvent до EndEvent',
+      description:
+        'Все элементы должны быть связаны SequenceFlow от StartEvent до EndEvent',
       errorIf: 'unreachable elements exist',
     },
     noOrphanElements: {
-      description: 'Не должно быть элементов без входящих И исходящих связей (кроме StartEvent/EndEvent)',
+      description:
+        'Не должно быть элементов без входящих И исходящих связей (кроме StartEvent/EndEvent)',
       exception: 'StartEvent — без incoming, EndEvent — без outgoing',
     },
     taskConnections: {
-      description: 'Task (UserTask, SendTask, ScriptTask, ServiceTask) должен иметь ровно 1 incoming и 1 outgoing SequenceFlow',
+      description:
+        'Task (UserTask, SendTask, ScriptTask, ServiceTask) должен иметь ровно 1 incoming и 1 outgoing SequenceFlow',
       errorIf: 'incoming !== 1 || outgoing !== 1',
-      exceptions: ['StartEvent (0 incoming)', 'EndEvent (0 outgoing)', 'Gateway (может иметь несколько)'],
+      exceptions: [
+        'StartEvent (0 incoming)',
+        'EndEvent (0 outgoing)',
+        'Gateway (может иметь несколько)',
+      ],
     },
   },
 
@@ -244,7 +259,8 @@ export const STRUCTURAL_RULES = {
       tool: 'bpmn_get_process_schema',
     },
     decisionGatewayNotAfterUserTask: {
-      description: 'ExclusiveGateway для decisions должен быть сразу после UserTask',
+      description:
+        'ExclusiveGateway для decisions должен быть сразу после UserTask',
       fix: 'Подключить ExclusiveGateway напрямую к UserTask или использовать свой gateway',
       tool: 'bpmn_toggle_decisions',
     },

@@ -144,3 +144,6 @@ npm run dev:agent
 ├── Dockerfile
 ```
 
+
+Карту вызова инструментов - проверить есть ли какое то упоминания как строить
+Анализ extend process vs modify process в чем разница?

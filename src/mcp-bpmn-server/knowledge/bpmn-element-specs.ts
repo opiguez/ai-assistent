@@ -20,7 +20,8 @@ export const PALETTE_ELEMENTS = {
   'bpmn:StartEvent:Message': {
     category: 'event',
     displayName: 'De-archive Event',
-    description: 'Message StartEvent для деархивации. Только на верхнем уровне процесса.',
+    description:
+      'Message StartEvent для деархивации. Только на верхнем уровне процесса.',
     customType: 'Dearchive',
     canBeInSubprocess: false,
     requiresParent: 'bpmn:Process',
@@ -62,7 +63,8 @@ export const PALETTE_ELEMENTS = {
   'bpmn:UserTask': {
     category: 'activity',
     displayName: 'User Task',
-    description: 'Задача для пользователя. Поддерживает decisions, candidates, simplifiedView.',
+    description:
+      'Задача для пользователя. Поддерживает decisions, candidates, simplifiedView.',
     customizableProperties: ['name', 'candidateGroups', 'decisionsEnabled'],
     hasCustomPanel: 'NAME',
     supportsDecisions: true,
@@ -72,7 +74,8 @@ export const PALETTE_ELEMENTS = {
   'bpmn:SendTask': {
     category: 'activity',
     displayName: 'Send Task',
-    description: 'Отправка email уведомлений. Использует шаблоны (postTemplates).',
+    description:
+      'Отправка email уведомлений. Использует шаблоны (postTemplates).',
     customType: 'email', // по умолчанию, может быть KafkaMessage
     hasCustomPanel: 'NAME',
     supportsTemplate: true,
@@ -108,7 +111,7 @@ export const PALETTE_ELEMENTS = {
   'bpmn:ExclusiveGateway': {
     category: 'gateway',
     displayName: 'Exclusive Gateway',
-    description: 'Эксклюзивный шлюз. Используется для决策 и RDM структур.',
+    description: 'Эксклюзивный шлюз. Используется для и RDM структур.',
     customizableProperties: ['name', 'default'],
     supportsDecisions: true,
     supportsRdmStructure: true,
@@ -181,7 +184,8 @@ export const CUSTOM_MODEL_PROPERTIES = {
     type: 'string',
   },
   name: {
-    description: 'Кастомная метка элемента (перезаписывает businessObject.name)',
+    description:
+      'Кастомная метка элемента (перезаписывает businessObject.name)',
     type: 'string',
   },
   simplifiedViewStep: {
