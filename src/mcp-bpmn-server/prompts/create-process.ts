@@ -39,36 +39,40 @@ export default function registerCreateProcessPrompt(server: McpServer) {
 #### Шаг 1: Каталог доступных элементов
 Вызови \`bpmn_get_available_element_types\` для справочника доступных BPMN элементов.
 
-#### Шаг 2: Создание скелета
+#### Шаг 2: Подготовка
+Прочитай API-спецификацию: \`bpmn_get_api_spec\` — нужна для ServiceTask (получи apiSpecGroupId).
+
+#### Шаг 3: Создание скелета
 Создай базовую структуру процесса:
 1. \`bpmn_add_element\` с dataTypeId="${dataTypeId}", elementType="bpmn:StartEvent", name="Start"
 2. \`bpmn_add_element\` с dataTypeId="${dataTypeId}", elementType="bpmn:EndEvent", name="End"
 3. \`bpmn_connect_elements\` с sourceId=<StartEvent ID>, targetId=<EndEvent ID>
 
-#### Шаг 3: Добавление элементов по описанию
+#### Шаг 4: Добавление элементов по описанию
 Для каждого элемента из описания вызови \`bpmn_add_element\`:
-- UserTask: elementType="bpmn:UserTask", name="Имя задачи"
-- ServiceTask: elementType="bpmn:ServiceTask", name="Имя сервиса"
+- UserTask: elementType="bpmn:UserTask", name="Имя задачи", params.assignee={ type: "owner" }
+- ServiceTask: elementType="bpmn:ServiceTask", name="Имя сервиса", params={ apiSpecGroupId, targetModule, targetService, targetMethod }
 - SendTask: elementType="bpmn:SendTask", name="Имя отправки"
 - Gateway: elementType="bpmn:ExclusiveGateway" или "bpmn:InclusiveGateway"
 - SubProcess: elementType="bpmn:SubProcess"
 
-#### Шаг 4: Соединение элементов
+#### Шаг 5: Соединение элементов
 Вызови \`bpmn_connect_elements\` для создания SequenceFlow между элементами.
 Сначала создай основной поток, затем ветвления.
 
-#### Шаг 5: Настройка свойств
+#### Шаг 6: Настройка свойств
 Для каждого элемента настрой свойства:
-- ServiceTask: \`bpmn_update_element_property\` для topic
+- ServiceTask: \`bpmn_set_service_task_config\` для привязки к API
 - SendTask: \`bpmn_set_send_task_template\` для шаблона
-- UserTask: \`bpmn_toggle_decisions\` для decisions
-- Gateway: \`bpmn_set_rdm_structure\` или \`bpmn_set_condition_expression\`
+- UserTask decisions: \`bpmn_toggle_decisions\` (создаёт ExclusiveGateway + flows автоматически)
+- Condition на стрелке: \`bpmn_set_condition_expression\`
+- Gateway RDM: \`bpmn_set_rdm_structure\`
 
-#### Шаг 6: Валидация
+#### Шаг 7: Валидация
 Вызови \`bpmn_validate_process\` с dataTypeId="${dataTypeId}".
-Если valid=false — проанализируй ошибки и повтори шаги 3-5.
+Если valid=false — проанализируй ошибки и повтори шаги 4-6.
 
-#### Шаг 7: Отчёт
+#### Шаг 8: Отчёт
 Опиши созданную структуру:
 - Сколько элементов создано
 - Какие типы элементов используются

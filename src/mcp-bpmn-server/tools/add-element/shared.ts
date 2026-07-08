@@ -46,54 +46,28 @@ export function calculatePosition(
   }
 
   const size = ELEMENT_SIZES[elementType] || { width: 100, height: 80 };
-  const GAP_X = 100;
-  const GAP_Y = 120;
+  const GAP = 100;
   const MAX_X = 900;
   const START_X = 100;
+  const CENTER_Y = 150;
 
   const allBounds = Object.values(model)
     .filter((e) => e?.bpmndi?.bounds)
     .map((e) => e.bpmndi.bounds);
 
   if (allBounds.length === 0) {
-    return { x: START_X, y: 150 };
+    return { x: START_X, y: snap(CENTER_Y - size.height / 2) };
   }
 
-  const ROW_TOLERANCE = 40;
-  const sorted = [...allBounds].sort((a, b) => a.y - b.y);
-  const rows: Array<{ centerY: number; maxX: number; maxY: number }> = [];
+  const maxX = Math.max(...allBounds.map((b) => b.x + b.width));
+  let newX = maxX + GAP;
 
-  for (const b of sorted) {
-    const cy = b.y + b.height / 2;
-    let found = false;
-    for (const row of rows) {
-      if (Math.abs(cy - row.centerY) < ROW_TOLERANCE) {
-        row.maxX = Math.max(row.maxX, b.x + b.width);
-        row.maxY = Math.max(row.maxY, b.y + b.height);
-        row.centerY = (row.centerY + cy) / 2;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      rows.push({ centerY: cy, maxX: b.x + b.width, maxY: b.y + b.height });
-    }
+  if (newX + size.width > MAX_X) {
+    const maxY = Math.max(...allBounds.map((b) => b.y + b.height));
+    return { x: START_X, y: snap(maxY + GAP) };
   }
 
-  const lastRow = rows[rows.length - 1];
-  const newX = lastRow.maxX + GAP_X;
-
-  if (newX + size.width <= MAX_X) {
-    return {
-      x: snap(newX),
-      y: snap(lastRow.centerY - size.height / 2),
-    };
-  } else {
-    return {
-      x: START_X,
-      y: snap(lastRow.maxY + GAP_Y),
-    };
-  }
+  return { x: snap(newX), y: snap(CENTER_Y - size.height / 2) };
 }
 
 export function handleAssignee(
@@ -103,7 +77,7 @@ export function handleAssignee(
   switch (assignee.type) {
     case 'owner': {
       const name = `${moduleName}:common:_owner`;
-      const techName = name.replace(/[:\-]/g, '_');
+      const techName = `${moduleName}__common__owner`;
       return {
         require: [name],
         attrs: {

@@ -10,11 +10,15 @@ const ConnectElementsSchema = z.object({
   conditionExpression: z
     .string()
     .optional()
-    .describe('Условие для ветвления. Формат: ${gatewayId==numericId} (напр. ${Gateway_1==2}). Используй ${GatewayId==1} для "Подтвердить" и ${GatewayId==2} для "Отклонить"'),
+    .describe(
+      'Условие для ветвления. Формат: ${gatewayId==numericId} (напр. ${Gateway_1==2}). Используй ${GatewayId==1} для "Подтвердить" и ${GatewayId==2} для "Отклонить"',
+    ),
   conditionName: z
     .string()
     .optional()
-    .describe('Отображаемое имя условия (лейбл на стрелке, напр. "Подтвердить" или "Отклонить")'),
+    .describe(
+      'Отображаемое имя условия (лейбл на стрелке, напр. "Подтвердить" или "Отклонить")',
+    ),
 });
 
 async function handleConnectElements(args: {
@@ -27,7 +31,6 @@ async function handleConnectElements(args: {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    // Проверяем существование элементов
     const source = bpmnXmlService.getElementById(state.parsed, args.sourceId);
     const target = bpmnXmlService.getElementById(state.parsed, args.targetId);
 
@@ -59,6 +62,68 @@ async function handleConnectElements(args: {
       };
     }
 
+    // --- НАЧАЛО БЛОКА ВАЛИДАЦИИ DECISIONS И ШЛЮЗОВ ---
+    const sourceModel = state.model[args.sourceId] || {};
+    const isDecisionsEnabled = !!sourceModel.decisionsEnabled;
+    let updatedDecisionsUnused: string[] = [];
+
+    if (isDecisionsEnabled) {
+      // КРИТИЧЕСКАЯ ПРОВЕРКА: Целевой элемент обязан быть шлюзом
+      const isGateway = target.$type && target.$type.includes('Gateway');
+      if (!isGateway) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({
+                status: 'error',
+                message: `Невозможно соединить элемент напрямую. Для "${args.sourceId}" включен режим Decisions, поэтому его можно связать ТОЛЬКО со шлюзом (например, bpmn:ExclusiveGateway). Текущий целевой элемент имеет тип "${target.$type}".`,
+              }),
+            },
+          ],
+        };
+      }
+
+      const currentUnused = sourceModel.decisionsUnused || [];
+
+      // 1. Проверяем, передан ли conditionName
+      if (!args.conditionName) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({
+                status: 'error',
+                message: `Для элемента "${args.sourceId}" включен режим Decisions. Передайте "conditionName" (одно из доступных решений: ${JSON.stringify(currentUnused)}).`,
+              }),
+            },
+          ],
+        };
+      }
+
+      // 2. Проверяем, доступно ли еще это решение в массиве unused
+      if (!currentUnused.includes(args.conditionName)) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify({
+                status: 'error',
+                message: `Решение "${args.conditionName}" не найдено в списке доступных или уже было использовано. Доступные варианты: ${JSON.stringify(currentUnused)}.`,
+              }),
+            },
+          ],
+        };
+      }
+
+      // 3. Вычисляем новый массив неиспользованных решений (удаляем текущее)
+      updatedDecisionsUnused = currentUnused.filter(
+        (d: string) => d !== args.conditionName,
+      );
+    }
+    // --- КОНЕЦ БЛОКА ВАЛИДАЦИИ DECISIONS И ШЛЮЗОВ ---
+
+    // Создаем связь в XML
     const result = bpmnXmlService.addSequenceFlow(
       state.parsed,
       args.sourceId,
@@ -80,12 +145,14 @@ async function handleConnectElements(args: {
       };
     }
 
-    const sourceModel = state.model[args.sourceId] || {};
     const targetModel = state.model[args.targetId] || {};
     const sourceBounds = sourceModel.bpmndi?.bounds;
     const targetBounds = targetModel.bpmndi?.bounds;
 
-    let waypoints = [{ x: 0, y: 0 }, { x: 100, y: 0 }];
+    let waypoints = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ];
     if (sourceBounds && targetBounds) {
       const sx = sourceBounds.x + (sourceBounds.width || 100);
       const sy = sourceBounds.y + (sourceBounds.height || 80) / 2;
@@ -97,13 +164,12 @@ async function handleConnectElements(args: {
       ];
     }
 
-    bpmnXmlService.addEdgeToDiagram(
-      state.parsed,
-      result.flowId,
-      waypoints,
-    );
+    bpmnXmlService.addEdgeToDiagram(state.parsed, result.flowId, waypoints);
 
+    // Клонируем и обновляем кастомную модель процессов
     const newModel = { ...state.model };
+
+    // Создаем запись для нового SequenceFlow
     newModel[result.flowId] = {
       bpmndi: { waypoint: waypoints },
       require: [],
@@ -114,8 +180,17 @@ async function handleConnectElements(args: {
       newModel[result.flowId].name = args.conditionName;
     }
 
+    // Обновляем исходный элемент
     if (newModel[args.sourceId]) {
-      newModel[args.sourceId] = { ...newModel[args.sourceId], outgoing: result.flowId };
+      newModel[args.sourceId] = {
+        ...newModel[args.sourceId],
+        outgoing: result.flowId, // Так как связь идет только к одному шлюзу, строка здесь идеальна
+      };
+
+      // Если решения были включены, сохраняем обновленный отфильтрованный массив
+      if (isDecisionsEnabled) {
+        newModel[args.sourceId].decisionsUnused = updatedDecisionsUnused;
+      }
     }
 
     const updatedXml = await bpmnXmlService.generateXml(state.parsed);
@@ -140,6 +215,15 @@ async function handleConnectElements(args: {
       };
     }
 
+    // Формируем финальное сообщение о статусе решений
+    let decisionStatusMessage = '';
+    if (isDecisionsEnabled) {
+      decisionStatusMessage =
+        updatedDecisionsUnused.length === 0
+          ? ' Все решения этой задачи успешно распределены по веткам шлюза.'
+          : ` Связь со шлюзом создана. Остались нераспределенные решения: ${JSON.stringify(updatedDecisionsUnused)}. Направьте их в этот же шлюз (или другие шлюзы, если применимо).`;
+    }
+
     return {
       content: [
         {
@@ -150,7 +234,10 @@ async function handleConnectElements(args: {
             source: args.sourceId,
             target: args.targetId,
             conditionExpression: args.conditionExpression || null,
-            message: `SequenceFlow создан: ${args.sourceId} → ${args.targetId}`,
+            decisionsUnused: isDecisionsEnabled
+              ? updatedDecisionsUnused
+              : undefined,
+            message: `SequenceFlow создан: ${args.sourceId} → ${args.targetId}.${decisionStatusMessage}`,
           }),
         },
       ],

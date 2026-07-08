@@ -555,6 +555,7 @@ class BpmnXmlService {
 
   /**
    * Добавляет BPMNEdge для SequenceFlow в диаграмму.
+   * Waypoints создаются как dc:Point объекты (di:Waypoint не существует в moddle).
    */
   addEdgeToDiagram(
     parsed: ParsedProcess,
@@ -570,15 +571,15 @@ class BpmnXmlService {
     const moddle = (this as any).moddle;
     const edgeId = `${flowId}_di`;
 
-    const waypointObjects = waypoints.map((wp) =>
-      moddle.create('di:Waypoint', { x: wp.x, y: wp.y }),
-    );
-
     const edge = moddle.create('bpmndi:BPMNEdge', {
       id: edgeId,
       bpmnElement: flow,
-      waypoint: waypointObjects,
     });
+
+    const points = waypoints.map((wp) =>
+      moddle.create('dc:Point', { x: wp.x, y: wp.y }),
+    );
+    edge.set('waypoint', points);
 
     plane.get('planeElement').push(edge);
   }

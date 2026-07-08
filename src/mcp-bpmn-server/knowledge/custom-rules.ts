@@ -54,12 +54,13 @@ export const BPMN_RULES = {
       },
       decisionsEnabled: {
         description:
-          'Нельзя создавать исходящие связи из элемента с decisionsEnabled',
+          'Нельзя создавать исходящие связи из элемента с decisionsEnabled, только в gateway',
       },
     },
     create: {
       decisionsEnabled: {
-        description: 'Нельзя создавать связи из элемента с decisionsEnabled',
+        description:
+          'Нельзя создавать связи из элемента с decisionsEnabled, только в gateway ',
       },
       boundaryEventNoIncoming: {
         description:
@@ -299,38 +300,34 @@ export const ELEMENT_CONFIGURATIONS = {
   userTaskWithDecisions: {
     description: 'UserTask с generic decisions',
     steps: [
-      '1. Создать UserTask',
-      '2. Включить decisionsEnabled через rabis.decisions.toggle',
-      '3. Создать ExclusiveGateway (автоматически создаётся)',
-      '4. Создать SequenceFlow от UserTask к ExclusiveGateway',
-      '5. ExclusiveGateway автоматически получает outgoing для каждого решения',
-      '6. Назначить имена через rabis.decisions.assign',
+      '1. Создать UserTask: bpmn_add_element(dataTypeId, "bpmn:UserTask", "Имя")',
+      '2. Создать ExclusiveGateway (fork): bpmn_add_element(dataTypeId, "bpmn:ExclusiveGateway")',
+      '3. Соединить UserTask → Gateway: bpmn_connect_elements(dataTypeId, userTaskId, gatewayId)',
+      '4. Создать ExclusiveGateway (convergence): bpmn_add_element(dataTypeId, "bpmn:ExclusiveGateway")',
+      '5. Соединить ветки: bpmn_connect_elements с conditionName ("Подтвердить"/"Отклонить")',
+      '6. Включить decisions: bpmn_toggle_decisions(dataTypeId, userTaskId, true)',
     ],
   },
   serviceTaskWithApi: {
     description: 'ServiceTask привязанная к API',
     steps: [
-      '1. Создать ServiceTask (topic: "BM Service Task")',
-      '2. Настроить модуль через bm.serviceTask.setModule',
-      '3. Настроить метод через bm.serviceTask.setMethod',
-      '4. Настроить input/output mappings если нужно',
+      '1. Прочитать API-спецификацию: bpmn_get_api_spec(moduleId)',
+      '2. Создать ServiceTask: bpmn_add_element(dataTypeId, "bpmn:ServiceTask", "Имя", { apiSpecGroupId, targetModule, targetService, targetMethod })',
     ],
   },
   gatewayWithRdmStructure: {
     description: 'ExclusiveGateway с RDM структурой',
     steps: [
-      '1. Создать ExclusiveGateway',
-      '2. Назначить DataTypeProperty = "rdmStructure" через bm.rdmStructure.assign',
-      '3. Назначить DataTypePropertyValue (ID свойства типа данных)',
-      '4. SequenceFlow автоматически получают условия на основе RDM объектов',
+      '1. Создать ExclusiveGateway: bpmn_add_element(dataTypeId, "bpmn:ExclusiveGateway")',
+      '2. Назначить RDM структуру: bpmn_set_rdm_structure(dataTypeId, gatewayId, rdmPropertyId)',
+      '3. Соединить исходящие SequenceFlow: bpmn_connect_elements',
     ],
   },
   sendTaskWithEmail: {
     description: 'SendTask для email уведомлений',
     steps: [
-      '1. Создать SendTask',
-      '2. Выбрать шаблон из postTemplates через bm.sendTask.set',
-      '3. SendTask автоматически получает имя из шаблона',
+      '1. Создать SendTask: bpmn_add_element(dataTypeId, "bpmn:SendTask", "Имя")',
+      '2. Настроить шаблон: bpmn_set_send_task_template(dataTypeId, elementId, template, emailTo, emailSubject, emailFrom)',
     ],
   },
   subprocessWithCancelDelete: {

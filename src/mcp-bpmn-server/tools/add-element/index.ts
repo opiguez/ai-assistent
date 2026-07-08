@@ -1,3 +1,4 @@
+import { addGenericElementTools } from './add-element.js';
 import { addUserTaskTools } from './add-user-task.js';
 import { addServiceTaskTools } from './add-service-task.js';
 import { addSendTaskTools } from './add-send-task.js';
@@ -12,6 +13,7 @@ import { addBoundaryEventTools } from './add-boundary-event.js';
 import { addSubProcessTools } from './add-sub-process.js';
 
 export const addElementTools = [
+  ...addGenericElementTools,
   ...addUserTaskTools,
   ...addServiceTaskTools,
   ...addSendTaskTools,

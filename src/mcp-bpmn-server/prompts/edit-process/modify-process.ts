@@ -4,6 +4,12 @@
  */
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/server';
+import {
+  stepReadSchema,
+  stepSaveSnapshot,
+  stepValidate,
+  stepReport,
+} from './workflow-helpers.js';
 
 export default function registerModifyProcessPrompt(server: McpServer) {
   server.registerPrompt(
@@ -36,17 +42,14 @@ export default function registerModifyProcessPrompt(server: McpServer) {
 
 ### Workflow (строго последовательный):
 
-#### Шаг 1: Чтение текущего состояния
-Вызови \`bpmn_get_process_schema\` с dataTypeId="${dataTypeId}".
-Запомни ID всех элементов и их типы.
+${stepReadSchema(dataTypeId)}
 
 #### Шаг 2: Поиск целевого элемента
 Определи ID элемента, который нужно изменить, по описанию из инструкции.
 Если нужно — вызови \`bpmn_get_element_properties\` для уточнения текущих значений.
 Если нужна общая структура — \`bpmn_get_process_topology\`.
 
-#### Шаг 3: Сохранение снимка (undo)
-Вызови \`bpmn_save_snapshot\` с dataTypeId="${dataTypeId}" для возможности отката.
+${stepSaveSnapshot(dataTypeId)}
 
 #### Шаг 4: Проверка ограничений
 Вызови \`bpmn_get_element_constraints\` с:
@@ -70,22 +73,13 @@ export default function registerModifyProcessPrompt(server: McpServer) {
 - Message Event: \`bpmn_set_message_event\`
 
 **CREATE (если нужен новый элемент):**
-- Новый элемент: \`bpmn_add_element\`
+- Новый элемент: \`bpmn_add_element(dataTypeId, elementType, name, params?)\`
 - Новая связь: \`bpmn_connect_elements\`
 - Удаление связи: \`bpmn_delete_element\` (с confirm: true)
 
-#### Шаг 6: Валидация
-Вызови \`bpmn_validate_process\` с dataTypeId="${dataTypeId}".
-Если valid=false — проанализируй ошибки:
-- Используй \`bpmn_log_validation_errors\` для деталей
-- Повтори шаг 5 с корректировкой
-- При необходимости — \`bpmn_restore_snapshot\` для отката
+${stepValidate(dataTypeId)}
 
-#### Шаг 7: Отчёт
-Опиши что изменилось:
-- Какой элемент был изменён/создан/удалён
-- Какое свойство/имя/связь обновлены
-- Результат валидации (успех/ошибка)
+${stepReport('изменено')}
 `;
 
       return {

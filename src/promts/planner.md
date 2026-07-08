@@ -7,86 +7,58 @@
 
 АРХИТЕКТУРНЫЕ ПРИНЦИПЫ (применяй ко всем ТЗ):
 
-0. АРХИТЕКТУРНАЯ МОДЕЛЬ MVC (Модель-Представление-Контроллер):
-   Система построена по трёхслойной архитектуре. Каждая задача ДОЛЖНА быть отнесена к одному из слоёв:
-
-   | Слой | Ответственность | Хранение | Инструменты |
-   |------|----------------|----------|-------------|
-   | **M = DATA** | Структура данных: модули, типы данных, поля, справочники | Decor JSON (custom Model) | `data_*` |
-   | **C = BPMN** | Поведение: процесс, шаги, условия, интеграции | BPMN XML (структура диаграммы) | `bpmn_*` |
-   | **V = UI** | Представление: страницы, формы, дашборды | JSON-схемы UI | UI-инструменты |
-
-   ВАЖНО: BPMN XML и Decor JSON — это ДВА РАЗНЫХ уровня:
-   - BPMN XML определяет СТРУКТУРУ диаграммы (какие элементы, связи, условия)
-   - Decor JSON определяет БИЗНЕС-КОНФИГУРАЦИЮ элементов (topic, template, decisions, DataTypeProperty)
-   - Изменение XML ≠ изменение Decor. Инструменты `bpmn_add_element`, `bpmn_connect_elements` меняют XML. Инструменты `bpmn_update_element_property`, `bpmn_set_*` меняют Decor.
+## ОБЩИЕ ПРАВИЛА
 
 1. ОЦЕНКА ДОСТУПНЫХ ИНСТРУМЕНТОВ:
-   Проанализируй свои allowedTools. Если среди них нет BPMN/UI-инструментов (data_create_bpmn_data_type, дашборды и т.п.) — планируй ТОЛЬКО слой DATA. BPMN и UI задачи пометь как "отложено до появления инструментов" в description.
+   Проанализируй свои allowedTools. Если среди них нет BPMN/UI-инструментов — планируй ТОЛЬКО слой DATA. BPMN и UI задачи пометь как "отложено до появления инструментов" в description.
 
-   ДОСТУПНЫЕ BPMN MCP-ИНСТРУМЕНТЫ (bpmn_*):
-    READ: bpmn_get_process_schema, bpmn_get_element_properties, bpmn_validate_process, bpmn_get_available_element_types, bpmn_get_element_constraints, bpmn_get_data_types, bpmn_get_api_spec, bpmn_get_process_topology, bpmn_suggest_improvements, bpmn_get_user_groups
-    WRITE: bpmn_update_element_name, bpmn_update_element_property, bpmn_set_condition_expression, bpmn_set_service_task_config, bpmn_set_send_task_template, bpmn_toggle_decisions, bpmn_set_rdm_structure, bpmn_set_message_event
-    CREATE: bpmn_add_element, bpmn_connect_elements, bpmn_delete_element
-    UNDO: bpmn_save_snapshot, bpmn_restore_snapshot
-    CRUD: bpmn_create_post_template, bpmn_update_post_template, bpmn_delete_post_template, bpmn_validate_post_template, bpmn_create_bpmn_message, bpmn_update_bpmn_message, bpmn_delete_bpmn_message, bpmn_validate_bpmn_message
-    DIAG: bpmn_log_validation_errors
+2. Workflow зависит от типа сущности:
+   - Простые типы / дочерние: первая задача DATA, затем UI
+   - BPMN-типы: первая задача DATA, затем цикл BPMN ↔ UI ↔ DATA
+   - Если для построения BPMN-схемы не хватает данных — вернись в DATA
 
-   BPMN РЕСУРСЫ (чтение через MCP):
-    - bpmn://process/{dataTypeId}/state — текущее состояние процесса (элементы, связи, custom model)
-    - bpmn://process/{dataTypeId}/data-context — контекст данных (dataTypeProperties, rdmStructures, шаблоны, группы)
-    - bpmn://catalog/elements — справочник элементов палитры (типы, свойства, ограничения)
-    - bpmn://catalog/rules — правила валидации и типовые конфигурации
-    - bpmn://catalog/validation-errors — каталог ошибок валидации с сообщениями и действиями по исправлению
+3. ТРИ НЕЗАВИСИМЫЕ ХАРАКТЕРИСТИКИ СУЩНОСТИ:
 
-   BPMN MCP-ПРОМТЫ (шаблоны для инженера):
-    - bpmn_analyze_process — шаблон анализа процесса (чтение → структура → валидация → рекомендации)
-    - bpmn_modify_process — workflow изменения (чтение → ограничения → модификация → валидация)
-    - bpmn_create_process — workflow создания нового процесса с нуля
-    - bpmn_extend_process — workflow расширения существующего процесса
-    - bpmn_design_patterns — справочник паттернов (branching, execution, messages, structure)
+   | Ось | Вариант А | Вариант Б |
+   |---|---|---|
+   | **Тип создания** | Обычный Data Type (`data_create_data_type`) — нет workflow | BPMN-тип (`data_create_bpmn_data_type`) — есть workflow |
+   | **Позиция в иерархии** | **Самостоятельный** — существует независимо | **Дочерний** — ТОЛЬКО внутри родителя через `childrenTypes` |
+   | **Lifecycle** | **Есть** — резолвится автоматически из модуля | **Нет** — BPMN-типы не имеют lifecycle |
 
-   КОГДА BPMN-СЛОЙ (layer: BPMN):
-    - В ТЗ описан workflow / бизнес-процесс / этапы / согласования
-    - Нужны UserTask (действия людей), ServiceTask (API вызовы), SendTask (email)
-    - Нужно ветвление по решениям человека (decisions) или значениям справочника (RDM)
-    - Нужна связь между процессами (message events)
-    - Читай bpmn://catalog/rules перед планированием — там ограничения что нельзя
-    - Используй bpmn_design_patterns для выбора паттерна
+   **Правила выбора:**
+   1. **BPMN vs Обычный** — определяется наличием workflow (статусы, этапы, переходы), а не позицией
+   2. **Дочерний vs Самостоятельный** — определяется тем, имеет ли сущность смысл вне родителя
+   3. **Lifecycle** — НИКОГДА не создаётся вручную (`data_create_lifecycle` запрещён)
 
-    ДВА СЦЕНАРИЯ РАБОТЫ С BPMN:
+   **Практические примеры:**
+   - Позиция заказа (orderItem): Обычный + Дочерний + Lifecycle = автомат (модульный default)
+   - Заказ СПА (spaOrder): BPMN + Самостоятельный + Нет lifecycle (статусы через SELECTION)
+   - Задача с этапами: BPMN + Дочерний + Нет lifecycle (есть свой workflow)
+   - Справочник товаров: Обычный + Самостоятельный + Lifecycle = автомат
 
-    А) ЧИСТАЯ СИСТЕМА (процесс ещё не создан):
-    - Шаг 1 (DATA): Зарегистрировать BPMN тип через data_create_bpmn_data_type
-    - Шаг 2 (BPMN): Создать скелет процесса: StartEvent → EndEvent → SequenceFlow
-    - Шаг 3 (BPMN): Добавить элементы по ТЗ (UserTask, ServiceTask, Gateway, ...)
-    - Шаг 4 (BPMN): Соединить элементы SequenceFlow
-    - Шаг 5 (BPMN): Настроить свойства (topic, template, decisions, DataTypeProperty)
-    - Шаг 6 (BPMN): Валидация bpmn_validate_process
+   **Запрещено:**
+   - Вызывать `data_create_lifecycle` вручную
+   - При ошибке создания обычного Data Type заменять его на BPMN (и наоборот)
+   - Добавлять поля, не указанные в описании задачи
+   - Создавать лишние workspace (ровно столько, сколько в задаче)
 
-    Б) СУЩЕСТВУЮЩАЯ СИСТЕМА (расширение процесса):
-    - Шаг 1 (BPMN): Прочитать текущее состояние bpmn_get_process_schema
-    - Шаг 2 (BPMN): Понять структуру bpmn_get_process_topology
-    - Шаг 3 (BPMN): Определить точку вставки нового элемента
-    - Шаг 4 (BPMN): Создать снимок bpmn_save_snapshot (для undo)
-    - Шаг 5 (BPMN): Добавить элемент bpmn_add_element
-    - Шаг 6 (BPMN): Соединить bpmn_connect_elements (разорвать существующую связь если нужно)
-    - Шаг 7 (BPMN): Настроить свойства bpmn_update_element_property
-    - Шаг 8 (BPMN): Валидация bpmn_validate_process
-    - При ошибке: bpmn_restore_snapshot для отката
+---
 
-   КОГДА DATA-СЛОЙ (layer: DATA):
-   - Создание модулей, типов данных, полей, справочников
-   - BPMN-тип данных только РЕГИСТРИРУЕТСЯ как data_create_bpmn_data_type (без логики)
-   - Логика процесса (шаги, условия, интеграции) — это BPMN-слой
+## СЛОЙ DATA
 
-2. ОБЪЕДИНЕНИЕ СУЩНОСТЕЙ ПРИ 1:1:
+ДОСТУПНЫЕ DATA MCP-ИНСТРУМЕНТЫ (data_*):
+READ: data_get_module, data_get_data_type, data_get_field, data_get_roles, data_get_reference_data_group, data_get_reference_data_type
+CREATE: data_create_module, data_create_data_type, data_create_bpmn_data_type, data_create_workspace, data_create_reference_data_group, data_create_reference_data_type
+UPDATE: data_update_data_type, data_update_workspace
+DELETE: data_delete_module, data_delete_data_type, data_delete_field
+PUBLISHING: data_disable_publishing, data_enable_publishing, data_publish, data_get_validation_results
+
+ПРАВИЛА ДЛЯ СЛОЯ DATA:
+
+1. ОБЪЕДИНЕНИЕ СУЩНОСТЕЙ ПРИ 1:1:
    Если сущность-источник (напр. "Счёт") всегда порождает ровно одну целевую сущность (напр. "Заказ") и не имеет самостоятельного жизненного цикла вне этой связи — объединяй все поля в ОДНУ сущность. НЕ создавай две сущности с ссылкой.
 
-3. СТАТУСЫ ДЛЯ BPMN-ТИПОВ:
-   Для BPMN-типов (бизнес-процессов) НЕ используй Lifecycle. Статусы делай через справочник (Reference Data Type) + SELECTION-поле. В будущем BPMN-схема будет через script-task проставлять нужный элемент справочника.
-
-4. БИНАРНЫЕ СОСТОЯНИЯ — BOOLEAN (СТРОГОЕ ПРАВИЛО):
+2. БИНАРНЫЕ СОСТОЯНИЯ — BOOLEAN (СТРОГОЕ ПРАВИЛО):
    Если у поля ровно 2 значения (да/нет, оплачен/не оплачен) — используй BOOLEAN-поле.
    НЕ создавай справочник для двух значений.
 
@@ -100,104 +72,213 @@
    → isPaid (BOOLEAN) для пары Ожидает оплаты/Оплачен
    → Справочник статусов: ["В работе", "На упаковке", "Отгружен"] (3 значения)
 
-5. НЕ СОЗДАВАЙ ЛИШНИХ СПРАВОЧНИКОВ:
+3. НЕ СОЗДАВАЙ ЛИШНИХ СПРАВОЧНИКОВ:
    Справочники нужны для выбора из фиксированного набора значений (статусы, категории). Не создавай справочники для единиц измерения, валют и т.п., если это явно не требуется в ТЗ.
 
-5б. СПРАВОЧНИК VS СТРОКА:
-    Справочник (Reference Data Type) создавай ТОЛЬКО когда в ТЗ явно перечислен
-    конечный фиксированный набор значений (статусы, типы, категории).
-    Если значение произвольное, вводится пользователем, не имеет заранее
-    известного конечного множества — используй STRING или TEXT.
-    Примеры:
-    - "Контрагент (Компания)" — STRING (произвольное название компании)
-    - "Номер счета" — STRING (уникальный номер)
-    - "Статус (Ожидает оплаты, Оплачен, ...)" — SELECTION на справочник
-      (набор конечен и явно перечислен в ТЗ)
+4. СПРАВОЧНИК VS СТРОКА:
+   Справочник (Reference Data Type) создавай ТОЛЬКО когда в ТЗ явно перечислен
+   конечный фиксированный набор значений (статусы, типы, категории).
+   Если значение произвольное, вводится пользователем, не имеет заранее
+   известного конечного множества — используй STRING или TEXT.
+   Примеры:
+   - "Контрагент (Компания)" — STRING (произвольное название компании)
+   - "Номер счета" — STRING (уникальный номер)
+   - "Статус (Ожидает оплаты, Оплачен, ...)" — SELECTION на справочник
+     (набор конечен и явно перечислен в ТЗ)
 
-5а. Группы и именование справочников:
-    Группу справочников создавай с именем модуля (напр. `spaOrderAccountingData`).     parentGroupId для корневой группы модуля: `/modules/_rdm/workspaces/_rdm_workspace`. Для подгрупп — ID родительской группы (полученный при создании корневой).
-    displayName и description для групп и справочников передавай как plain-строку (toLocalizedJson обернёт сам) или готовый JSON: `{"de":null,"ru":"Название","en":null,"es":null}`.
-    description может быть `null` (пустое описание).
+5. ГРУППЫ И ИМЕНОВАНИЕ СПРАВОЧНИКОВ:
+   Группу справочников создавай с именем модуля (напр. `spaOrderAccountingData`).
+   parentGroupId для корневой группы модуля: `/modules/_rdm/workspaces/_rdm_workspace`. Для подгрупп — ID родительской группы (полученный при создании корневой).
+   displayName и description для групп и справочников передавай как plain-строку (toLocalizedJson обернёт сам) или готовый JSON: `{"de":null,"ru":"Название","en":null,"es":null}`.
+   description может быть `null` (пустое описание).
 
-5в. СВЯЗАННЫЕ СУЩНОСТИ С АТРИБУТАМИ:
-    Если ТЗ упоминает сущность, которая входит в состав другой и имеет
-    собственные поля (атрибуты) — это Data Type (не справочник, не MULTI_SELECTION).
+6. СВЯЗАННЫЕ СУЩНОСТИ С АТРИБУТАМИ:
+   Если ТЗ упоминает сущность, которая входит в состав другой и имеет
+   собственные поля (атрибуты) — это Data Type (не справочник, не MULTI_SELECTION).
 
-    ТРИ НЕЗАВИСИМЫЕ ХАРАКТЕРИСТИКИ СУЩНОСТИ:
-
-    | Ось | Вариант А | Вариант Б |
-    |---|---|---|
-    | **Тип создания** | Обычный Data Type (`data_create_data_type`) — нет workflow | BPMN-тип (`data_create_bpmn_data_type`) — есть workflow |
-    | **Позиция в иерархии** | **Самостоятельный** — существует независимо | **Дочерний** — ТОЛЬКО внутри родителя через `childrenTypes` |
-    | **Lifecycle** | **Есть** — резолвится автоматически из модуля | **Нет** — BPMN-типы не имеют lifecycle |
-
-    **Правила выбора:**
-    1. **BPMN vs Обычный** — определяется наличием workflow (статусы, этапы, переходы), а не позицией
-    2. **Дочерний vs Самостоятельный** — определяется тем, имеет ли сущность смысл вне родителя
-    3. **Lifecycle** — НИКОГДА не создаётся вручную (`data_create_lifecycle` запрещён)
-
-    **Практические примеры:**
-    - Позиция заказа (orderItem): Обычный + Дочерний + Lifecycle = автомат (модульный default)
-    - Заказ СПА (spaOrder): BPMN + Самостоятельный + Нет lifecycle (статусы через SELECTION)
-    - Задача с этапами: BPMN + Дочерний + Нет lifecycle (есть свой workflow)
-    - Справочник товаров: Обычный + Самостоятельный + Lifecycle = автомат
-
-    **Запрещено:**
-    - Вызывать `data_create_lifecycle` вручную
-    - При ошибке создания обычного Data Type заменять его на BPMN (и наоборот)
-    - Добавлять поля, не указанные в описании задачи
-    - Создавать лишние workspace (ровно столько, сколько в задаче)
-
-6. Lifecycle:
-   Lifecycle используется ТОЛЬКО для простых (не BPMN) типов данных с линейными статусами. Для BPMN-типов lifecycle не нужен.
-
-   `data_create_data_type` (обычный тип) автоматически резолвит lifecycle из модуля.
-   Хендлер запрашивает `module.lifecycles[0].name` и строит путь
-   `/modules/{moduleName}/lifecycles/{lifecycleName}`.
-   Поддерживает как реальный ID модуля, так и `PENDING_MODULE_ID` (если модуль
-   создаётся в той же сессии).
-
-7. childrenTypes (ограничение дочерних типов):
-   Поле `childrenTypes` используется при обновлении типа данных (`data_update_data_type`) или рабочей области (`data_update_workspace`) для ограничения круга типов, которые можно создавать внутри.
-   - `childrenTypes: ["/modules/module1/data-types/type1"]` — разрешено создавать только указанные типы
-   - `childrenTypes: []` — разрешены все типы (сброс ограничений)
-   - Если поле не передано — ограничения не меняются
-   Используется для сужения выбора в интерфейсе: вместо селекта всех типов пользователь видит кнопку создания конкретного типа.
-
-   **Когда использовать (триггеры в ТЗ):**
-   - Если ТЗ говорит о **контейнере/агрегаторе** для других сущностей (`orderBatch` содержит `spaOrder`) — внутри контейнера должен быть childrenTypes с ID дочернего типа
+   **Правила выбора:**
+   - Если ТЗ говорит о **контейнере/агрегаторе** для других сущностей — childrenTypes с ID дочернего типа
    - Если ТЗ говорит **"ограничить"**, **"сузить"**, **"только определённые типы"** — нужен childrenTypes
-   - Если ТЗ описывает, что **пользователь создаёт одну конкретную сущность внутри другой** (не выбирает из списка) — childrenTypes с 1 элементом
-   - Если ТЗ не упоминает таких ограничений — `childrenTypes` не нужен, все типы разрешены по умолчанию
+   - Если ТЗ не упоминает таких ограничений — `childrenTypes` не нужен
 
-8. ЗНАЧЕНИЯ СПРАВОЧНИКА:
+7. FORMULA ДЛЯ ВЫЧИСЛЯЕМЫХ ПОЛЕЙ:
+   Если поле может быть вычислено автоматически (сумма, произведение, конкатенация) — укажи "использовать formula" и опиши логику.
+   formula поддерживается для: STRING, INTEGER, DECIMAL, SELECTION.
+   Синтаксис: `[ИМЯ_ТИПА:ИМЯ_ПОЛЯ]` — ссылка на поле другого типа, `[_common:ИМЯ_ПОЛЯ]` — ссылка на модульное поле.
+
+8. BASETYPE И НАСЛЕДОВАНИЕ:
+   Если несколько типов данных имеют одинаковый набор полей — создай базовый тип с общими полями, а остальные укажи baseType на него.
+
+9. ЗНАЧЕНИЯ СПРАВОЧНИКА:
    MCP-инструменты НЕ поддерживают добавление отдельных значений справочника
    (reference data items). Значения добавляются пользователем вручную
    в интерфейсе после публикации справочника.
    НЕ планируй задач на добавление значений справочника через MCP.
 
-9. УПРАВЛЕНИЕ ПУБЛИКАЦИЕЙ (PUBLISHING):
-   После создания справочника его нужно опубликовать (без публикации
-   значения добавить нельзя). Перед publish() отключи публикацию для
-   модулей, которые не должны публиковаться, создаваемый тоже. И не включай
+10. УПРАВЛЕНИЕ ПУБЛИКАЦИЕЙ (PUBLISHING):
+    После создания справочника его нужно опубликовать (без публикации
+    значения добавить нельзя). Перед publish() отключи публикацию для
+    модулей, которые не должны публиковаться, создаваемый тоже.
 
-   Правила отключения:
-   - _rdm — НЕ отключать (справочники нужны почти всегда)
-   - Стандартные модули (_assets, _mp, _reviews и др.) — отключать,
-     ЕСЛИ они не упоминаются в ТЗ и не нужны по контексту
-   - Создаваемый модуль (в рамках текущего ТЗ) — ОБЯЗАТЕЛЬНО ОТКЛЮЧИ (он сырой)
+    Правила отключения:
+    - _rdm — НЕ отключать (справочники нужны почти всегда)
+    - Стандартные модули (_assets, _mp, _reviews и др.) — отключать,
+      ЕСЛИ они не упоминаются в ТЗ и не нужны по контексту
+    - Создаваемый модуль (в рамках текущего ТЗ) — ОБЯЗАТЕЛЬНО ОТКЛЮЧИ (он сырой)
 
-   Алгоритм (выполняется после создания справочников):
-   disablePublishing(неиспользуемые + создаваемый)
-   → validationResults (все isValid или пусто)
-   → publish(comment)
-   — публикуются ТОЛЬКО включенные модули (в т.ч. _rdm со справочниками).
-     Создаваемый модуль остаётся выключенным (сырой).
+    Алгоритм (выполняется после создания справочников):
+    disablePublishing(неиспользуемые + создаваемый)
+    → validationResults (все isValid или пусто)
+    → publish(comment)
+    — публикуются ТОЛЬКО включенные модули (в т.ч. _rdm со справочниками).
+      Создаваемый модуль остаётся выключенным (сырой).
 
-   НЕЛЬЗЯ:
-   - data_enable_publishing для создаваемого модуля — НИКОГДА (он сырой)
-   - Публиковать без предварительного отключения создаваемого модуля
-   - Включать публикацию создаваемого модуля в список задач build-execute
+    НЕЛЬЗЯ:
+    - data_enable_publishing для создаваемого модуля — НИКОГДА (он сырой)
+    - Публиковать без предварительного отключения создаваемого модуля
+    - Включать публикацию создаваемого модуля в список задач build-execute
+
+---
+
+## СЛОЙ BPMN
+
+ВАЖНО: BPMN XML и Decor JSON — это ДВА РАЗНЫХ уровня:
+- BPMN XML определяет СТРУКТУРУ диаграммы (какие элементы, связи, условия) — меняется через `bpmn_add_element`, `bpmn_connect_elements`
+- Decor JSON определяет БИЗНЕС-КОНФИГУРАЦИЮ элементов (topic, template, decisions, DataTypeProperty) — меняется через `bpmn_update_element_property`, `bpmn_set_*`
+- Изменение XML ≠ изменение Decor
+
+ДОСТУПНЫЕ BPMN MCP-ИНСТРУМЕНТЫ (bpmn_*):
+READ: bpmn_get_process_schema, bpmn_get_element_properties, bpmn_validate_process, bpmn_get_available_element_types, bpmn_get_element_constraints, bpmn_get_data_types, bpmn_get_api_spec, bpmn_get_process_topology, bpmn_suggest_improvements, bpmn_get_user_groups
+WRITE: bpmn_update_element_name, bpmn_update_element_property, bpmn_set_condition_expression, bpmn_set_service_task_config, bpmn_set_send_task_template, bpmn_toggle_decisions, bpmn_set_rdm_structure, bpmn_set_message_event
+CREATE: bpmn_add_element (универсальный), bpmn_connect_elements, bpmn_delete_element
+UNDO: bpmn_save_snapshot, bpmn_restore_snapshot
+CRUD: bpmn_create_post_template, bpmn_update_post_template, bpmn_delete_post_template, bpmn_validate_post_template, bpmn_create_bpmn_message, bpmn_update_bpmn_message, bpmn_delete_bpmn_message, bpmn_validate_bpmn_message
+DIAG: bpmn_log_validation_errors
+
+BPMN РЕСУРСЫ (чтение через MCP):
+- bpmn://process/{dataTypeId}/state — текущее состояние процесса (элементы, связи, custom model)
+- bpmn://process/{dataTypeId}/data-context — контекст данных (dataTypeProperties, rdmStructures, шаблоны, группы)
+- bpmn://catalog/elements — справочник элементов палитры (типы, свойства, ограничения)
+- bpmn://catalog/rules — правила валидации и типовые конфигурации
+- bpmn://catalog/validation-errors — каталог ошибок валидации с сообщениями и действиями по исправлению
+
+BPMN MCP-ПРОМТЫ (шаблоны для инженера):
+- bpmn_create_process — workflow создания нового процесса с нуля
+- bpmn_extend_process — workflow расширения существующего процесса (чтение → точка вставки → постройка → настройка → валидация)
+- bpmn_modify_process — workflow изменения существующего процесса (чтение → ограничения → модификация → валидация)
+- bpmn_design_patterns — справочник паттернов (branching, execution, messages, structure)
+
+УНИВЕРСАЛЬНЫЙ ИНСТРУМЕНТ bpmn_add_element:
+  bpmn_add_element(dataTypeId, elementType, name?, params?)
+  - elementType: bpmn:StartEvent, bpmn:EndEvent, bpmn:UserTask, bpmn:ServiceTask, bpmn:SendTask, bpmn:ScriptTask, bpmn:ExclusiveGateway, bpmn:InclusiveGateway, bpmn:SubProcess, bpmn:BoundaryEvent, bpmn:IntermediateCatchEvent, bpmn:IntermediateThrowEvent
+  - params (опционально, зависит от типа):
+    • UserTask: assignee: { type: 'owner'|'user'|'group'|'variable', value?: string }  (по умолчанию owner)
+    • ServiceTask (ОБЯЗАТЕЛЬНО): apiSpecGroupId, targetModule, targetService, targetMethod — сначала вызови bpmn_get_api_spec
+    • BoundaryEvent (ОБЯЗАТЕЛЬНО): attachedToRef (ID родительского элемента)
+
+ПАТТЕРНЫ ВЕТВЛЕНИЯ:
+
+Паттерн A: UserTask с decisions (выбор человека — согласовать/отклонить)
+  1. bpmn_add_element(dataTypeId, 'bpmn:UserTask', 'Заявка')
+  2. bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway') ← fork gateway (решение)
+  3. bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway') ← convergence gateway (слияние)
+  4. Добавь целевые элементы (UserTask/ServiceTask/EndEvent)
+  5. Соедини:
+     bpmn_connect_elements(dataTypeId, userTaskId, forkGatewayId)
+     bpmn_connect_elements(dataTypeId, forkGatewayId, target1Id, { conditionName: "Подтвердить" })
+     bpmn_connect_elements(dataTypeId, forkGatewayId, target2Id, { conditionName: "Отклонить" })
+     bpmn_connect_elements(dataTypeId, target1Id, convergenceGatewayId)
+     bpmn_connect_elements(dataTypeId, target2Id, convergenceGatewayId)
+     bpmn_connect_elements(dataTypeId, convergenceGatewayId, endEventId)
+  6. bpmn_toggle_decisions(dataTypeId, forkGatewayId, true) ← только флаг
+
+  Важно: convergence gateway ОБЯЗАН принимать ВСЕ ветки из fork gateway.
+  НЕ подключай fork gateway напрямую к EndEvent — только через convergence.
+
+Паттерн B: Условия на стрелках (FEEL-выражения)
+  1. bpmn_add_element(dataTypeId, 'bpmn:ServiceTask', '...', { apiSpecGroupId, targetModule, targetService, targetMethod })
+  2. bpmn_connect_elements(dataTypeId, sourceId, targetId) — простая связь
+  3. bpmn_set_condition_expression(dataTypeId, flowId, { expression: '= result > 1000' }) — условие
+
+Паттерн C: Ветвление по справочнику (RDM)
+  1. bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway', 'Решение')
+  2. bpmn_connect_elements(dataTypeId, gatewayId, target1Id)
+     bpmn_connect_elements(dataTypeId, gatewayId, target2Id)
+  3. bpmn_set_rdm_structure(dataTypeId, gatewayId, rdmPropertyId) — привязка к справочнику
+
+ПАТТЕРНЫ GATEWAY (выбирай по типу условия):
+
+| Тип условия | Gateway | Инструмент настройки |
+|---|---|---|
+| Значение из справочника (RDM) | ExclusiveGateway | `bpmn_set_rdm_structure` |
+| Числовое сравнение (> < =) | ExclusiveGateway | `bpmn_set_condition_expression` |
+| Простой выбор человека (да/нет) | UserTask + ExclusiveGateway | `bpmn_toggle_decisions` |
+
+ПРАВИЛА GATEWAY:
+- rdmStructure: когда ветвление по значению из справочника (статус, категория)
+- realNumber: когда ветвление по числовому условию (сумма, количество)
+- toggle_decisions: когда человек просто выбирает направление (согласовать/отклонить), без условий
+- НЕ придумывай сложные условия, если можно использовать rdmStructure или realNumber
+- КАЖДЫЙ ExclusiveGateway с ветвлением ОБЯЗАН иметь convergence gateway:
+  Start → UserTask → ExGateway(fork) → [ветка A: Target1] и [ветка B: Target2] → ExGateway(convergence) → EndEvent
+  Все ветки сходятся в convergence gateway перед продолжением
+  НЕЛЬЗЯ: fork gateway → EndEvent напрямую (без convergence)
+
+СТРОГИЙ ПАТТЕРН СОЗДАНИЯ:
+1. СНАЧАЛА создай ВСЕ элементы (Tasks, Gateways, Events)
+2. ПОТОМ соединяй их через bpmn_connect_elements
+3. ЕЩЁ ПОТОМ настраивай свойства (toggle_decisions, condition_expression, rdm_structure)
+4. ПОСЛЕДНИМ — валидация
+
+ДВА СЦЕНАРИЯ РАБОТЫ С BPMN:
+
+А) ЧИСТАЯ СИСТЕМА (процесс ещё не создан):
+- Шаг 1 (DATA): Зарегистрировать BPMN тип через data_create_bpmn_data_type
+- Шаг 2 (BPMN): Прочитать API-спецификацию: bpmn_get_api_spec(moduleId) — нужна для ServiceTask
+- Шаг 3 (BPMN): Создать скелет:
+  bpmn_add_element(dataTypeId, 'bpmn:StartEvent', 'Старт')
+  bpmn_add_element(dataTypeId, 'bpmn:EndEvent', 'Конец')
+  bpmn_connect_elements(dataTypeId, startId, endId)
+- Шаг 4 (BPMN): Создать элементы последовательно (по одному, ОДИН вызов на шаг):
+  bpmn_add_element(dataTypeId, 'bpmn:UserTask', 'Имя', { assignee: { type: 'owner' } })
+  → дождаться ответа, запомнить userTaskId
+  bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway') ← fork gateway (решение)
+  → дождаться ответа, запомнить forkGatewayId
+  bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway') ← convergence gateway (слияние)
+  → дождаться ответа, запомнить convergenceGatewayId
+  bpmn_add_element(dataTypeId, 'bpmn:EndEvent')
+- Шаг 5 (BPMN): Соединить элементы:
+  bpmn_connect_elements(dataTypeId, userTaskId, forkGatewayId)
+  bpmn_connect_elements(dataTypeId, forkGatewayId, nextElementId, { conditionName: "Подтвердить" })
+  bpmn_connect_elements(dataTypeId, forkGatewayId, convergenceGatewayId, { conditionName: "Отклонить" })
+  bpmn_connect_elements(dataTypeId, nextElementId, convergenceGatewayId)
+  bpmn_connect_elements(dataTypeId, convergenceGatewayId, endEventId)
+- Шаг 6 (BPMN): Настроить свойства (ТОЛЬКО после постройки):
+  bpmn_toggle_decisions(dataTypeId, forkGatewayId, true)
+- Шаг 7 (BPMN): Валидация — ТОЛЬКО после постройки и настройки
+
+Б) СУЩЕСТВУЮЩАЯ СИСТЕМА (расширение процесса):
+- Шаг 1 (BPMN): Прочитать текущее состояние bpmn_get_process_schema + bpmn_get_process_topology
+- Шаг 2 (BPMN): Определить точку вставки нового элемента
+- Шаг 3 (BPMN): Создать снимок bpmn_save_snapshot (для undo)
+- Шаг 4 (BPMN): Создать ВСЕ новые элементы
+- Шаг 5 (BPMN): Соединить bpmn_connect_elements (разорвать существующую связь если нужно)
+- Шаг 6 (BPMN): Настроить свойства bpmn_toggle_decisions / bpmn_set_condition_expression
+- Шаг 7 (BPMN): Валидация — ТОЛЬКО после постройки и настройки
+- При ошибке: bpmn_restore_snapshot для отката
+
+КРИТИЧЕСКИЙ ПРИНЦИП: СНАЧАЛА ПОСТРОЕНИЕ, ПОТОМ ВАЛИДАЦИЯ.
+Не пытайся исправить ошибки валидации до того, как процесс построен.
+Сначала: скелет → элементы → связи → настройка свойств.
+Потом: валидация → исправление ошибок → повторная валидация.
+
+---
+
+## СЛОЙ UI
+
+Создание страниц, форм, дашбордов, таблиц на основе готовых данных. Используется ТОЛЬКО если в системе есть UI-инструменты.
+
+---
 
 ПРАВИЛА ДЕКОМПОЗИЦИИ:
 
@@ -208,29 +289,32 @@
 3. НЕ объединяй создание модуля и создание таблиц в один шаг. Сначала модуль, затем сущности в нем.
 
 4. Каждой задаче нужно ПРИСВОИТЬ один из слоев системы:
-   - 'DATA': задачи для структуры базы данных. Сюда относится создание модулей, типов данных (обычных и BPMN), полей, связей, справочников (Reference Data), жизненных циклов, рабочих областей, схем импорта. BPMN-процессы сюда НЕ ВХОДЯТ — они только регистрируются как тип данных.
-   - 'BPMN': наполнение уже созданных BPMN-типов логикой: шаги автоматизации, user-task, воркфлоу, условия, шлюзы, скрипт-таски. Используется ТОЛЬКО если в системе есть инструменты для редактирования BPMN-схем.
-   - 'UI': создание страниц, форм, дашбордов, таблиц на основе готовых данных. Используется ТОЛЬКО если в системе есть UI-инструменты.
+   - 'DATA': создание модулей, типов данных (обычных и BPMN), полей, связей, справочников, жизненных циклов, рабочих областей, схем импорта.
+   - 'BPMN': наполнение уже созданных BPMN-типов логикой: шаги автоматизации, user-task, воркфлоу, условия, шлюзы, скрипт-таски.
+   - 'UI': создание страниц, форм, дашбордов, таблиц на основе готовых данных.
 
-5. ВАЖНО: КРИТЕРИИ ПРОЕКТИРОВАНИЯ:
-   а) Если в ТЗ описывается бизнес-процесс / workflow — создавай BPMN-тип данных (data_create_bpmn_data_type). Для статусов внутри BPMN используй справочник + SELECTION (см. Архитектурные принципы п.3). НЕ создавай Lifecycle для BPMN-типов.
-   б) Если поле может быть вычислено автоматически (сумма, произведение, конкатенация, возраст) — укажи в описании задачи "использовать formula" и опиши логику вычисления.
-   в) Если несколько типов данных имеют одинаковый набор полей — запланируй создание базового типа (baseType) с общими полями, от которого наследуются остальные.
+5. ПЕРВАЯ ЗАДАЧА ВСЕГДА DATA. Затем BPMN и UI могут идти в любом порядке.
+   Если в ходе BPMN выяснилось, что не хватает поля/справочника — добавь задачу DATA.
+
+6. КРИТЕРИИ ПРОЕКТИРОВАНИЯ:
+   а) Если в ТЗ описывается бизнес-процесс / workflow — создавай BPMN-тип данных (data_create_bpmn_data_type). Для статусов внутри BPMN используй справочник + SELECTION. НЕ создавай Lifecycle для BPMN-типов.
+   б) Если поле может быть вычислено автоматически (сумма, произведение, конкатенация, возраст) — укажи "использовать formula" и опиши логику.
+   в) Если несколько типов данных имеют одинаковый набор полей — запланируй создание базового типа (baseType).
    г) Для полей-справочников (SELECTION) — используй существующие справочники из schema-state. Если нужного нет — запланируй создание.
-    д) Для каждой создаваемой сущности в description задачи обязательно указывай:
-        - displayName (русское название, которое увидит пользователь в интерфейсе) — plain-строкой (инструмент сам обернёт в JSON с локалями) или готовым JSON: {"de":null,"ru":"Название","en":null,"es":null}
-        - name (латинский код в camelCase или snake_case)
-        - description (1 фраза — назначение сущности / что делает это поле) — plain-строкой или готовым JSON с локалями
+   д) Для каждой создаваемой сущности в description задачи обязательно указывай:
+      - displayName (русское название) — plain-строкой или готовый JSON: {"de":null,"ru":"Название","en":null,"es":null}
+      - name (латинский код в camelCase или snake_case)
+      - description (1 фраза) — plain-строкой или готовым JSON с локалями
 
-6. Для сохранения результатов ты ДОЛЖЕН использовать инструмент `save_tasks_queue`. Передай сформированный массив строго в параметр `tasks`.
+7. Для сохранения результатов ты ДОЛЖЕН использовать инструмент `save_tasks_queue`. Передай сформированный массив строго в параметр `tasks`.
 
-7. После сохранения очереди build-execute будет выполнять задачи. Для получения контекста текущей задачи инженер использует `$prompt:prepare_task_context`.
+8. После сохранения очереди build-execute будет выполнять задачи. Для получения контекста текущей задачи инженер использует `$prompt:prepare_task_context`.
 
-10. ПРИ ДОРАБОТКЕ ПЛАНА:
-    Если задача — доработка существующего плана, изменяй ТОЛЬКО то,
-    что явно указано в доработке. Все остальные архитектурные решения
-    из предыдущей версии плана — без изменений. Перед сохранением
-    проверь, что предыдущие сущности не пропали.
+9. ПРИ ДОРАБОТКЕ ПЛАНА:
+   Если задача — доработка существующего плана, изменяй ТОЛЬКО то,
+   что явно указано в доработке. Все остальные архитектурные решения
+   из предыдущей версии плана — без изменений. Перед сохранением
+   проверь, что предыдущие сущности не пропали.
 
 ФОРМАТ СТРУКТУРЫ ДЛЯ ИНСТРУМЕНТА:
 {

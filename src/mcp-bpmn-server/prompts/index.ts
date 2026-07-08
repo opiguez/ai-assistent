@@ -4,10 +4,10 @@
  */
 import { McpServer } from '@modelcontextprotocol/server';
 import registerAnalyzeProcessPrompt from './analyze-process.js';
-import registerModifyProcessPrompt from './modify-process.js';
+import registerModifyProcessPrompt from './edit-process/modify-process.js';
 import registerDesignPatternsPrompt from './design-patterns.js';
 import registerCreateProcessPrompt from './create-process.js';
-import registerExtendProcessPrompt from './extend-process.js';
+import registerExtendProcessPrompt from './edit-process/extend-process.js';
 
 export default function registerBpmnPrompts(server: McpServer) {
   registerAnalyzeProcessPrompt(server);

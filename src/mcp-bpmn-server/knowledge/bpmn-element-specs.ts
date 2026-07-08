@@ -111,11 +111,20 @@ export const PALETTE_ELEMENTS = {
   'bpmn:ExclusiveGateway': {
     category: 'gateway',
     displayName: 'Exclusive Gateway',
-    description: 'Эксклюзивный шлюз. Используется для и RDM структур.',
+    description:
+      'Эксклюзивный шлюз. Используется для generic decision, NUMBERS и RDM структур. Замыкающий элемент перед следующим элементом',
     customizableProperties: ['name', 'default'],
     supportsDecisions: true,
     supportsRdmStructure: true,
     supportsRealNumber: true,
+  },
+
+  'bpmn:InclusiveGateway': {
+    category: 'gateway',
+    displayName: 'Inclusive Gateway',
+    description:
+      'Инклюзивный шлюз (OR). Параллельное слияние всех активных входов.',
+    customizableProperties: ['name'],
   },
 
   // ── SubProcesses ──
@@ -171,10 +180,10 @@ export const CUSTOM_MODEL_PROPERTIES = {
     description: 'Включены ли generic decisions для UserTask',
     type: 'boolean',
   },
-  isManualTask: {
-    description: 'Отрисовать UserTask как ManualTask',
-    type: 'boolean',
-  },
+  // isManualTask: {
+  //   description: 'Отрисовать UserTask как ManualTask',
+  //   type: 'boolean',
+  // },
   topic: {
     description: 'Kafka topic или service task topic',
     type: 'string',
@@ -240,49 +249,29 @@ export const COMPONENT_TYPES = {
 
 export const COMMAND_HANDLERS = {
   serviceTask: {
-    setModule: 'bm.serviceTask.setModule',
-    setMethod: 'bm.serviceTask.setMethod',
-    setThreadCount: 'bm.serviceTask.setThreadCount',
-    addResponse: 'bm.serviceTask.addResponse',
-    setInputMappings: 'bm.serviceTask.setInputMappings',
-    setOutputMappings: 'bm.serviceTask.setOutputMappings',
-    setAutoCreateRules: 'bm.serviceTask.setAutoCreateRules',
-    removeOutputMappings: 'bm.serviceTask.removeOutputMappings',
+    setModule: 'bpmn_add_element (params.targetModule)',
+    setMethod: 'bpmn_add_element (params.targetService, params.targetMethod)',
+    setThreadCount: 'bpmn_add_element (params.threadCount)',
+    setConfig: 'bpmn_set_service_task_config',
   },
   decisions: {
-    toggle: 'rabis.decisions.toggle',
-    assign: 'rabis.decisions.assign',
-    change: 'rabis.decisions.change',
+    toggle: 'bpmn_toggle_decisions',
+    assign: 'bpmn_connect_elements (conditionName)',
+    change: 'bpmn_set_condition_expression (conditionName)',
   },
   rdmStructure: {
-    assign: 'bm.rdmStructure.assign',
+    assign: 'bpmn_set_rdm_structure',
   },
   simplifiedView: {
-    toggle: 'bm.simplifiedView.toggle',
-    setSteps: 'bm.simplifiedView.setSteps',
-    assignStep: 'bm.simplifiedView.assignStep',
+    toggle: 'bpmn_update_element_property (simplifiedViewStep)',
+    setSteps: 'bpmn_update_element_property (simplifiedViewStep)',
   },
   messageEvent: {
-    catchMessage: 'bm.messageEvent.CatchMessageSet',
-    throwMessage: 'bm.messageEvent.ThrowMessageSet',
-    kafkaMessage: 'bm.messageEvent.KafkaMessageSet',
-  },
-  errorEvent: {
-    set: 'bm.errorEvent.set',
-  },
-  timerEvent: {
-    setDuration: 'bm.timerEvent.setDuration',
-  },
-  documentation: {
-    set: 'bm.documentation.set',
-  },
-  candidate: {
-    set: 'bm.candidate.set',
+    catchMessage: 'bpmn_set_message_event',
+    throwMessage: 'bpmn_set_message_event',
+    kafkaMessage: 'bpmn_set_message_event',
   },
   sendTask: {
-    set: 'bm.sendTask.set',
-  },
-  scriptTask: {
-    set: 'bm.scriptTask.set',
+    set: 'bpmn_set_send_task_template',
   },
 } as const;

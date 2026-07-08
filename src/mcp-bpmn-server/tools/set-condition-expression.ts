@@ -8,15 +8,23 @@ const SetConditionExpressionSchema = z.object({
   connectionId: z.string().describe('ID SequenceFlow'),
   expression: z
     .string()
+    .optional()
     .describe(
       'FEEL выражение. Формат: = "значение" для строк, = true/false для булевых, = сумма > 1000 для числовых сравнений',
+    ),
+  conditionName: z
+    .string()
+    .optional()
+    .describe(
+      'Отображаемое имя условия (лейбл на стрелке). Используй для decisions: "Подтвердить", "Отклонить".',
     ),
 });
 
 async function handleSetConditionExpression(args: {
   dataTypeId: string;
   connectionId: string;
-  expression: string;
+  expression?: string;
+  conditionName?: string;
 }) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
@@ -36,16 +44,31 @@ async function handleSetConditionExpression(args: {
       };
     }
 
-    const updatedXml = await bpmnXmlService.setConditionExpression(
-      state.parsed,
-      args.connectionId,
-      args.expression,
-    );
+    // Обновляем conditionExpression если задан
+    let updatedXml: string;
+    if (args.expression) {
+      updatedXml = await bpmnXmlService.setConditionExpression(
+        state.parsed,
+        args.connectionId,
+        args.expression,
+      );
+    } else {
+      updatedXml = await bpmnXmlService.generateXml(state.parsed);
+    }
+
+    // Обновляем conditionName (лейбл) в custom model
+    const newModel = { ...state.model };
+    if (args.conditionName !== undefined) {
+      newModel[args.connectionId] = {
+        ...newModel[args.connectionId],
+        name: args.conditionName,
+      };
+    }
 
     const saveResult = await bpmnSchemaService.saveProcess({
       dataTypeId: args.dataTypeId,
       xml: updatedXml,
-      decor: JSON.stringify(state.model),
+      decor: JSON.stringify(newModel),
     });
 
     if (!saveResult.success) {
@@ -69,8 +92,9 @@ async function handleSetConditionExpression(args: {
           text: JSON.stringify({
             status: 'success',
             connectionId: args.connectionId,
-            expression: args.expression,
-            message: `Condition Expression для "${args.connectionId}" обновлена`,
+            expression: args.expression || null,
+            conditionName: args.conditionName || null,
+            message: `SequenceFlow "${args.connectionId}" обновлен`,
           }),
         },
       ],
@@ -96,7 +120,7 @@ export const setConditionExpressionTools = [
     {
       title: 'Set Condition Expression',
       description:
-        'Устанавливает условное выражение (conditionExpression) для SequenceFlow. Формат FEEL: = "approved" для строк, = true для булевых. Используется для ExclusiveGateway и других ветвлений.',
+        'Устанавливает условное выражение (conditionExpression) и/или лейбл (conditionName) для SequenceFlow. Формат FEEL: = "approved" для строк, = true для булевых. Используется для ExclusiveGateway и decisions.',
       inputSchema: SetConditionExpressionSchema,
     },
     handleSetConditionExpression,
