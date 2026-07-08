@@ -6,9 +6,14 @@
 import { BPMNModel } from 'bpmn-moddle';
 import { rabisClient } from '../../shared/services/rabisClient.service.js';
 import { bpmnXmlService } from './bpmn-xml.service.js';
+import {
+  BpmnMessage,
+  Group,
+  PostTemplate,
+  View,
+} from '../../generated/client/schema.js';
 
 // ─── Types ────────────────────────────────────────────────
-
 export interface BpmnProcessData {
   dataTypeId: string;
   name: string;
@@ -16,13 +21,24 @@ export interface BpmnProcessData {
   bpmnXml: string;
   decorJson: string;
   valid: boolean;
-  validationResults: any;
-  bpmnMessages: any[];
-  dataTypeProperties: any;
-  rdmStructures: Record<string, any>;
-  postTemplates: any[];
-  userGroups: any[];
-  views: any[];
+  validationResults: Record<string, any> | null;
+  bpmnMessages: BpmnMessage[];
+  dataTypeProperties: {
+    singleSelect: Record<string, any>;
+    multipleSelect: Record<string, any>;
+    realNumber: Record<string, any>;
+    DATA_OBJECT: Record<string, any>;
+    genericProperties: Record<string, any>;
+  };
+  rdmStructures: Record<
+    string,
+    {
+      rdmObjects: Array<Record<string, any>>;
+    }
+  >;
+  postTemplates: PostTemplate[];
+  userGroups: Group[];
+  views: View[];
 }
 
 export interface BpmnProcessState {
@@ -70,7 +86,7 @@ class BpmnSchemaService {
       bpmnProcessType: {
         bpmnXml: true,
         decorJson: true,
-      } as any,
+      },
       bpmnMessages: {
         id: true,
         name: true,
@@ -108,13 +124,13 @@ class BpmnSchemaService {
         viewType: { viewTypeEnum: true, displayName: true },
         status: true,
       },
-    } as any);
+    });
 
-    const bpmnProcessType = (res as any).bpmnProcessType;
+    const bpmnProcessType = res.bpmnProcessType;
 
     // Parse dataTypeProperties into categorized structure
-    const properties = (res as any).properties || [];
-    const allFields = properties.flatMap((g: any) => g.properties || []);
+    const properties = res.properties || [];
+    const allFields = properties.flatMap((g) => g.properties || []);
 
     // Build categorized dataTypeProperties
     const dataTypeProperties = {
@@ -145,18 +161,18 @@ class BpmnSchemaService {
 
     return {
       dataTypeId,
-      name: (res as any).name,
-      displayName: (res as any).displayName,
+      name: res.name,
+      displayName: res.displayName,
       bpmnXml: bpmnProcessType?.bpmnXml || '',
       decorJson: bpmnProcessType?.decorJson || '{}',
-      valid: false, // Will be set from validation
+      valid: false,
       validationResults: null,
-      bpmnMessages: (res as any).bpmnMessages || [],
+      bpmnMessages: (res.bpmnMessages as unknown as BpmnMessage[]) || [],
       dataTypeProperties,
       rdmStructures: {}, // Populated separately if needed
-      postTemplates: (res as any).postTemplates || [],
+      postTemplates: (res.postTemplates as unknown as PostTemplate[]) || [],
       userGroups: [], // Would need separate query
-      views: (res as any).views || [],
+      views: (res.views as unknown as View[]) || [],
     };
   }
 

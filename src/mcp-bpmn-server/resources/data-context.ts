@@ -15,7 +15,7 @@ const resources = [
     config: {
       title: 'BPMN Data Context',
       description:
-        'DATA-контекст процесса: свойства данных (dataTypeProperties), RDM структуры (rdmStructures), шаблоны писем (postTemplates), группы пользователей, BPMN сообщения, представления. Используй для настройки UserTask (decisions), ServiceTask (API привязки), Gateway (ветвление по RDM), SendTask (шаблоны писем).',
+        'DATA-контекст процесса: свойства данных (dataTypeProperties), RDM структуры (rdmStructures), шаблоны писем (postTemplates), группы пользователей, BPMN сообщения, представления. Используй для настройки UserTask (generic decisions), ServiceTask (API привязки), Gateway (rdmStructure (ветвление по справочнику)/realNumber (числовое условие)), SendTask (шаблоны писем).',
       mimeType: 'application/json',
     },
     read: async (uri: URL) => {
@@ -95,7 +95,7 @@ const resources = [
 
 function countProperties(
   dataTypeProperties: Record<string, Record<string, any>> | undefined,
-): number {
+) {
   if (!dataTypeProperties) return 0;
   let count = 0;
   for (const category of Object.values(dataTypeProperties)) {
