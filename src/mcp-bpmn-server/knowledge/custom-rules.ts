@@ -323,6 +323,14 @@ export const ELEMENT_CONFIGURATIONS = {
       '3. Соединить исходящие SequenceFlow: bpmn_connect_elements',
     ],
   },
+  // gatewayWithRealNumber: {
+  //   description: 'ExclusiveGateway с Number значениями',
+  //   steps: [
+  //     '1. Создать ExclusiveGateway: bpmn_add_element(dataTypeId, "bpmn:ExclusiveGateway")',
+  //     '2. Назначить RDM структуру: bpmn_set_rdm_structure(dataTypeId, gatewayId, rdmPropertyId)',
+  //     '3. Соединить исходящие SequenceFlow: bpmn_connect_elements',
+  //   ],
+  // },
   sendTaskWithEmail: {
     description: 'SendTask для email уведомлений',
     steps: [

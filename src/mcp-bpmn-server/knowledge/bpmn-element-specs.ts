@@ -65,7 +65,12 @@ export const PALETTE_ELEMENTS = {
     displayName: 'User Task',
     description:
       'Задача для пользователя. Поддерживает decisions, candidates, simplifiedView.',
-    customizableProperties: ['name', 'candidateGroups', 'decisionsEnabled'],
+    customizableProperties: [
+      'name',
+      'candidateGroups',
+      'decisionsEnabled',
+      'candidateUsers',
+    ],
     hasCustomPanel: 'NAME',
     supportsDecisions: true,
     supportsCandidates: true,

@@ -3,8 +3,9 @@
  * Работает с GraphQL API для чтения/записи BPMN схем.
  * Использует rabisClient (genql) для запросов.
  */
+import { BPMNModel } from 'bpmn-moddle';
 import { rabisClient } from '../../shared/services/rabisClient.service.js';
-import { bpmnXmlService, type ParsedProcess } from './bpmn-xml.service.js';
+import { bpmnXmlService } from './bpmn-xml.service.js';
 
 // ─── Types ────────────────────────────────────────────────
 
@@ -25,7 +26,7 @@ export interface BpmnProcessData {
 }
 
 export interface BpmnProcessState {
-  parsed: ParsedProcess;
+  parsed: BPMNModel;
   model: Record<string, Record<string, any>>;
   data: BpmnProcessData;
 }
@@ -174,12 +175,11 @@ class BpmnSchemaService {
 
     const data = await this.loadProcessData(dataTypeId);
 
-    let parsed: ParsedProcess = {
-      definitions: null,
+    let parsed = {
       rootElement: null,
       elementsById: {},
       warnings: [],
-    };
+    } as unknown as BPMNModel;
 
     if (data.bpmnXml) {
       parsed = await bpmnXmlService.fromXML(data.bpmnXml);
@@ -245,7 +245,7 @@ class BpmnSchemaService {
     validationResults?: any;
     error?: string;
   }> {
-    const xml = await bpmnXmlService.toXML(state.parsed.definitions);
+    const xml = await bpmnXmlService.toXML(state.parsed.rootElement);
     const decor = JSON.stringify(state.model);
 
     return this.saveProcess({
