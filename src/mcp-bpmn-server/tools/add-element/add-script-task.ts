@@ -14,7 +14,7 @@ import {
   errorResponse,
 } from './shared.js';
 
-const AddScriptTaskSchema = z.object({
+export const AddScriptTaskSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
   name: z
     .string()

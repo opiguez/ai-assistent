@@ -15,7 +15,7 @@ const AddExclusiveGatewaySchema = z.object({
   name: z.string().max(255).optional().describe('Имя шлюза'),
 });
 
-async function handleAddExclusiveGateway(
+export async function handleAddExclusiveGateway(
   args: z.infer<typeof AddExclusiveGatewaySchema>,
 ) {
   try {

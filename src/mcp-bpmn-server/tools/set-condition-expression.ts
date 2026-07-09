@@ -4,7 +4,7 @@ import { bpmnXmlService, ModdleElement } from '../services/bpmn-xml.service.js';
 import { defineTool } from '../../shared/utils/base.js';
 import { errorResponse, successResponse } from './add-element/shared.js';
 
-const SetConditionExpressionSchema = z.object({
+export const SetConditionExpressionSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
   connectionId: z
     .string()

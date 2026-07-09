@@ -15,7 +15,7 @@ const AddEndEventSchema = z.object({
   name: z.string().max(255).optional().describe('Имя события'),
 });
 
-async function handleAddEndEvent(args: z.infer<typeof AddEndEventSchema>) {
+export async function handleAddEndEvent(args: z.infer<typeof AddEndEventSchema>) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 

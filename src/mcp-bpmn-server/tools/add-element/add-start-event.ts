@@ -15,7 +15,7 @@ const AddStartEventSchema = z.object({
   name: z.string().max(255).optional().describe('Имя события'),
 });
 
-async function handleAddStartEvent(args: z.infer<typeof AddStartEventSchema>) {
+export async function handleAddStartEvent(args: z.infer<typeof AddStartEventSchema>) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 

@@ -4,7 +4,7 @@ import { bpmnXmlService, ModdleElement } from '../services/bpmn-xml.service.js';
 import { defineTool } from '../../shared/utils/base.js';
 import { errorResponse, successResponse } from './add-element/shared.js';
 
-const ConnectElementsSchema = z.object({
+export const ConnectElementsSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
   sourceId: z.string().describe('ID исходного элемента (откуда идет стрелка)'),
   targetId: z.string().describe('ID целевого элемента (куда идет стрелка)'),

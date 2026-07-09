@@ -5,7 +5,7 @@ import { defineTool } from '../../shared/utils/base.js';
 import { errorResponse, successResponse } from './add-element/shared.js';
 import { checkConstraint } from '../services/constraint-utils.js';
 
-const ToggleDecisionsSchema = z.object({
+export const ToggleDecisionsSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
   elementId: z.string().describe('ID элемента bpmn:UserTask на схеме'),
   enabled: z

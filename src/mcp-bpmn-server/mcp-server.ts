@@ -5,6 +5,7 @@ import { createMcpExpressApp } from '@modelcontextprotocol/express';
 import registerBpmnTools from './tools/index.js';
 import registerBpmnResources from './resources/index.js';
 import registerBpmnPrompts from './prompts/index.js';
+import bpmnRestRouter from './rest/index.js';
 import { ENV } from '../config/base.js';
 
 const app = createMcpExpressApp();
@@ -30,6 +31,8 @@ app.post('/mcp', (req, res) => {
   transport.handleRequest(req, res, req.body);
 });
 
+app.use('/api/bpmn', bpmnRestRouter);
+
 const host = new URL(ENV.LOCAL_SERVER_URL_NO_PORT).hostname;
 const port = Number(ENV.PORT_MCP_BPMN) || 3003;
 
@@ -37,4 +40,6 @@ app.listen(port, host, () => {
   console.log(
     `BPMN MCP сервер успешно запущен на ${ENV.LOCAL_SERVER_URL_NO_PORT}:${port}`,
   );
+  console.log(`REST API: http://${host}:${port}/api/bpmn/*`);
+  console.log(`Swagger UI: http://${host}:${port}/api/bpmn/docs`);
 });

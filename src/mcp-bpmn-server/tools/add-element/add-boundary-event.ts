@@ -23,7 +23,7 @@ const AddBoundaryEventSchema = z.object({
     ),
 });
 
-async function handleAddBoundaryEvent(
+export async function handleAddBoundaryEvent(
   args: z.infer<typeof AddBoundaryEventSchema>,
 ) {
   try {

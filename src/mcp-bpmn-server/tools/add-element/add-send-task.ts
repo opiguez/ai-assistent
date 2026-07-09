@@ -33,7 +33,7 @@ const AddSendTaskSchema = z.object({
   sendTaskTemplate: z.string().optional().describe('ID шаблона письма'),
 });
 
-async function handleAddSendTask(args: z.infer<typeof AddSendTaskSchema>) {
+export async function handleAddSendTask(args: z.infer<typeof AddSendTaskSchema>) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 

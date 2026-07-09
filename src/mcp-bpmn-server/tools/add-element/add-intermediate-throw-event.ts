@@ -15,7 +15,7 @@ const AddIntermediateThrowEventSchema = z.object({
   name: z.string().max(255).optional().describe('Имя события'),
 });
 
-async function handleAddIntermediateThrowEvent(
+export async function handleAddIntermediateThrowEvent(
   args: z.infer<typeof AddIntermediateThrowEventSchema>,
 ) {
   try {

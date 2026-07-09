@@ -15,7 +15,7 @@ const AddIntermediateCatchEventSchema = z.object({
   name: z.string().max(255).optional().describe('Имя события'),
 });
 
-async function handleAddIntermediateCatchEvent(
+export async function handleAddIntermediateCatchEvent(
   args: z.infer<typeof AddIntermediateCatchEventSchema>,
 ) {
   try {

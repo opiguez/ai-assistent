@@ -12,7 +12,7 @@ import {
   errorResponse,
 } from './shared.js';
 
-const AddUserTaskSchema = z.object({
+export const AddUserTaskSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных'),
   name: z.string().max(255).describe('Имя задачи'),
   assignee: z
