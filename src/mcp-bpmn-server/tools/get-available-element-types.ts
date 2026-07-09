@@ -1,17 +1,19 @@
 import { z } from 'zod';
 import { PALETTE_ELEMENTS } from '../knowledge/bpmn-element-specs.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 const GetAvailableElementTypesSchema = z.object({
   filter: z
     .enum(['all', 'event', 'activity', 'gateway'])
     .optional()
-    .describe('Фильтр по категории элементов'),
+    .default('all')
+    .describe('Фильтр для ограничения списка по категории BPMN элементов'),
 });
 
-async function handleGetAvailableElementTypes(args: {
-  filter?: string;
-}) {
+export async function handleGetAvailableElementTypes(
+  args: z.infer<typeof GetAvailableElementTypesSchema>,
+) {
   try {
     const filter = args.filter || 'all';
 
@@ -21,64 +23,27 @@ async function handleGetAvailableElementTypes(args: {
         return spec.category === filter;
       })
       .map(([key, spec]) => ({
-        key,
-        category: spec.category,
-        displayName: spec.displayName,
-        description: spec.description,
-        ...('customType' in spec ? { customType: (spec as any).customType } : {}),
-        ...('topic' in spec ? { topic: (spec as any).topic } : {}),
-        ...('canBeInSubprocess' in spec
-          ? { canBeInSubprocess: (spec as any).canBeInSubprocess }
-          : {}),
-        ...('canAttachTo' in spec
-          ? { canAttachTo: (spec as any).canAttachTo }
-          : {}),
-        ...('requiresParent' in spec
-          ? { requiresParent: (spec as any).requiresParent }
-          : {}),
-        ...('supportsDecisions' in spec
-          ? { supportsDecisions: (spec as any).supportsDecisions }
-          : {}),
-        ...('supportsRdmStructure' in spec
-          ? { supportsRdmStructure: (spec as any).supportsRdmStructure }
-          : {}),
-        ...('supportsModuleConfig' in spec
-          ? { supportsModuleConfig: (spec as any).supportsModuleConfig }
-          : {}),
-        ...('supportsTemplate' in spec
-          ? { supportsTemplate: (spec as any).supportsTemplate }
-          : {}),
+        elementType: key, // Официальный BPMN тег (напр. "bpmn:UserTask")
+        category: spec.category, // Категория (event, activity, gateway)
+        displayName: spec.displayName, // Человеческое название для интерфейса
+        description: spec.description, // Инструкция для ИИ, как и когда использовать узел
+
+        customizableProperties: spec.customizableProperties || [],
+
+        // специфичные ограничения платформы
+        ...((spec as any).canBeInSubprocess ? { canBeInSubprocess: true } : {}),
       }));
 
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify(
-            {
-              status: 'success',
-              filter,
-              totalElements: elements.length,
-              elements,
-            },
-            null,
-            2,
-          ),
-        },
-      ],
-    };
+    // Возвращаем ИИ структурированный и компактный ответ
+    return successResponse({
+      filter,
+      totalAvailableTypes: elements.length,
+      elements: elements,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка получения типов элементов',
-          }),
-        },
-      ],
-    };
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка при получении типов элементов',
+    );
   }
 }
 

@@ -1,69 +1,76 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
-import { bpmnXmlService } from '../services/bpmn-xml.service.js';
+import { bpmnXmlService, ModdleElement } from '../services/bpmn-xml.service.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
+import { checkConstraint } from '../services/constraint-utils.js';
 
 const ToggleDecisionsSchema = z.object({
-  dataTypeId: z.string().describe('ID BPMN типа данных'),
-  elementId: z.string().describe('ID UserTask'),
-  enabled: z.boolean().describe('Включить или выключить decisions'),
+  dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
+  elementId: z.string().describe('ID элемента bpmn:UserTask на схеме'),
+  enabled: z
+    .boolean()
+    .describe(
+      'Флаг переключения: true — активировать режим решений, false — деактивировать',
+    ),
   decisions: z
     .array(z.string())
     .optional()
     .describe(
-      'Список решений (лейблов). Сохраняется в custom model для справки. Не создаёт flows — используй bpmn_connect_elements с conditionName.',
+      'Список текстовых названий кнопок (лейблов) (напр. ["Одобрить", "Отклонить"]). Сохраняется в custom model для автоматического расчета индексов ветвления.',
     ),
 });
 
-async function handleToggleDecisions(args: {
-  dataTypeId: string;
-  elementId: string;
-  enabled: boolean;
-  decisions?: string[];
-}) {
+export async function handleToggleDecisions(
+  args: z.infer<typeof ToggleDecisionsSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
-    const element = bpmnXmlService.getElementById(state.parsed, args.elementId);
 
+    const element = bpmnXmlService.getElementById(
+      state.parsed,
+      args.elementId,
+    ) as ModdleElement | null;
     if (!element) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Элемент с ID "${args.elementId}" не найден`,
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        `Элемент с ID "${args.elementId}" не найден в BPMN XML`,
+      );
     }
 
-    // Валидация: Механизм решений работает исключительно с UserTask
     if (element.$type !== 'bpmn:UserTask') {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Элемент "${args.elementId}" имеет тип "${element.$type}". Decisions поддерживаются только для bpmn:UserTask.`,
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        `Элемент "${args.elementId}" имеет тип "${element.$type}". Decisions поддерживаются исключительно для bpmn:UserTask.`,
+      );
     }
 
     const newModel = { ...state.model };
     const userTaskId = element.id;
+    const modelProps = newModel[userTaskId] || {};
+
+    if (args.enabled) {
+      const constraint = checkConstraint(
+        'addDecision',
+        element,
+        modelProps,
+        state,
+      );
+      if (!constraint.allowed) {
+        return errorResponse(
+          `Включение Decisions запрещено валидатором: ${constraint.reason}`,
+        );
+      }
+    }
+
     const defaultDecisions = ['Подтвердить', 'Отклонить'];
+    const finalDecisions = args.decisions || defaultDecisions;
 
     newModel[userTaskId] = {
-      ...newModel[userTaskId],
+      ...modelProps,
       decisionsEnabled: args.enabled,
-      decisionsUnused: args.enabled ? args.decisions || defaultDecisions : [],
+      decisionsUnused: args.enabled ? finalDecisions : [],
     };
 
+    // Генерируем XML и сохраняем процесс в базу данных
     const updatedXml = await bpmnXmlService.generateXml(state.parsed);
     const saveResult = await bpmnSchemaService.saveProcess({
       dataTypeId: args.dataTypeId,
@@ -72,49 +79,24 @@ async function handleToggleDecisions(args: {
     });
 
     if (!saveResult.success) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: saveResult.error || 'Ошибка сохранения изменений в БД',
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        saveResult.error ||
+          'Ошибка при сохранении изменений UserTask в базу данных',
+      );
     }
 
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            elementId: userTaskId,
-            decisionsEnabled: args.enabled,
-            decisions: args.enabled ? args.decisions || defaultDecisions : null,
-            message: args.enabled
-              ? `Decisions успешно включены для UserTask "${userTaskId}". Используй инструмент "bpmn_connect_elements" с параметром "conditionName" для создания логических ветвлений.`
-              : `Decisions выключены для UserTask "${userTaskId}".`,
-          }),
-        },
-      ],
-    };
+    return successResponse({
+      elementId: userTaskId,
+      decisionsEnabled: args.enabled,
+      decisionsUnused: args.enabled ? finalDecisions : null,
+      message: args.enabled
+        ? `Режим Decisions успешно активирован для UserTask "${userTaskId}". Задано кнопок: ${JSON.stringify(finalDecisions)}. Используйте инструмент соединения стрелок "bpmn_connect_elements", передавая имена этих кнопок в параметр conditionName для автоматического вычеркивания.`
+        : `Режим Decisions успешно отключен для UserTask "${userTaskId}". Списки решений очищены.`,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message:
-              e?.message ||
-              'Внутренняя ошибка при переключении решений (decisions)',
-          }),
-        },
-      ],
-    };
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка при переключении решений (decisions)',
+    );
   }
 }
 

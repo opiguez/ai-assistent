@@ -19,9 +19,7 @@ export default function registerExtendProcessPrompt(server: McpServer) {
       description:
         'Workflow расширения существующего BPMN процесса: анализ текущей структуры → определение точки вставки → добавление элементов → соединение → валидация.',
       argsSchema: z.object({
-        dataTypeId: z
-          .string()
-          .describe('ID BPMN типа данных'),
+        dataTypeId: z.string().describe('ID BPMN типа данных'),
         instruction: z
           .string()
           .describe('Описание что нужно добавить/изменить (на русском)'),
@@ -69,8 +67,6 @@ ${stepSaveSnapshot(dataTypeId)}
 
 #### Шаг 6: Настройка свойств
 Настрой свойства нового элемента:
-- \`bpmn_set_service_task_config\` — ServiceTask API
-- \`bpmn_set_send_task_template\` — SendTask шаблон
 - \`bpmn_toggle_decisions\` — UserTask decisions (создаёт ExclusiveGateway + flows)
 - \`bpmn_set_condition_expression\` — условия на SequenceFlow
 - \`bpmn_set_rdm_structure\` — ветвление по справочнику

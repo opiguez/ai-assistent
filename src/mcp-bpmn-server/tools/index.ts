@@ -17,10 +17,8 @@ import { suggestImprovementsTools } from './suggest-improvements.js';
 import { validateProcessTools } from './validate-process.js';
 
 // Phase 3: WRITE instruments
-import { updateElementNameTools } from './update-element-name.js';
 import { updateElementPropertyTools } from './update-element-property.js';
 import { setConditionExpressionTools } from './set-condition-expression.js';
-import { setSendTaskTemplateTools } from './set-send-task-template.js';
 import { toggleDecisionsTools } from './toggle-decisions.js';
 import { setRdmAndNumberStructureTools } from './set-rdm-and-number-structure.js';
 import { setMessageEventTools } from './set-message-event.js';
@@ -49,10 +47,8 @@ const bpmnTools: ToolDef[] = [
   ...getProcessTopologyTools,
   ...suggestImprovementsTools,
   ...validateProcessTools,
-  ...updateElementNameTools,
   ...updateElementPropertyTools,
   ...setConditionExpressionTools,
-  ...setSendTaskTemplateTools,
   ...toggleDecisionsTools,
   ...setRdmAndNumberStructureTools,
   ...setMessageEventTools,

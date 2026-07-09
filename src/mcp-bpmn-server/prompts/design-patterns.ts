@@ -14,13 +14,7 @@ export default function registerDesignPatternsPrompt(server: McpServer) {
         'Справочник паттернов проектирования BPMN: ветвление (decisions, RDM, условия), выполнение (ServiceTask, SendTask, ScriptTask, UserTask), асинхронные сообщения, структура (SubProcess, ошибки, таймеры).',
       argsSchema: z.object({
         pattern: z
-          .enum([
-            'branching',
-            'execution',
-            'messages',
-            'structure',
-            'all',
-          ])
+          .enum(['branching', 'execution', 'messages', 'structure', 'all'])
           .optional()
           .default('all')
           .describe('Категория паттернов для просмотра'),
@@ -34,7 +28,7 @@ export default function registerDesignPatternsPrompt(server: McpServer) {
 | Паттерн | Когда | Инструмент |
 |---------|-------|------------|
 | **Decisions** | Человек выбирает из вариантов | \`bpmn_toggle_decisions\` |
-| **RDM Structure** | Ветвление по значению справочника/поля | \`bpmn_set_rdm_structure\` |
+| **RDM/Number Structure** | Ветвление по значению справочника/поля | \`bpmn_set_rdm_or_number_structure\` |
 | **Condition Expression** | Ветвление по вычисляемому условию (FEEL) | \`bpmn_set_condition_expression\` |
 
 ### Примеры FEEL-выражений:
@@ -48,10 +42,8 @@ export default function registerDesignPatternsPrompt(server: McpServer) {
 
 | Паттерн | Когда | Инструмент |
 |---------|-------|------------|
-| **ServiceTask** | Вызов внешнего API (REST) | \`bpmn_set_service_task_config\` |
-| **SendTask** | Отправка email-уведомления | \`bpmn_set_send_task_template\` |
 | **ScriptTask** | Внутренняя логика (вычисления) | через фронтенд |
-| **UserTask** | Действие человека | \`bpmn_update_element_name\`, \`bpmn_update_element_property\` |
+| **UserTask** | Действие человека | \`bpmn_update_element_property\` |
 `,
 
         messages: `

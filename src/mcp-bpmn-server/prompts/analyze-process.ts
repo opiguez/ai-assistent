@@ -13,9 +13,7 @@ export default function registerAnalyzeProcessPrompt(server: McpServer) {
       description:
         'Анализ BPMN процесса: чтение схемы, структуры элементов, валидация, рекомендации по улучшению.',
       argsSchema: z.object({
-        dataTypeId: z
-          .string()
-          .describe('ID BPMN типа данных для анализа'),
+        dataTypeId: z.string().describe('ID BPMN типа данных для анализа'),
       }),
     },
     async ({ dataTypeId }: { dataTypeId: string }) => {
@@ -30,8 +28,6 @@ export default function registerAnalyzeProcessPrompt(server: McpServer) {
 ### Шаг 2: Проверка custom Model
 Проверь элементы:
 - UserTask с decisionsEnabled → \`bpmn_toggle_decisions\`
-- ServiceTask без topic → \`bpmn_set_service_task_config\`
-- SendTask без template → \`bpmn_set_send_task_template\`
 - Gateway без DataTypeProperty → \`bpmn_set_rdm_structure\`
 
 ### Шаг 3: Валидация

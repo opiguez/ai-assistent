@@ -3,7 +3,13 @@ export interface ValidationErrorEntry {
   fix: { ru: string; en: string };
   tool?: string;
   severity: 'error' | 'warning';
-  category: 'structure' | 'element' | 'decision' | 'data' | 'expression' | 'workflow';
+  category:
+    | 'structure'
+    | 'element'
+    | 'decision'
+    | 'data'
+    | 'expression'
+    | 'workflow';
 }
 
 export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
@@ -33,7 +39,10 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
 
   // ─── Elements ─────────────────────────────────────────────
   'system.dse.wf.validation.result.required_attribute_is_absent': {
-    message: { ru: 'Атрибут "{{0}}" не заполнен', en: 'Attribute "{{0}}" is not filled in' },
+    message: {
+      ru: 'Атрибут "{{0}}" не заполнен',
+      en: 'Attribute "{{0}}" is not filled in',
+    },
     fix: {
       ru: 'Заполнить обязательный атрибут "{{0}}" в свойствах элемента',
       en: 'Fill in the required attribute "{{0}}" in element properties',
@@ -43,12 +52,15 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
     category: 'element',
   },
   'system.dse.wf.validation.result.required_name_is_empty': {
-    message: { ru: 'Обязательное поле "{{0}}" не заполнено', en: 'Required "{{0}}" is not filled in' },
-    fix: {
-      ru: 'Заполнить имя элемента через двойной клик или bpmn_update_element_name',
-      en: 'Fill in the element name via double-click or bpmn_update_element_name',
+    message: {
+      ru: 'Обязательное поле "{{0}}" не заполнено',
+      en: 'Required "{{0}}" is not filled in',
     },
-    tool: 'bpmn_update_element_name',
+    fix: {
+      ru: 'Заполнить имя элемента через bpmn_update_element_property c property - name',
+      en: 'Fill in the element name via bpmn_update_element_property with property - name',
+    },
+    tool: 'bpmn_update_element_property',
     severity: 'error',
     category: 'element',
   },
@@ -76,82 +88,88 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
     severity: 'error',
     category: 'element',
   },
-  'system.dse.wf.validation.result.wrong_type_of_gateway_with_incoming_and_outgoing_flows': {
-    message: {
-      ru: 'Неправильный тип шлюза с {{0}} входящим и {{1}} исходящим потоками',
-      en: 'Wrong type of gateway with {{0}} incoming and {{1}} outgoing flows',
+  'system.dse.wf.validation.result.wrong_type_of_gateway_with_incoming_and_outgoing_flows':
+    {
+      message: {
+        ru: 'Неправильный тип шлюза с {{0}} входящим и {{1}} исходящим потоками',
+        en: 'Wrong type of gateway with {{0}} incoming and {{1}} outgoing flows',
+      },
+      fix: {
+        ru: 'Проверить тип шлюза — возможно нужен ExclusiveGateway, InclusiveGateway или ParallelGateway',
+        en: 'Check gateway type — may need ExclusiveGateway, InclusiveGateway, or ParallelGateway',
+      },
+      severity: 'error',
+      category: 'element',
     },
-    fix: {
-      ru: 'Проверить тип шлюза — возможно нужен ExclusiveGateway, InclusiveGateway или ParallelGateway',
-      en: 'Check gateway type — may need ExclusiveGateway, InclusiveGateway, or ParallelGateway',
-    },
-    severity: 'error',
-    category: 'element',
-  },
 
   // ─── Decisions ────────────────────────────────────────────
-  'system.dse.wf.validation.result.decision_must_be_located_immediately_after_usertask': {
-    message: {
-      ru: 'Решение должно быть размещено после пользовательской задачи "{{0}}"',
-      en: 'Decision must be placed after user task "{{0}}"',
+  'system.dse.wf.validation.result.decision_must_be_located_immediately_after_usertask':
+    {
+      message: {
+        ru: 'Решение должно быть размещено после пользовательской задачи "{{0}}"',
+        en: 'Decision must be placed after user task "{{0}}"',
+      },
+      fix: {
+        ru: 'ExclusiveGateway для decisions должен быть подключён напрямую к UserTask. Можно использовать свой gateway, но если decisions выбирались через UI — ExclusiveGateway должен идти сразу после UserTask',
+        en: 'ExclusiveGateway for decisions must be connected directly to UserTask. You can use your own gateway, but if decisions were selected via UI — ExclusiveGateway must be placed immediately after UserTask',
+      },
+      tool: 'bpmn_toggle_decisions',
+      severity: 'error',
+      category: 'decision',
     },
-    fix: {
-      ru: 'ExclusiveGateway для decisions должен быть подключён напрямую к UserTask. Можно использовать свой gateway, но если decisions выбирались через UI — ExclusiveGateway должен идти сразу после UserTask',
-      en: 'ExclusiveGateway for decisions must be connected directly to UserTask. You can use your own gateway, but if decisions were selected via UI — ExclusiveGateway must be placed immediately after UserTask',
+  'system.dse.wf.validation.result.another_usertask_is_connected_to_same_forkgateway':
+    {
+      message: {
+        ru: 'Другая пользовательская задача "{{0}}" подключена к тому же шлюзу разветвления',
+        en: 'Another user task "{{0}}" is connected to the same fork gateway',
+      },
+      fix: {
+        ru: 'Каждый ExclusiveGateway для decisions должен обслуживать только одну UserTask. Создайте отдельный gateway для другой UserTask',
+        en: 'Each ExclusiveGateway for decisions must serve only one UserTask. Create a separate gateway for the other UserTask',
+      },
+      severity: 'error',
+      category: 'decision',
     },
-    tool: 'bpmn_toggle_decisions',
-    severity: 'error',
-    category: 'decision',
-  },
-  'system.dse.wf.validation.result.another_usertask_is_connected_to_same_forkgateway': {
-    message: {
-      ru: 'Другая пользовательская задача "{{0}}" подключена к тому же шлюзу разветвления',
-      en: 'Another user task "{{0}}" is connected to the same fork gateway',
+  'system.dse.wf.validation.result.there_is_no_gateway_to_setup_generic_decisions_branch':
+    {
+      message: {
+        ru: 'Нет потоков последовательности для обработки значений: {{0}}',
+        en: 'There are no sequence flows to process values: {{0}}',
+      },
+      fix: {
+        ru: 'Создать SequenceFlow от ExclusiveGateway к целевым элементам для каждого варианта решения',
+        en: 'Create SequenceFlow from ExclusiveGateway to target elements for each decision option',
+      },
+      tool: 'bpmn_toggle_decisions',
+      severity: 'error',
+      category: 'decision',
     },
-    fix: {
-      ru: 'Каждый ExclusiveGateway для decisions должен обслуживать только одну UserTask. Создайте отдельный gateway для другой UserTask',
-      en: 'Each ExclusiveGateway for decisions must serve only one UserTask. Create a separate gateway for the other UserTask',
+  'system.dse.wf.validation.result.decision_expressions_use_different_variables':
+    {
+      message: {
+        ru: 'В решениях используются разные переменные: {{0}}',
+        en: 'Decisions use different variables: {{0}}',
+      },
+      fix: {
+        ru: 'Все SequenceFlow от ExclusiveGateway для decisions должны использовать одну переменную',
+        en: 'All SequenceFlows from ExclusiveGateway for decisions must use the same variable',
+      },
+      severity: 'error',
+      category: 'decision',
     },
-    severity: 'error',
-    category: 'decision',
-  },
-  'system.dse.wf.validation.result.there_is_no_gateway_to_setup_generic_decisions_branch': {
-    message: {
-      ru: 'Нет потоков последовательности для обработки значений: {{0}}',
-      en: 'There are no sequence flows to process values: {{0}}',
+  'system.dse.wf.validation.result.the_expression_of_is_triggered_by_value_as_well_as_the_expression_of':
+    {
+      message: {
+        ru: 'Условие для "{{0}}" запускается тем же значением {{1}}, что и условие для "{{2}}"',
+        en: 'Condition for "{{0}}" is triggered by the same value {{1}} as the condition for "{{2}}"',
+      },
+      fix: {
+        ru: 'Условия на SequenceFlow должны быть уникальными — каждое значение должно соответствовать одному варианту',
+        en: 'Conditions on SequenceFlows must be unique — each value should correspond to one option',
+      },
+      severity: 'error',
+      category: 'decision',
     },
-    fix: {
-      ru: 'Создать SequenceFlow от ExclusiveGateway к целевым элементам для каждого варианта решения',
-      en: 'Create SequenceFlow from ExclusiveGateway to target elements for each decision option',
-    },
-    tool: 'bpmn_toggle_decisions',
-    severity: 'error',
-    category: 'decision',
-  },
-  'system.dse.wf.validation.result.decision_expressions_use_different_variables': {
-    message: {
-      ru: 'В решениях используются разные переменные: {{0}}',
-      en: 'Decisions use different variables: {{0}}',
-    },
-    fix: {
-      ru: 'Все SequenceFlow от ExclusiveGateway для decisions должны использовать одну переменную',
-      en: 'All SequenceFlows from ExclusiveGateway for decisions must use the same variable',
-    },
-    severity: 'error',
-    category: 'decision',
-  },
-  'system.dse.wf.validation.result.the_expression_of_is_triggered_by_value_as_well_as_the_expression_of': {
-    message: {
-      ru: 'Условие для "{{0}}" запускается тем же значением {{1}}, что и условие для "{{2}}"',
-      en: 'Condition for "{{0}}" is triggered by the same value {{1}} as the condition for "{{2}}"',
-    },
-    fix: {
-      ru: 'Условия на SequenceFlow должны быть уникальными — каждое значение должно соответствовать одному варианту',
-      en: 'Conditions on SequenceFlows must be unique — each value should correspond to one option',
-    },
-    severity: 'error',
-    category: 'decision',
-  },
 
   // ─── Data ─────────────────────────────────────────────────
   'system.dse.wf.validation.result.no_custom_structure_for_id': {
@@ -163,7 +181,7 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
       ru: 'Проверить DataTypePropertyValue — указанный ID не найден в RDM структуре',
       en: 'Check DataTypePropertyValue — the specified ID was not found in the RDM structure',
     },
-    tool: 'bpmn_set_rdm_structure',
+    tool: 'bpmn_set_rdm_or_number_structure',
     severity: 'error',
     category: 'data',
   },
@@ -176,7 +194,7 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
       ru: 'RDM структура не содержит указанный объект. Проверьте привязку к RDM структуре',
       en: 'RDM structure does not contain the specified object. Check the RDM structure binding',
     },
-    tool: 'bpmn_set_rdm_structure',
+    tool: 'bpmn_set_rdm_or_number_structure',
     severity: 'error',
     category: 'data',
   },
@@ -199,7 +217,10 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
     category: 'data',
   },
   'system.dse.wf.validation.result.conflicts_with': {
-    message: { ru: '{{0}} конфликтует с {{1}}', en: '{{0}} conflicts with {{1}}' },
+    message: {
+      ru: '{{0}} конфликтует с {{1}}',
+      en: '{{0}} conflicts with {{1}}',
+    },
     fix: {
       ru: 'Устранить конфликт между {{0}} и {{1}}',
       en: 'Resolve the conflict between {{0}} and {{1}}',
@@ -209,21 +230,25 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
   },
 
   // ─── Expression ───────────────────────────────────────────
-  'system.dse.wf.validation.result.branch_must_be_compared_with_numeric_value': {
-    message: {
-      ru: 'Условие для {{0}} должно содержать числовое значение',
-      en: 'Condition for {{0}} must contain numeric value',
+  'system.dse.wf.validation.result.branch_must_be_compared_with_numeric_value':
+    {
+      message: {
+        ru: 'Условие для {{0}} должно содержать числовое значение',
+        en: 'Condition for {{0}} must contain numeric value',
+      },
+      fix: {
+        ru: 'Изменить условие на SequenceFlow — сравнение должно быть с числовым значением',
+        en: 'Change the condition on SequenceFlow — comparison must be with a numeric value',
+      },
+      tool: 'bpmn_set_condition_expression',
+      severity: 'error',
+      category: 'expression',
     },
-    fix: {
-      ru: 'Изменить условие на SequenceFlow — сравнение должно быть с числовым значением',
-      en: 'Change the condition on SequenceFlow — comparison must be with a numeric value',
-    },
-    tool: 'bpmn_set_condition_expression',
-    severity: 'error',
-    category: 'expression',
-  },
   'system.dse.wf.validation.result.wrong_format_of_expression': {
-    message: { ru: 'Неверный формат выражения', en: 'Wrong format of expression' },
+    message: {
+      ru: 'Неверный формат выражения',
+      en: 'Wrong format of expression',
+    },
     fix: {
       ru: 'Проверить формат FEEL-выражения на SequenceFlow',
       en: 'Check the FEEL expression format on SequenceFlow',
@@ -245,18 +270,19 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
     severity: 'error',
     category: 'expression',
   },
-  'system.dse.wf.validation.result.there_is_no_default_branch_to_process_values': {
-    message: {
-      ru: 'Нет потоков последовательности для обработки значений: {{0}}',
-      en: 'There are no sequence flows to process values: {{0}}',
+  'system.dse.wf.validation.result.there_is_no_default_branch_to_process_values':
+    {
+      message: {
+        ru: 'Нет потоков последовательности для обработки значений: {{0}}',
+        en: 'There are no sequence flows to process values: {{0}}',
+      },
+      fix: {
+        ru: 'Добавить SequenceFlow для необработанных значений или сделать дефолтную ветку',
+        en: 'Add SequenceFlow for unhandled values or create a default branch',
+      },
+      severity: 'error',
+      category: 'expression',
     },
-    fix: {
-      ru: 'Добавить SequenceFlow для необработанных значений или сделать дефолтную ветку',
-      en: 'Add SequenceFlow for unhandled values or create a default branch',
-    },
-    severity: 'error',
-    category: 'expression',
-  },
 
   // ─── Workflow ─────────────────────────────────────────────
   'system.dse.wf.validation.result.no_workflow_defined': {
@@ -290,7 +316,10 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
     category: 'workflow',
   },
   'system.dse.wf.validation.result.step_from_simplified_view_is_not_assigned': {
-    message: { ru: 'Шаг из упрощенного представления не назначен', en: 'Step from simplified view is not assigned' },
+    message: {
+      ru: 'Шаг из упрощенного представления не назначен',
+      en: 'Step from simplified view is not assigned',
+    },
     fix: {
       ru: 'Назначить шаг упрощённого представления на элемент процесса',
       en: 'Assign the simplified view step to a process element',
@@ -299,7 +328,10 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
     category: 'workflow',
   },
   'system.dse.wf.validation.result.more_than_one_dearchive_event': {
-    message: { ru: 'Разрешено только одно событие разархивирования', en: 'More than one Dearchive event found' },
+    message: {
+      ru: 'Разрешено только одно событие разархивирования',
+      en: 'More than one Dearchive event found',
+    },
     fix: {
       ru: 'Оставить только одно событие Dearchive Event на верхнем уровне процесса',
       en: 'Keep only one Dearchive Event at the top level of the process',
@@ -335,19 +367,20 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
   },
 
   // ─── ServiceTask ──────────────────────────────────────────
-  'system.dse.wf.validation.result.service_task_required_input_param_is_absent': {
-    message: {
-      ru: 'Для сервисной задачи не определены входные параметры',
-      en: 'No input parameters are defined for the service task',
+  'system.dse.wf.validation.result.service_task_required_input_param_is_absent':
+    {
+      message: {
+        ru: 'Для сервисной задачи не определены входные параметры',
+        en: 'No input parameters are defined for the service task',
+      },
+      fix: {
+        ru: 'Настроить входные параметры ServiceTask через bpmn_set_service_task_config',
+        en: 'Configure ServiceTask input parameters via bpmn_set_service_task_config',
+      },
+      tool: 'bpmn_set_service_task_config',
+      severity: 'warning',
+      category: 'element',
     },
-    fix: {
-      ru: 'Настроить входные параметры ServiceTask через bpmn_set_service_task_config',
-      en: 'Configure ServiceTask input parameters via bpmn_set_service_task_config',
-    },
-    tool: 'bpmn_set_service_task_config',
-    severity: 'warning',
-    category: 'element',
-  },
   'system.dse.wf.validation.result.method_doesnt_exist': {
     message: {
       ru: 'Метод {{0}}.{{1}} не существует',
@@ -364,7 +397,10 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
 
   // ─── Candidate Groups ─────────────────────────────────────
   'system.dse.wf.validation.result.candidate_group_defines_n_groups': {
-    message: { ru: 'Разрешена только 1 группа пользователей', en: 'Only 1 user group is allowed' },
+    message: {
+      ru: 'Разрешена только 1 группа пользователей',
+      en: 'Only 1 user group is allowed',
+    },
     fix: {
       ru: 'Оставить только одну candidateGroups для UserTask',
       en: 'Keep only one candidateGroups for UserTask',
@@ -396,7 +432,10 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
     category: 'element',
   },
   'system.dse.wf.validation.result.with_does_not_exists': {
-    message: { ru: '{{0}} с {{1}} не существует', en: '{{0}} with {{1}} does not exist' },
+    message: {
+      ru: '{{0}} с {{1}} не существует',
+      en: '{{0}} with {{1}} does not exist',
+    },
     fix: {
       ru: 'Проверить ссылку — указанный объект не найден',
       en: 'Check the reference — the specified object was not found',

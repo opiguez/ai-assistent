@@ -25,11 +25,11 @@ export async function handleConnectElements(
     const source = bpmnXmlService.getElementById(
       state.parsed,
       args.sourceId,
-    ) as ModdleElement | undefined;
+    ) as ModdleElement | null;
     const target = bpmnXmlService.getElementById(
       state.parsed,
       args.targetId,
-    ) as ModdleElement | undefined;
+    ) as ModdleElement | null;
 
     if (!source)
       return errorResponse(

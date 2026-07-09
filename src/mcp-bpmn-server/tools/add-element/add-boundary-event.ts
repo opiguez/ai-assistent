@@ -32,7 +32,7 @@ async function handleAddBoundaryEvent(
     const parentElement = bpmnXmlService.getElementById(
       state.parsed,
       args.attachedToRef,
-    ) as ModdleElement | undefined;
+    ) as ModdleElement | null;
     if (!parentElement) {
       return errorResponse(
         `Родительский элемент "${args.attachedToRef}" не найден в XML структуре`,

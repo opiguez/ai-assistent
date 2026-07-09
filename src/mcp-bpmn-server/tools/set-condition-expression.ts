@@ -35,7 +35,7 @@ export async function handleSetConditionExpression(
     const flowElement = bpmnXmlService.getElementById(
       state.parsed,
       args.connectionId,
-    ) as ModdleElement | undefined;
+    ) as ModdleElement | null;
     if (!flowElement || flowElement.$type !== 'bpmn:SequenceFlow') {
       return errorResponse(
         `SequenceFlow с ID "${args.connectionId}" не найден в XML`,
@@ -71,6 +71,7 @@ export async function handleSetConditionExpression(
       const propType = sourceNode.DataTypeProperty; // 'rdmStructure', 'realNumber' или undefined
 
       if (!propType) {
+        // КЕЙС 1: Шлюз решений UserTask
         const incomingToGateway = Object.entries(state.model).find(
           ([_, entry]: [string, any]) => {
             return (
@@ -87,7 +88,6 @@ export async function handleSetConditionExpression(
           const [_, parentFlow]: [string, any] = incomingToGateway;
           const potentialUserTask = state.model[parentFlow.sourceRef];
 
-          // Проверяем, что это UserTask и на ней ДЕЙСТВИТЕЛЬНО включены решения
           if (
             potentialUserTask &&
             potentialUserTask.elementType === 'bpmn:UserTask' &&
@@ -104,17 +104,32 @@ export async function handleSetConditionExpression(
           );
         }
 
-        let buttonIndex = args.value;
-        const allButtons: string[] =
-          userTaskWithDecisions.decisionsUnused || [];
+        // Получаем массив ID всех стрелок, выходящих из текущего шлюза
+        const gatewayOutgoingFlowIds: string[] = Array.isArray(
+          sourceNode.outgoing,
+        )
+          ? sourceNode.outgoing
+          : sourceNode.outgoing
+            ? [sourceNode.outgoing]
+            : [];
+
+        // Собираем их человеческие имена из модели decor в порядке их создания
+        const allGatewayButtons = gatewayOutgoingFlowIds
+          .map((flowId) => state.model[flowId]?.name)
+          .filter(Boolean);
+
         const currentFlowName = flowDecor.name;
 
-        const foundIdx = allButtons.indexOf(currentFlowName);
+        // Ищем индекс кнопки среди ВСЕХ созданных веток этого шлюза
+        let buttonIndex = args.value; // Оставляем фолбэк на значение от ИИ
+        const foundIdx = allGatewayButtons.indexOf(currentFlowName);
+
         if (foundIdx !== -1) {
-          buttonIndex = String(foundIdx + 1);
+          buttonIndex = String(foundIdx + 1); // Нумерация строго по порядку: 1, 2, 3...
         } else {
+          // Если по какой-то причине имя стрелки не совпало
           return errorResponse(
-            `Ветка шлюза с названием "${currentFlowName}" не найдена в списке доступных решений родительской задачи "${parentUserTaskId}" (доступные решения: ${JSON.stringify(allButtons)}).`,
+            `Ветка шлюза с названием "${currentFlowName}" не найдена среди выходящих линий шлюза "${sourceId}". Убедитесь, что вы правильно соединили элементы.`,
           );
         }
 

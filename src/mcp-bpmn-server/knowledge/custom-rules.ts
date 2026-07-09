@@ -211,16 +211,6 @@ export const STRUCTURAL_RULES = {
       fix: 'Проверить SequenceFlow от ExclusiveGateway — каждая должна иметь условие',
       tool: 'bpmn_set_condition_expression',
     },
-    sendTaskNoTemplate: {
-      description: 'SendTask без привязки к шаблону',
-      fix: 'Настроить шаблон через bpmn_set_send_task_template',
-      tool: 'bpmn_set_send_task_template',
-    },
-    serviceTaskNoApi: {
-      description: 'ServiceTask без привязки к API',
-      fix: 'Настроить API через bpmn_set_service_task_config',
-      tool: 'bpmn_set_service_task_config',
-    },
     tooManyOutgoingConnections: {
       description: 'Gateway с слишком большим количеством исходящих рёбер',
       fix: 'Уменьшить количество исходящих SequenceFlow или использовать другой тип шлюза',
@@ -305,8 +295,7 @@ export const ELEMENT_CONFIGURATIONS = {
   sendTaskWithEmail: {
     description: 'SendTask для email уведомлений',
     steps: [
-      '1. Создать SendTask: bpmn_add_element(dataTypeId, "bpmn:SendTask", "Имя")',
-      '2. Настроить шаблон: bpmn_set_send_task_template(dataTypeId, elementId, template, emailTo, emailSubject, emailFrom)',
+      '1. Создать SendTask: bpmn_add_element(dataTypeId, "bpmn:SendTask", "Имя") и далее по роутингу',
     ],
   },
   subprocessWithCancelDelete: {

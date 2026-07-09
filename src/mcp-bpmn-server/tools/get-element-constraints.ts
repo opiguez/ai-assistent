@@ -1,12 +1,15 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
-import { bpmnXmlService } from '../services/bpmn-xml.service.js';
+import { bpmnXmlService, ModdleElement } from '../services/bpmn-xml.service.js';
 import { defineTool } from '../../shared/utils/base.js';
 import { checkConstraint } from '../services/constraint-utils.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 const GetElementConstraintsSchema = z.object({
-  dataTypeId: z.string().describe('ID BPMN типа данных'),
-  elementId: z.string().describe('ID элемента'),
+  dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
+  elementId: z
+    .string()
+    .describe('ID элемента на схеме, который нужно проверить'),
   operation: z
     .enum([
       'delete',
@@ -15,69 +18,43 @@ const GetElementConstraintsSchema = z.object({
       'addBoundaryEvent',
       'directEdit',
       'addDecision',
-      'addRdmStructure',
+      'addGatewayStructure', // ИСПРАВЛЕНО: заменили addRdmStructure на addGatewayStructure
     ])
-    .describe('Операция для проверки'),
+    .describe(
+      'Тип операции, валидность которой нужно проверить перед выполнением',
+    ),
 });
 
-async function handleGetElementConstraints(args: {
-  dataTypeId: string;
-  elementId: string;
-  operation: string;
-}) {
+export async function handleGetElementConstraints(
+  args: z.infer<typeof GetElementConstraintsSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
-    const element = bpmnXmlService.getElementById(state.parsed, args.elementId);
+    const element = bpmnXmlService.getElementById(
+      state.parsed,
+      args.elementId,
+    ) as ModdleElement | null;
 
     if (!element) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Элемент с ID "${args.elementId}" не найден`,
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        `Элемент с ID "${args.elementId}" не найден в BPMN XML`,
+      );
     }
 
     const modelProps = state.model[args.elementId] || {};
     const result = checkConstraint(args.operation, element, modelProps, state);
 
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify(
-            {
-              status: 'success',
-              elementId: args.elementId,
-              elementType: element.$type,
-              operation: args.operation,
-              allowed: result.allowed,
-              reason: result.reason,
-              details: result.details,
-            },
-            null,
-            2,
-          ),
-        },
-      ],
-    };
+    return successResponse({
+      elementId: args.elementId,
+      elementType: element.$type,
+      operation: args.operation,
+      allowed: result.allowed,
+      reason: result.reason || null,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка проверки ограничений',
-          }),
-        },
-      ],
-    };
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка проверки ограничений элемента',
+    );
   }
 }
 
@@ -86,8 +63,10 @@ export const getElementConstraintsTools = [
     'bpmn_get_element_constraints',
     {
       title: 'Get Element Constraints',
-      description:
-        'Проверяет ограничения для операции над элементом. Операции: delete, connect, changeType, addBoundaryEvent, directEdit, addDecision, addRdmStructure. Возвращает allowed (boolean) и reason (string).',
+      description: `Проверяет, разрешено ли выполнять конкретное действие с элементом по правилам Low-Code платформы.
+      Рекомендуется вызывать этот инструмент ПЕРЕД удалением элементов, созданием связей или изменением структуры шлюзов.
+      Это убережет вас от совершения запрещенных операций, которые бэкенд все равно отклонит при сохранении.
+      В параметре operation передавайте тип планируемого действия (напр., 'delete', 'connect', 'addGatewayStructure').`,
       inputSchema: GetElementConstraintsSchema,
     },
     handleGetElementConstraints,

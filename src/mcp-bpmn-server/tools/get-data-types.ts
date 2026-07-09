@@ -1,96 +1,56 @@
 import { z } from 'zod';
 import { rabisClient } from '../../shared/services/rabisClient.service.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 const GetDataTypesSchema = z.object({
-  moduleId: z.string().describe('ID модуля для получения BPMN типов данных'),
+  moduleId: z
+    .string()
+    .describe(
+      'ID Low-Code модуля для получения доступных BPMN процессов и типов данных',
+    ),
 });
 
-async function handleGetDataTypes(args: { moduleId: string }) {
+export async function handleGetDataTypes(
+  args: z.infer<typeof GetDataTypesSchema>,
+) {
   try {
-    const res = await rabisClient.chain.query.module({ id: args.moduleId }).get({
-      dataTypes: {
-        id: true,
-        name: true,
-        displayName: true,
-        status: true,
-        isPreconfigured: true,
-        isSystem: true,
-        properties: {
+    const res = await rabisClient.chain.query
+      .module({ id: args.moduleId })
+      .get({
+        dataTypes: {
           id: true,
-          displayName: true,
           name: true,
+          displayName: true,
           status: true,
-          properties: {
-            id: true,
-            key: true,
-            displayName: true,
-            propertyType: { propertyTypeEnum: true, displayName: true },
-            readonly: true,
-            required: true,
+          isPreconfigured: true,
+          isSystem: true,
+          stateMachine: true,
+          bpmnProcessType: {
+            valid: true,
           },
         },
-        bpmnProcessType: {
-          bpmnXml: true,
-          valid: true,
-        } as any,
-      },
-    });
+      });
 
-    const dataTypes = ((res as any).dataTypes || []).map((dt: any) => ({
-      id: dt.id,
+    const dataTypes = (res.dataTypes || []).map((dt) => ({
+      dataTypeId: dt.id,
       name: dt.name,
       displayName: dt.displayName,
       status: dt.status,
-      isPreconfigured: dt.isPreconfigured,
-      isSystem: dt.isSystem,
-      hasBpmnSchema: !!dt.bpmnProcessType?.bpmnXml,
+      isSystem: !!dt.isSystem,
+      isPreconfigured: !!dt.isPreconfigured,
       isBpmnValid: dt.bpmnProcessType?.valid ?? null,
-      propertiesCount: (dt.properties || []).flatMap(
-        (g: any) => g.properties || [],
-      ).length,
-      properties: (dt.properties || []).flatMap((g: any) =>
-        (g.properties || []).map((p: any) => ({
-          id: p.id,
-          key: p.key,
-          displayName: p.displayName,
-          type: p.propertyType?.propertyTypeEnum,
-          readonly: p.readonly,
-        })),
-      ),
     }));
 
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify(
-            {
-              status: 'success',
-              moduleId: args.moduleId,
-              totalDataTypes: dataTypes.length,
-              bpmnDataTypes: dataTypes.filter((dt: any) => dt.hasBpmnSchema)
-                .length,
-              dataTypes,
-            },
-            null,
-            2,
-          ),
-        },
-      ],
-    };
+    return successResponse({
+      moduleId: args.moduleId,
+      totalDataTypes: dataTypes.length,
+      dataTypes: dataTypes,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка получения типов данных',
-          }),
-        },
-      ],
-    };
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка получения Low-Code типов данных',
+    );
   }
 }
 
@@ -99,8 +59,11 @@ export const getDataTypesTools = [
     'bpmn_get_data_types',
     {
       title: 'Get Data Types',
-      description:
-        'Возвращает список всех типов данных модуля, включая BPMN типы (с флагом hasBpmnSchema). Для каждого типа: ID, name, displayName, статус, количество и типы свойств.',
+      description: `Возвращает список всех типов данных и BPMN-процессов для указанного модуля.
+      Используйте этот инструмент на старте, чтобы получить валидный "dataTypeId".
+      Каждая сущность в списке имеет маркер stateMachine="BpmnProcess".
+      Ответ содержит только компактные метаданные: dataTypeId, name, displayName, статус системы и флаг валидности схемы (isBpmnValid).
+      Внимание: инструмент возвращает только плоский список процессов, технические свойства полей (properties) здесь не выводятся.`,
       inputSchema: GetDataTypesSchema,
     },
     handleGetDataTypes,

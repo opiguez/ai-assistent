@@ -1,98 +1,81 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
-import { bpmnXmlService } from '../services/bpmn-xml.service.js';
-import { CUSTOM_MODEL_PROPERTIES } from '../knowledge/bpmn-element-specs.js';
+import { bpmnXmlService, ModdleElement } from '../services/bpmn-xml.service.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
+import { checkConstraint } from '../services/constraint-utils.js';
 
-const UpdateElementPropertySchema = z.object({
-  dataTypeId: z.string().describe('ID BPMN типа данных'),
-  elementId: z.string().describe('ID элемента'),
+export const UpdateElementPropertySchema = z.object({
+  dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
+  elementId: z
+    .string()
+    .describe('ID элемента, свойство которого нужно изменить'),
   property: z
     .enum([
-      'type',
-      'DataTypeProperty',
-      'DataTypePropertyValue',
-      'decisionsEnabled',
-      'isManualTask',
-      'topic',
-      'template',
-      'simplifiedViewStep',
+      'name',
       'isCancelEvent',
       'isDeleteEvent',
       'isDearchiveEvent',
       'messageId',
       'eventName',
     ])
-    .describe('Имя свойства custom Model'),
+    .describe(
+      'Имя Low-Code свойства в custom Model (JSON-decor) для точечного изменения',
+    ),
   value: z
     .union([z.string(), z.boolean(), z.number()])
-    .describe('Значение свойства'),
+    .describe(
+      'Новое значение свойства (может быть строкой, числом или булевым флагом)',
+    ),
 });
 
-async function handleUpdateElementProperty(args: {
-  dataTypeId: string;
-  elementId: string;
-  property: string;
-  value: any;
-}) {
+export async function handleUpdateElementProperty(
+  args: z.infer<typeof UpdateElementPropertySchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    const element = bpmnXmlService.getElementById(state.parsed, args.elementId);
+    const element = bpmnXmlService.getElementById(
+      state.parsed,
+      args.elementId,
+    ) as ModdleElement | undefined;
     if (!element) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Элемент с ID "${args.elementId}" не найден`,
-            }),
-          },
-        ],
-      };
-    }
-
-    const spec = CUSTOM_MODEL_PROPERTIES[args.property as keyof typeof CUSTOM_MODEL_PROPERTIES];
-    if (!spec) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Неизвестное свойство: ${args.property}`,
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        `Элемент с ID "${args.elementId}" не найден в BPMN XML`,
+      );
     }
 
     const newModel = { ...state.model };
-    newModel[args.elementId] = { ...newModel[args.elementId] };
 
-    if (args.property === 'type') {
-      const validTypes = (CUSTOM_MODEL_PROPERTIES.type as any).allowedValues as string[];
-      if (!validTypes.includes(args.value as string)) {
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: JSON.stringify({
-                status: 'error',
-                message: `Недопустимое значение type: ${args.value}. Допустимые: ${validTypes.join(', ')}`,
-              }),
-            },
-          ],
-        };
-      }
-      newModel[args.elementId].type = args.value as string;
+    if (!newModel[args.elementId]) {
+      newModel[args.elementId] = {
+        elementType: element.$type,
+        name: element.get('name') || '',
+        require: [],
+        produce: [],
+      };
     } else {
-      (newModel[args.elementId] as any)[args.property] = args.value;
+      newModel[args.elementId] = { ...newModel[args.elementId] };
     }
 
-    const updatedXml = await bpmnXmlService.generateXml(state.parsed);
+    const modelProps = newModel[args.elementId];
 
+    const constraint = checkConstraint(
+      'directEdit',
+      element,
+      modelProps,
+      state,
+    );
+    if (!constraint.allowed) {
+      return errorResponse(
+        `Изменение свойства заблокировано валидатором констреинтов: ${constraint.reason}`,
+      );
+    }
+
+    // Для всех остальных плоских low-code флагов пишем только в декор
+    (modelProps as any)[args.property] = args.value;
+
+    const updatedXml = await bpmnXmlService.generateXml(state.parsed);
     const saveResult = await bpmnSchemaService.saveProcess({
       dataTypeId: args.dataTypeId,
       xml: updatedXml,
@@ -100,45 +83,23 @@ async function handleUpdateElementProperty(args: {
     });
 
     if (!saveResult.success) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: saveResult.error || 'Ошибка сохранения',
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        saveResult.error ||
+          'Ошибка при сохранении измененного свойства в базу данных',
+      );
     }
 
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            elementId: args.elementId,
-            property: args.property,
-            value: args.value,
-            message: `Свойство "${args.property}" элемента "${args.elementId}" обновлено`,
-          }),
-        },
-      ],
-    };
+    return successResponse({
+      elementId: args.elementId,
+      property: args.property,
+      value: args.value,
+      message: `Low-Code свойство "${args.property}" элемента "${args.elementId}" успешно обновлено на значение "${args.value}". Изменения зафиксированы в JSON-decor.`,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка обновления свойства',
-          }),
-        },
-      ],
-    };
+    return errorResponse(
+      e?.message ||
+        'Внутренняя ошибка при обновлении Low-Code свойства элемента',
+    );
   }
 }
 
@@ -147,8 +108,10 @@ export const updateElementPropertyTools = [
     'bpmn_update_element_property',
     {
       title: 'Update Element Property',
-      description:
-        'Обновляет свойство custom Model элемента BPMN. Доступные свойства: type, DataTypeProperty, DataTypePropertyValue, decisionsEnabled, isManualTask, topic, template, simplifiedViewStep, isCancelEvent, isDeleteEvent, isDearchiveEvent, messageId, eventName.',
+      description: `Точечно изменяет кастомные флаговые или строковые Low-Code свойства элемента внутри JSON-decor.
+Используется для переключения служебных маркеров процессов (напр., 'isCancelEvent', 'messageId', 'eventName')
+Внимание: этот инструмент предназначен СТРОГО для плоских вспомогательных свойств.
+Для настройки исполнителей (assignee), шаблонов уведомлений, условий шлюзов (RDM/Number) и кнопок UserTask ОБЯЗАТЕЛЬНО используйте соответствующие специализированные инструменты!`,
       inputSchema: UpdateElementPropertySchema,
     },
     handleUpdateElementProperty,

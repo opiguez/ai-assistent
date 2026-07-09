@@ -149,7 +149,7 @@ PUBLISHING: data_disable_publishing, data_enable_publishing, data_publish, data_
 
 ДОСТУПНЫЕ BPMN MCP-ИНСТРУМЕНТЫ (bpmn_*):
 READ: bpmn_get_process_schema, bpmn_get_element_properties, bpmn_validate_process, bpmn_get_available_element_types, bpmn_get_element_constraints, bpmn_get_data_types, bpmn_get_api_spec, bpmn_get_process_topology, bpmn_suggest_improvements, bpmn_get_user_groups
-WRITE: bpmn_update_element_name, bpmn_update_element_property, bpmn_set_condition_expression, bpmn_set_service_task_config, bpmn_set_send_task_template, bpmn_toggle_decisions, bpmn_set_rdm_structure, bpmn_set_message_event
+WRITE: bpmn_update_element_property, bpmn_set_condition_expression, bpmn_set_service_task_config, bpmn_toggle_decisions, bpmn_set_rdm_structure, bpmn_set_message_event
 CREATE: bpmn_add_element (универсальный), bpmn_connect_elements, bpmn_delete_element
 UNDO: bpmn_save_snapshot, bpmn_restore_snapshot
 CRUD: bpmn_create_post_template, bpmn_update_post_template, bpmn_delete_post_template, bpmn_validate_post_template, bpmn_create_bpmn_message, bpmn_update_bpmn_message, bpmn_delete_bpmn_message, bpmn_validate_bpmn_message

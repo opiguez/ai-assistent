@@ -1,39 +1,25 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 const GetUserGroupsSchema = z.object({
-  search: z.string().optional().describe('Поисковый запрос для фильтрации групп (опционально)'),
+  search: z
+    .string()
+    .optional()
+    .describe('Поисковый запрос для фильтрации групп (опционально)'),
 });
 
 async function handleGetUserGroups(args: { search?: string }) {
   try {
     const groups = await bpmnSchemaService.loadUserGroups(args.search);
 
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            count: groups.length,
-            groups,
-          }, null, 2),
-        },
-      ],
-    };
+    return successResponse({
+      count: groups.length,
+      groups,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка загрузки групп пользователей',
-          }),
-        },
-      ],
-    };
+    return errorResponse(e?.message || 'Ошибка загрузки групп пользователей');
   }
 }
 

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { bpmnXmlService } from '../services/bpmn-xml.service.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 // ─── In-memory snapshot store ────────────────────────────────
 
@@ -11,10 +13,13 @@ interface Snapshot {
   timestamp: number;
 }
 
+// Хранилище снимков в памяти MCP-сервера
 const snapshots = new Map<string, Snapshot>();
 const SNAPSHOT_TTL_MS = 10 * 60 * 1000; // 10 минут
 
 function generateSnapshotId(dataTypeId: string): string {
+  // Упрощаем генерацию: ИИ намного легче оперировать чистыми строками,
+  // а таймстамп в конце защитит от коллизий в памяти бэкенда
   return `snap_${dataTypeId}_${Date.now()}`;
 }
 
@@ -27,25 +32,33 @@ function cleanExpiredSnapshots(): void {
   }
 }
 
-// ─── Save Snapshot ──────────────────────────────────────────
+// ====================================================================
+// ─── TOOL 1: Save Snapshot (Создание снимка) ────────────────────────
+// ====================================================================
 
-const SaveSnapshotSchema = z.object({
-  dataTypeId: z.string().describe('ID BPMN типа данных'),
+export const SaveSnapshotSchema = z.object({
+  dataTypeId: z
+    .string()
+    .describe(
+      'ID BPMN типа данных (модуля/процесса) для создания резервной копии схемы',
+    ),
 });
 
-async function handleSaveSnapshot(args: { dataTypeId: string }) {
+export async function handleSaveSnapshot(
+  args: z.infer<typeof SaveSnapshotSchema>,
+) {
   try {
     cleanExpiredSnapshots();
 
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    const xml = await (await import('../services/bpmn-xml.service.js')).bpmnXmlService.generateXml(
-      state.parsed,
-    );
+    const xml = await bpmnXmlService.generateXml(state.parsed);
     const decor = JSON.stringify(state.model);
 
+    // Генерируем уникальный токен снимка
     const snapshotId = generateSnapshotId(args.dataTypeId);
 
+    // Сохраняем слепок графа схемы в память бэкенда
     snapshots.set(snapshotId, {
       dataTypeId: args.dataTypeId,
       xml,
@@ -53,56 +66,39 @@ async function handleSaveSnapshot(args: { dataTypeId: string }) {
       timestamp: Date.now(),
     });
 
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            snapshotId,
-            message: `Снимок сохранён. Действителен ${SNAPSHOT_TTL_MS / 60000} мин.`,
-          }),
-        },
-      ],
-    };
+    return successResponse({
+      snapshotId,
+      dataTypeId: args.dataTypeId,
+      message: `Резервный снимок схемы успешно сохранен под ID "${snapshotId}". Снимок действителен в течение 10 минут. Если ваши последующие шаги по изменению графа схемы окажутся ошибочными, вызовите инструмент восстановления, передав этот snapshotId.`,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка создания снимка',
-          }),
-        },
-      ],
-    };
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка при создании снимка схемы',
+    );
   }
 }
 
-// ─── Restore Snapshot ───────────────────────────────────────
+// ====================================================================
+// ─── TOOL 2: Restore Snapshot (Восстановление из снимка) ────────────
+// ====================================================================
 
-const RestoreSnapshotSchema = z.object({
-  snapshotId: z.string().describe('ID снимка для восстановления'),
+export const RestoreSnapshotSchema = z.object({
+  snapshotId: z
+    .string()
+    .describe('ID сохраненного ранее снимка схемы для отката изменений'),
 });
 
-async function handleRestoreSnapshot(args: { snapshotId: string }) {
+export async function handleRestoreSnapshot(
+  args: z.infer<typeof RestoreSnapshotSchema>,
+) {
   try {
     cleanExpiredSnapshots();
 
     const snapshot = snapshots.get(args.snapshotId);
     if (!snapshot) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Снимок "${args.snapshotId}" не найден или истёк`,
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        `Снимок с ID "${args.snapshotId}" не найден. Возможно, он истёк (TTL 10 минут) или никогда не создавался.`,
+      );
     }
 
     const saveResult = await bpmnSchemaService.saveProcess({
@@ -112,46 +108,20 @@ async function handleRestoreSnapshot(args: { snapshotId: string }) {
     });
 
     if (!saveResult.success) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: saveResult.error || 'Ошибка восстановления',
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        saveResult.error || 'Ошибка при записи данных снимка в базу данных',
+      );
     }
 
-    // Удаляем снимок после восстановления
-    snapshots.delete(args.snapshotId);
-
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            snapshotId: args.snapshotId,
-            message: 'Процесс восстановлен из снимка',
-          }),
-        },
-      ],
-    };
+    return successResponse({
+      snapshotId: args.snapshotId,
+      dataTypeId: snapshot.dataTypeId,
+      message: `Состояние процесса успешно откачено назад к резервному снимку "${args.snapshotId}". Все изменения графа, сделанные после создания снимка, аннулированы.`,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка восстановления снимка',
-          }),
-        },
-      ],
-    };
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка при восстановлении процесса из снимка',
+    );
   }
 }
 

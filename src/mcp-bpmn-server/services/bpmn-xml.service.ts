@@ -39,6 +39,7 @@ export interface ProcessConnection {
 export type ModdleElement<T = BaseElement> = T & {
   set(property: string, value: any): void;
   get(property: string): any;
+  name?: string;
   $type: string;
   $attrs: Record<string, any>;
   $parent?: ModdleElement;

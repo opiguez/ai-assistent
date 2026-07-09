@@ -13,9 +13,7 @@ export default function registerCreateProcessPrompt(server: McpServer) {
       description:
         'Workflow создания нового BPMN процесса с нуля: скелет (StartEvent → EndEvent) → добавление элементов → соединение → настройка → валидация.',
       argsSchema: z.object({
-        dataTypeId: z
-          .string()
-          .describe('ID BPMN типа данных'),
+        dataTypeId: z.string().describe('ID BPMN типа данных'),
         elements: z
           .string()
           .describe('Описание элементов процесса (на русском)'),
@@ -62,11 +60,9 @@ export default function registerCreateProcessPrompt(server: McpServer) {
 
 #### Шаг 6: Настройка свойств
 Для каждого элемента настрой свойства:
-- ServiceTask: \`bpmn_set_service_task_config\` для привязки к API
-- SendTask: \`bpmn_set_send_task_template\` для шаблона
 - UserTask decisions: \`bpmn_toggle_decisions\` (создаёт ExclusiveGateway + flows автоматически)
 - Condition на стрелке: \`bpmn_set_condition_expression\`
-- Gateway RDM: \`bpmn_set_rdm_structure\`
+- Gateway RDM/Number: \`bpmn_set_rdm_or_number_structure\`
 
 #### Шаг 7: Валидация
 Вызови \`bpmn_validate_process\` с dataTypeId="${dataTypeId}".

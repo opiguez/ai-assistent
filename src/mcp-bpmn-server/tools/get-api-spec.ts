@@ -1,14 +1,18 @@
 import { z } from 'zod';
 import { rabisClient } from '../../shared/services/rabisClient.service.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 const GetApiSpecSchema = z.object({
-  moduleId: z.string().describe('ID модуля для получения API спек'),
+  moduleId: z
+    .string()
+    .describe(
+      'ID Low-Code модуля для получения доступных API спецификаций и методов',
+    ),
 });
 
-async function handleGetApiSpec(args: { moduleId: string }) {
+export async function handleGetApiSpec(args: z.infer<typeof GetApiSpecSchema>) {
   try {
-    // Получаем API specs groups для модуля
     const moduleRes = await rabisClient.chain.query
       .module({ id: args.moduleId })
       .get({
@@ -21,85 +25,51 @@ async function handleGetApiSpec(args: { moduleId: string }) {
             name: true,
             displayName: true,
             moduleDtoJson: true,
-            serviceUrl: true,
-            version: true,
           },
         },
       });
 
-    const groups = ((moduleRes as any).apiSpecsGroups || []).map(
-      (group: any) => ({
-        id: group.id,
-        name: group.name,
-        displayName: group.displayName,
-        apiSpecs: (group.apiSpecs || []).map((spec: any) => {
-          let parsedMethods: any[] = [];
-          try {
-            const moduleDto = JSON.parse(spec.moduleDtoJson || '[]');
-            parsedMethods = moduleDto.flatMap((mod: any) =>
-              (mod.serviceDtos || []).flatMap((dto: any) =>
-                (dto.methods || []).map((method: any) => ({
-                  serviceName: dto.name,
-                  methodName: method.name,
-                  httpMethod: method.httpMethod,
-                  path: method.path,
-                  description: method.description || method.summary,
-                  technicalName: method.technicalName,
-                })),
-              ),
-            );
-          } catch {}
+    const availableMethods: any[] = [];
 
-          return {
-            id: spec.id,
-            name: spec.name,
-            displayName: spec.displayName,
-            serviceUrl: spec.serviceUrl,
-            version: spec.version,
-            methodsCount: parsedMethods.length,
-            methods: parsedMethods,
-          };
-        }),
-      }),
-    );
+    (moduleRes.apiSpecsGroups || []).forEach((group) => {
+      (group.apiSpecs || []).forEach((spec) => {
+        try {
+          const moduleDto = JSON.parse(spec.moduleDtoJson || '[]');
 
-    const totalMethods = groups.reduce(
-      (sum: number, g: any) =>
-        sum +
-        g.apiSpecs.reduce((s: number, sp: any) => s + sp.methodsCount, 0),
-      0,
-    );
+          moduleDto.forEach((mod: any) => {
+            const targetModule = mod.name || group.name;
 
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify(
-            {
-              status: 'success',
-              moduleId: args.moduleId,
-              totalGroups: groups.length,
-              totalMethods,
-              groups,
-            },
-            null,
-            2,
-          ),
-        },
-      ],
-    };
+            (mod.serviceDtos || []).forEach((dto: any) => {
+              const targetService = dto.name; // Имя сервиса
+
+              (dto.methods || []).forEach((method: any) => {
+                // Пушим метод, оставляя ТОЛЬКО те поля, которые ИИ скопирует в ServiceTask!
+                availableMethods.push({
+                  apiSpecGroupId: group.id, // ID группы спецификаций
+                  targetModule: targetModule, // Имя модуля
+                  targetService: targetService, // Имя сервиса
+                  targetMethod: method.name, // Имя метода API
+                  description:
+                    method.description || method.summary || 'Без описания',
+                });
+              });
+            });
+          });
+        } catch (parseError) {
+          // Игнорируем битый JSON в конкретной спецификации, чтобы не ломать весь инструмент
+        }
+      });
+    });
+
+    return successResponse({
+      moduleId: args.moduleId,
+      totalMethodsFound: availableMethods.length,
+      availableMethods: availableMethods,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка получения API спек',
-          }),
-        },
-      ],
-    };
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка получения API спецификаций',
+    );
   }
 }
 

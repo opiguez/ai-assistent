@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
-import { bpmnXmlService } from '../services/bpmn-xml.service.js';
+import { bpmnXmlService, ModdleElement } from '../services/bpmn-xml.service.js';
 import { checkConstraint } from '../services/constraint-utils.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 const DeleteElementSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных'),
@@ -12,80 +13,94 @@ const DeleteElementSchema = z.object({
     .describe('Подтверждение удаления (обязательно true)'),
 });
 
-async function handleDeleteElement(args: {
-  dataTypeId: string;
-  elementId: string;
-  confirm: boolean;
-}) {
+export async function handleDeleteElement(
+  args: z.infer<typeof DeleteElementSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    // Проверяем существование элемента
-    const element = bpmnXmlService.getElementById(state.parsed, args.elementId);
+    const element = bpmnXmlService.getElementById(
+      state.parsed,
+      args.elementId,
+    ) as ModdleElement | null;
     if (!element) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Элемент "${args.elementId}" не найден`,
-            }),
-          },
-        ],
-      };
+      return errorResponse(`Элемент "${args.elementId}" не найден в BPMN XML`);
     }
 
-    // Проверяем constraints
     const constraint = checkConstraint(
       'delete',
       element,
       state.model[args.elementId] || {},
-      state.parsed,
+      state,
     );
 
     if (!constraint.allowed) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Удаление запрещено: ${constraint.reason}`,
-            }),
-          },
-        ],
-      };
+      return errorResponse(`Удаление запрещено: ${constraint.reason}`);
     }
 
-    const deleted = bpmnXmlService.deleteElement(state.parsed, args.elementId);
-
-    if (!deleted) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message:
-                'Не удалось удалить элемент (возможно, это StartEvent или EndEvent)',
-            }),
-          },
-        ],
-      };
-    }
+    const incomingFlows = [
+      ...(element.get('incoming') || []),
+    ] as ModdleElement[];
+    const outgoingFlows = [
+      ...(element.get('outgoing') || []),
+    ] as ModdleElement[];
+    const allRelatedFlows = [...incomingFlows, ...outgoingFlows];
 
     const newModel = { ...state.model };
-    delete newModel[args.elementId];
 
-    const incoming = [...(element.get('incoming') || [])];
-    const outgoing = [...(element.get('outgoing') || [])];
-    for (const flow of [...incoming, ...outgoing]) {
+    if (element.$type.includes('Gateway')) {
+      const incomingToGateway = Object.values(state.model).find(
+        (entry: any) => {
+          return (
+            entry.elementType === 'bpmn:SequenceFlow' &&
+            entry.targetRef === args.elementId
+          );
+        },
+      ) as any;
+
+      if (incomingToGateway) {
+        const parentUserTaskId = incomingToGateway.sourceRef;
+        const userTask = newModel[parentUserTaskId];
+
+        if (
+          userTask &&
+          userTask.elementType === 'bpmn:UserTask' &&
+          userTask.decisionsEnabled
+        ) {
+          const currentUnused = userTask.decisionsUnused || [];
+          const restoredDecisions: string[] = [];
+
+          outgoingFlows.forEach((flow) => {
+            const flowDecor = state.model[flow.id];
+            if (flowDecor && flowDecor.name) {
+              restoredDecisions.push(flowDecor.name);
+            }
+          });
+
+          if (restoredDecisions.length > 0) {
+            newModel[parentUserTaskId] = {
+              ...userTask,
+              decisionsUnused: [...currentUnused, ...restoredDecisions],
+            };
+          }
+        }
+      }
+    }
+    for (const flow of allRelatedFlows) {
+      bpmnXmlService.deleteElement(state.parsed, flow.id);
       delete newModel[flow.id];
     }
 
-    const updatedXml = await bpmnXmlService.generateXml(state.parsed);
+    const deleted = bpmnXmlService.deleteElement(state.parsed, args.elementId);
+    if (!deleted) {
+      return errorResponse(
+        'Не удалось удалить базовый элемент на уровне XML (возможно, это системный защищенный узел)',
+      );
+    }
 
+    delete newModel[args.elementId];
+
+    const updatedXml = await bpmnXmlService.generateXml(state.parsed);
     const saveResult = await bpmnSchemaService.saveProcess({
       dataTypeId: args.dataTypeId,
       xml: updatedXml,
@@ -93,44 +108,20 @@ async function handleDeleteElement(args: {
     });
 
     if (!saveResult.success) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: saveResult.error || 'Ошибка сохранения',
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        saveResult.error || 'Ошибка при сохранении изменений после удаления',
+      );
     }
 
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            elementId: args.elementId,
-            elementType: element.$type,
-            message: `Элемент "${args.elementId}" (${element.$type}) удалён`,
-          }),
-        },
-      ],
-    };
+    return successResponse({
+      elementId: args.elementId,
+      elementType: element.$type,
+      message: `Элемент "${args.elementId}" (${element.$type}) и все его связанные линии связи (${allRelatedFlows.length} шт.) успешно удалены каскадно. Граф процесса очищен.`,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка удаления элемента',
-          }),
-        },
-      ],
-    };
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка при удалении элемента',
+    );
   }
 }
 

@@ -3,6 +3,7 @@ import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
 import { bpmnXmlService, ModdleElement } from '../services/bpmn-xml.service.js';
 import { defineTool } from '../../shared/utils/base.js';
 import { errorResponse, successResponse } from './add-element/shared.js';
+import { checkConstraint } from '../services/constraint-utils.js';
 
 const SetRdmOrNumberStructureSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
@@ -24,11 +25,21 @@ export async function handleSetRdmOrNumberStructure(
     const element = bpmnXmlService.getElementById(
       state.parsed,
       args.elementId,
-    ) as ModdleElement | undefined;
+    ) as ModdleElement | null;
     if (!element) {
       return errorResponse(
         `Элемент с ID "${args.elementId}" не найден в BPMN XML`,
       );
+    }
+
+    const constraint = checkConstraint(
+      'addGatewayStructure',
+      element,
+      state.model[args.elementId] || {},
+      state,
+    );
+    if (!constraint.allowed) {
+      return errorResponse(constraint.reason as string);
     }
 
     if (

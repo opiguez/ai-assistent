@@ -3,6 +3,9 @@
  * Общая логика проверки ограничений для get-element-properties и get-element-constraints.
  */
 
+import { BpmnProcessState } from './bpmn-schema.service.js';
+import { ModdleElement } from './bpmn-xml.service.js';
+
 // ─── Types ────────────────────────────────────────────────
 
 export interface ConstraintResult {
@@ -13,97 +16,121 @@ export interface ConstraintResult {
 
 // ─── Shared Constraint Checks ─────────────────────────────
 
+export function checkAllConstraints(
+  element: ModdleElement,
+  modelElementProps: Record<string, any>,
+  state: BpmnProcessState,
+): Record<string, ConstraintResult> {
+  return {
+    delete: checkDelete(element, modelElementProps, state),
+    connect: checkConnect(element, modelElementProps),
+    changeType: checkChangeType(element, state),
+    addBoundaryEvent: checkAddBoundaryEvent(element),
+    directEdit: checkDirectEdit(element, state),
+    addDecision: checkAddDecision(element, modelElementProps),
+    addGatewayStructure: checkAddGatewayStructure(element, modelElementProps),
+  };
+}
+
 /**
  * Проверяет ограничение для операции над элементом.
  */
 export function checkConstraint(
   operation: string,
-  element: any,
-  modelProps: any,
-  state: any,
+  element: ModdleElement,
+  modelElementProps: Record<string, any>,
+  state: BpmnProcessState,
 ): ConstraintResult {
   switch (operation) {
     case 'delete':
-      return checkDelete(element, modelProps, state);
+      return checkDelete(element, modelElementProps, state);
     case 'connect':
-      return checkConnect(element, modelProps, state);
+      return checkConnect(element, modelElementProps);
     case 'changeType':
-      return checkChangeType(element, modelProps, state);
+      return checkChangeType(element, state);
     case 'addBoundaryEvent':
       return checkAddBoundaryEvent(element);
     case 'directEdit':
-      return checkDirectEdit(element, modelProps, state);
+      return checkDirectEdit(element, state);
     case 'addDecision':
-      return checkAddDecision(element, modelProps, state);
-    case 'addRdmStructure':
-      return checkAddRdmStructure(element, modelProps, state);
+      return checkAddDecision(element, modelElementProps);
+    case 'addGatewayStructure':
+      return checkAddGatewayStructure(element, modelElementProps);
     default:
       return { allowed: true };
   }
 }
 
-/**
- * Проверяет все ограничения элемента и возвращает объект с флагами.
- */
-export function checkAllConstraints(
-  element: any,
-  modelProps: any,
-  state: any,
-): Record<string, ConstraintResult> {
-  return {
-    delete: checkDelete(element, modelProps, state),
-    connect: checkConnect(element, modelProps, state),
-    changeType: checkChangeType(element, modelProps, state),
-    addBoundaryEvent: checkAddBoundaryEvent(element),
-    directEdit: checkDirectEdit(element, modelProps, state),
-    addDecision: checkAddDecision(element, modelProps, state),
-    addRdmStructure: checkAddRdmStructure(element, modelProps, state),
-  };
-}
-
-// ─── Individual Checks ────────────────────────────────────
-
 function checkDelete(
-  element: any,
-  modelProps: any,
-  state: any,
+  element: ModdleElement,
+  modelElementProps: Record<string, any>,
+  state: BpmnProcessState,
 ): ConstraintResult {
   const type = element.$type;
 
   if (type === 'bpmn:Process') {
-    return { allowed: false, reason: 'Нельзя удалить корневой элемент Process' };
+    return {
+      allowed: false,
+      reason: 'Нельзя удалить корневой элемент Process',
+    };
+  }
+
+  // ОГРАНИЧЕНИЕ ПЛАТФОРМЫ: Запрещаем удалять единственный корневой Старт и Конец
+  if (element.$parent?.$type !== 'bpmn:SubProcess') {
+    if (type === 'bpmn:StartEvent') {
+      return {
+        allowed: false,
+        reason: 'Нельзя удалить главное стартовое событие процесса',
+      };
+    }
+    if (type === 'bpmn:EndEvent') {
+      return {
+        allowed: false,
+        reason: 'Нельзя удалить главное конечное событие процесса',
+      };
+    }
+  }
+
+  if (type === 'bpmn:SequenceFlow') {
+    const sourceRef = element.get('sourceRef');
+    if (sourceRef) {
+      const sourceDecor = state.model[sourceRef.id] || {};
+      if (sourceDecor.DataTypeProperty) {
+        return {
+          allowed: false,
+          reason: `Нельзя удалить ветку SequenceFlow напрямую. Она привязана к условиям шлюза "${sourceRef.id}" (${sourceDecor.DataTypeProperty}).`,
+        };
+      }
+    }
   }
 
   if (
-    type === 'bpmn:SequenceFlow' &&
-    modelProps.DataTypeProperty
+    modelElementProps.decisionsEnabled &&
+    modelElementProps.decisionsUnused?.length > 0
   ) {
     return {
       allowed: false,
-      reason: 'Нельзя удалить SequenceFlow, входящую в Custom Structure Gateway',
+      reason:
+        'Нельзя удалить UserTask, пока не будут удалены или сброшены её решения (decisions)',
     };
   }
 
-  if (modelProps.decisionsEnabled) {
+  if (
+    (type === 'bpmn:ExclusiveGateway' || type === 'bpmn:InclusiveGateway') &&
+    modelElementProps.DataTypeProperty
+  ) {
     return {
       allowed: false,
-      reason: 'Нельзя удалить UserTask с включёнными decisions',
+      reason: `Нельзя удалить шлюз "${element.id}", так как на нем настроена структура условий (${modelElementProps.DataTypeProperty}). Сначала сбросьте структуру шлюза.`,
     };
   }
 
-  if (type === 'bpmn:ExclusiveGateway' && modelProps.DataTypeProperty) {
-    return {
-      allowed: false,
-      reason: 'Нельзя удалить Gateway с DataTypeProperty (Custom Structure)',
-    };
-  }
-
-  // SubProcess restrictions
-  if (element.parent?.$type === 'bpmn:SubProcess') {
+  if (element.$parent?.$type === 'bpmn:SubProcess') {
     if (type === 'bpmn:StartEvent' || type === 'bpmn:EndEvent') {
       return {
         allowed: false,
-        reason: 'Нельзя удалить StartEvent/EndEvent внутри SubProcess',
+        reason:
+          'Нельзя удалить встроенные StartEvent/EndEvent внутри SubProcess',
       };
     }
   }
@@ -112,29 +139,35 @@ function checkDelete(
 }
 
 function checkConnect(
-  element: any,
-  modelProps: any,
-  state: any,
+  element: ModdleElement,
+  modelElementProps: Record<string, any>,
 ): ConstraintResult {
-  if (modelProps.decisionsEnabled) {
-    return {
-      allowed: false,
-      reason: 'Нельзя создавать связи из элемента с decisionsEnabled',
-    };
+  const type = element.$type;
+
+  // ИСПРАВЛЕНО: Логика для UserTask в режиме решений (Decisions)
+  if (type === 'bpmn:UserTask' && modelElementProps.decisionsEnabled) {
+    const outgoing = element.get('outgoing') || [];
+    // Из задачи с кнопками может выходить ТЕХНИЧЕСКИ ровно одна стрелка — к шлюзу распределения
+    if (outgoing.length >= 1) {
+      return {
+        allowed: false,
+        reason:
+          'Для этого UserTask включены Decisions. Из неё может выходить только одна главная стрелка к шлюзу (ExclusiveGateway). Все остальные ветки условий должны тянуться уже ИЗ самого шлюза!',
+      };
+    }
   }
 
-  // Task can have only one outgoing non-Association
-  if (
-    element.$type?.includes('Task') &&
-    element.get('outgoing')?.length > 0
-  ) {
-    const nonAssociation = element
-      .get('outgoing')
-      .filter((sf: any) => sf.$type !== 'bpmn:Association');
+  // Стандартное ограничение BPMN: из обычной задачи не может выходить веер стрелок
+  if (type?.includes('Task') && !modelElementProps.decisionsEnabled) {
+    const outgoing = element.get('outgoing') || [];
+    const nonAssociation = outgoing.filter(
+      (sf: any) => sf.$type !== 'bpmn:Association',
+    );
     if (nonAssociation.length > 0) {
       return {
         allowed: false,
-        reason: 'Task может иметь только одну исходящую non-Association связь',
+        reason:
+          'Обычная задача (Task) может иметь только одну исходящую связь. Для разветвления логики используйте шлюзы (Gateway).',
       };
     }
   }
@@ -143,11 +176,13 @@ function checkConnect(
 }
 
 function checkChangeType(
-  element: any,
-  modelProps: any,
-  state: any,
+  element: ModdleElement,
+  state: BpmnProcessState,
 ): ConstraintResult {
-  if (element.$type === 'bpmn:ExclusiveGateway') {
+  if (
+    element.$type === 'bpmn:ExclusiveGateway' ||
+    element.$type === 'bpmn:InclusiveGateway'
+  ) {
     const incoming = element.get('incoming') || [];
     for (const sf of incoming) {
       const source = sf.get('sourceRef');
@@ -156,7 +191,8 @@ function checkChangeType(
         if (srcModel.decisionsEnabled) {
           return {
             allowed: false,
-            reason: 'Нельзя менять тип ExclusiveGateway, входящая от UserTask с decisions',
+            reason:
+              'Нельзя изменять тип шлюза, так как он принимает поток решений (decisions) от UserTask',
           };
         }
       }
@@ -166,34 +202,40 @@ function checkChangeType(
   return { allowed: true };
 }
 
-function checkAddBoundaryEvent(
-  element: any,
-): ConstraintResult {
+function checkAddBoundaryEvent(element: ModdleElement): ConstraintResult {
+  // Ограничение платформы: вешаем ошибки только на системные таски интеграций
   if (element.$type !== 'bpmn:ServiceTask') {
     return {
       allowed: false,
-      reason: 'Error Boundary Event можно прикрепить ТОЛЬКО к ServiceTask',
+      reason:
+        'Error Boundary Event можно прикрепить ТОЛЬКО к ServiceTask API-интеграции',
     };
   }
   return { allowed: true };
 }
 
 function checkDirectEdit(
-  element: any,
-  modelProps: any,
-  state: any,
+  element: ModdleElement,
+  state: BpmnProcessState,
 ): ConstraintResult {
-  if (element.$type === 'bpmn:SendTask') {
+  if (
+    element.$type === 'bpmn:SendTask' ||
+    element.$type === 'bpmn:ScriptTask'
+  ) {
     return {
       allowed: false,
-      reason: 'Direct edit запрещён для SendTask',
+      reason:
+        'Прямое редактирование текста запрещено. Используйте специализированные инструменты настройки параметров',
     };
   }
 
-  // Decision sequence flow
   if (element.$type === 'bpmn:SequenceFlow') {
     const source = element.get('sourceRef');
-    if (source?.$type === 'bpmn:ExclusiveGateway') {
+    if (
+      source &&
+      (source.$type === 'bpmn:ExclusiveGateway' ||
+        source.$type === 'bpmn:InclusiveGateway')
+    ) {
       const incoming = source.get('incoming') || [];
       for (const sf of incoming) {
         const src = sf.get('sourceRef');
@@ -202,7 +244,8 @@ function checkDirectEdit(
           if (srcModel.decisionsEnabled) {
             return {
               allowed: false,
-              reason: 'Direct edit запрещён для Decision SequenceFlow',
+              reason:
+                'Прямое изменение текста запрещено для линий решений шлюза (Decision SequenceFlow)',
             };
           }
         }
@@ -214,48 +257,49 @@ function checkDirectEdit(
 }
 
 function checkAddDecision(
-  element: any,
-  modelProps: any,
-  state: any,
+  element: ModdleElement,
+  modelElementProps: Record<string, any>,
 ): ConstraintResult {
   if (element.$type !== 'bpmn:UserTask') {
     return {
       allowed: false,
-      reason: 'Decisions можно добавить только на UserTask',
+      reason:
+        'Решения (Decisions) можно активировать только на элементе bpmn:UserTask',
     };
   }
 
-  if (modelProps.decisionsEnabled) {
+  if (modelElementProps.decisionsEnabled) {
     return {
       allowed: false,
-      reason: 'Decisions уже включены на этом UserTask',
+      reason: 'Режим решений уже активирован на этой пользовательской задаче',
     };
   }
 
   return { allowed: true };
 }
 
-function checkAddRdmStructure(
-  element: any,
-  modelProps: any,
-  state: any,
+function checkAddGatewayStructure(
+  element: ModdleElement,
+  modelElementProps: Record<string, any>,
 ): ConstraintResult {
   const type = element.$type;
 
-  if (
-    type !== 'bpmn:ExclusiveGateway' &&
-    type !== 'bpmn:InclusiveGateway'
-  ) {
+  if (type !== 'bpmn:ExclusiveGateway' && type !== 'bpmn:InclusiveGateway') {
     return {
       allowed: false,
-      reason: 'RDM Structure можно назначить только на Exclusive/Inclusive Gateway',
+      reason:
+        'Структуру условий (RDM или Number) можно назначить только на Exclusive или Inclusive Gateway',
     };
   }
 
-  if (modelProps.DataTypeProperty) {
+  if (modelElementProps.DataTypeProperty) {
+    const currentType =
+      modelElementProps.DataTypeProperty === 'realNumber'
+        ? 'Числовая (realNumber)'
+        : 'Справочник (rdmStructure)';
     return {
       allowed: false,
-      reason: 'DataTypeProperty уже назначен на этот Gateway',
+      reason: `На шлюз "${element.id}" уже назначена структура условий: [${currentType}]. Повторная конфигурация запрещена. Сначала очистите или удалите элемент.`,
     };
   }
 

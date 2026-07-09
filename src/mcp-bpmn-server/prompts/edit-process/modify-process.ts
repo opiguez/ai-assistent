@@ -19,9 +19,7 @@ export default function registerModifyProcessPrompt(server: McpServer) {
       description:
         'Пошаговый workflow изменения BPMN процесса: чтение → проверка ограничений → модификация → валидация → сохранение.',
       argsSchema: z.object({
-        dataTypeId: z
-          .string()
-          .describe('ID BPMN типа данных'),
+        dataTypeId: z.string().describe('ID BPMN типа данных'),
         instruction: z
           .string()
           .describe('Описание требуемого изменения (на русском)'),
@@ -63,13 +61,10 @@ ${stepSaveSnapshot(dataTypeId)}
 Вызови соответствующий инструмент:
 
 **WRITE (настройка существующих элементов):**
-- Имя: \`bpmn_update_element_name\`
-- Свойство: \`bpmn_update_element_property\`
+- Свойства(имя и т.п.): \`bpmn_update_element_property\`
 - Условие: \`bpmn_set_condition_expression\`
-- ServiceTask API: \`bpmn_set_service_task_config\`
-- SendTask шаблон: \`bpmn_set_send_task_template\`
 - Decisions: \`bpmn_toggle_decisions\`
-- RDM Structure: \`bpmn_set_rdm_structure\`
+- RDM/Number Structure: \`bpmn_set_rdm_or_number_structure\`
 - Message Event: \`bpmn_set_message_event\`
 
 **CREATE (если нужен новый элемент):**

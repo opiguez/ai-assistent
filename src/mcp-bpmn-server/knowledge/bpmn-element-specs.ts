@@ -97,53 +97,28 @@ export const PALETTE_ELEMENTS = {
       'Скриптовая задача для выполнения кастомной автоматизации (код выполняется на бэкенде платформы).',
     customizableProperties: ['name', 'scriptFormat', 'script'],
   },
-  'bpmn:ServiceTask:BM': {
+  'bpmn:ServiceTask': {
     category: 'activity',
     displayName: 'BM Service Task',
-    description: 'Сервисная задача для вызова внешних API (модуль + метод).',
-    customType: 'BM Service Task',
-    topic: 'BM Service Task',
-    hasCustomPanel: 'NAME',
-    supportsModuleConfig: true,
-    supportsInputOutputMappings: true,
-  },
-  'bpmn:ServiceTask:Sync': {
-    category: 'activity',
-    displayName: 'Rabis Sync Task',
-    description: 'Задача синхронизации с Rabis.',
-    customType: 'Rabis Sync Task',
-    topic: 'Rabis Sync Task',
-    hasCustomPanel: 'NAME',
-    supportsModuleConfig: true,
+    description:
+      "Сервисная задача для вызова внешних методов API. Автоматически настраивает Camunda-расширения: camunda:type='external' и camunda:topic='BM Service Task'.",
+    customizableProperties: [
+      'name',
+      'apiSpecGroupId',
+      'targetModule',
+      'targetService',
+      'targetMethod',
+      'threadCount',
+    ],
   },
 
-  // ── SubProcesses ──
+  // ── SubProcesses (Подпроцессы-контейнеры) ──
   'bpmn:SubProcess': {
     category: 'activity',
     displayName: 'General Subprocess',
-    description: 'Подпроцесс. Может содержать StartEvent/EndEvent.',
-    triggeredByEvent: false,
-    canHaveBoundaryEvents: true,
-  },
-  'bpmn:SubProcess:Triggered': {
-    category: 'activity',
-    displayName: 'Triggered-by-Event Subprocess',
-    description: 'Подпроцесс, запускаемый событием.',
-    triggeredByEvent: true,
-  },
-  'bpmn:SubProcess:Cancel': {
-    category: 'activity',
-    displayName: 'Cancel Message Subprocess',
-    description: 'Подпроцесс для обработки Cancel событий.',
-    customType: 'cancel',
-    hasCancelDeleteEvents: true,
-  },
-  'bpmn:SubProcess:Delete': {
-    category: 'activity',
-    displayName: 'Delete Message Subprocess',
-    description: 'Подпроцесс для обработки Delete событий.',
-    customType: 'delete',
-    hasCancelDeleteEvents: true,
+    description:
+      'Подпроцесс-контейнер. При создании автоматически генерирует внутри базовый шаблон: StartEvent -> SequenceFlow -> EndEvent.',
+    customizableProperties: ['name'],
   },
 } as const;
 
@@ -221,19 +196,6 @@ export const CUSTOM_MODEL_PROPERTIES = {
   },
 } as const;
 
-// ─── Component Types (Panel Mapping) ──────────────────────
-
-export const COMPONENT_TYPES = {
-  NONE: 'NONE',
-  NAME: 'NAME',
-  GENERIC_DECISIONS: 'GENERIC_DECISIONS',
-  REAL_NUMBER: 'REAL_NUMBER',
-  DEARCHIVE_EVENT: 'DEARCHIVE_EVENT',
-  TEXT_ANNOTATION: 'TEXT_ANNOTATION',
-  RDM_STRUCTURE: 'RDM_STRUCTURE',
-  DEFAULT_SEQUENCE_FLOW: 'DEFAULT_SEQUENCE_FLOW',
-} as const;
-
 // ─── Command Handlers ─────────────────────────────────────
 
 export const COMMAND_HANDLERS = {
@@ -247,16 +209,13 @@ export const COMMAND_HANDLERS = {
     assign: 'bpmn_connect_elements',
     change: 'bpmn_set_condition_expression',
   },
-  simplifiedView: {
-    toggle: 'bpmn_update_element_property (simplifiedViewStep)',
-    setSteps: 'bpmn_update_element_property (simplifiedViewStep)',
-  },
+  // simplifiedView: {
+  //   toggle: 'bpmn_update_element_property (simplifiedViewStep)',
+  //   setSteps: 'bpmn_update_element_property (simplifiedViewStep)',
+  // },
   messageEvent: {
     catchMessage: 'bpmn_set_message_event',
     throwMessage: 'bpmn_set_message_event',
     kafkaMessage: 'bpmn_set_message_event',
-  },
-  sendTask: {
-    set: 'bpmn_set_send_task_template',
   },
 } as const;
