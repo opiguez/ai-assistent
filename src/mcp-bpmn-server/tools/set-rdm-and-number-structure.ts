@@ -87,7 +87,7 @@ export async function handleSetRdmOrNumberStructure(
 
 export const setRdmAndNumberStructureTools = [
   defineTool(
-    'bpmn_set_rdm_structure',
+    'bpmn_set_rdm_or_number_structure',
     {
       title: 'Set RDM Structure',
       description:

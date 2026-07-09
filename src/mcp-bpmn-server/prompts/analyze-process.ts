@@ -24,11 +24,13 @@ export default function registerAnalyzeProcessPrompt(server: McpServer) {
 
 ### Шаг 1: Чтение текущего состояния
 Вызови \`bpmn_get_process_schema\` с dataTypeId="${dataTypeId}" для получения структуры процесса.
+Вызови \`bpmn_get_process_topology\` для анализа графа (пути, виснущие элементы, петли).
 
 ### Шаг 2: Проверка custom Model
 Проверь элементы:
 - UserTask с decisionsEnabled → \`bpmn_toggle_decisions\`
-- Gateway без DataTypeProperty → \`bpmn_set_rdm_structure\`
+- Gateway без DataTypeProperty → \`bpmn_set_rdm_or_number_structure\`
+- Свойства элемента → \`bpmn_get_element_properties\`
 
 ### Шаг 3: Валидация
 Вызови \`bpmn_validate_process\` с dataTypeId="${dataTypeId}" для проверки валидности.

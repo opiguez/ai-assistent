@@ -72,6 +72,9 @@ function cleanExpiredCache(): void {
   }
 }
 
+// Периодическая чистка просроченных записей кэша
+setInterval(cleanExpiredCache, 30_000);
+
 class BpmnSchemaService {
   /**
    * Загружает полные данные BPMN процесса по dataTypeId.

@@ -209,13 +209,42 @@ export const COMMAND_HANDLERS = {
     assign: 'bpmn_connect_elements',
     change: 'bpmn_set_condition_expression',
   },
-  // simplifiedView: {
-  //   toggle: 'bpmn_update_element_property (simplifiedViewStep)',
-  //   setSteps: 'bpmn_update_element_property (simplifiedViewStep)',
-  // },
   messageEvent: {
     catchMessage: 'bpmn_set_message_event',
     throwMessage: 'bpmn_set_message_event',
     kafkaMessage: 'bpmn_set_message_event',
   },
+  // Универсальный блок изменения простых Low-Code свойств и текстовых полей
+  flatProperties: {
+    updateProperty:
+      'bpmn_update_element_property(dataTypeId, elementId, property, value)',
+    allowedProperties: [
+      'name',
+      'simplifiedViewStep',
+      'isCancelEvent',
+      'isDeleteEvent',
+      'isDearchiveEvent',
+      'messageId',
+      'eventName',
+    ],
+  },
+
+  // ЖЁСТКОЕ СИСТЕМНОЕ ПРАВИЛО ДЛЯ ИИ (Архитектурное ограничение платформы)
+  reconfigurationPolicy: {
+    rule: 'Если пользователю необходимо изменить метод API (в ServiceTask), шаблон письма (в SendTask) или перепривязать шлюз к другому справочнику, ЗАПРЕЩЕНО использовать инструмент bpmn_update_element_property. Вместо этого примените атомарный сценарий пересоздания: 1. bpmn_delete_element -> 2. Вызов соответствующего add-инструмента с новыми техническими параметрами.',
+  },
+
+  serviceTask: {
+    setModule: 'bpmn_add_service_task (params.targetModule)',
+    setMethod:
+      'bpmn_add_service_task (params.targetService, params.targetMethod)',
+    setThreadCount: 'bpmn_add_service_task (params.threadCount)',
+  },
+  sendTask: {
+    set: 'bpmn_add_send_task',
+  },
+  // simplifiedView: {
+  //   toggle: 'bpmn_update_element_property (property: "simplifiedViewStep")',
+  //   setSteps: 'bpmn_update_element_property (property: "simplifiedViewStep")',
+  // },
 } as const;

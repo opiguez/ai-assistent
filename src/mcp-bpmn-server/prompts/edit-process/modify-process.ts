@@ -53,7 +53,7 @@ ${stepSaveSnapshot(dataTypeId)}
 Вызови \`bpmn_get_element_constraints\` с:
 - dataTypeId="${dataTypeId}"
 - elementId=<ID целевого элемента>
-- operation=<тип операции: delete|connect|changeType|addBoundaryEvent|directEdit|addDecision|addRdmStructure>
+- operation=<тип операции: delete|connect|changeType|addBoundaryEvent|directEdit|addDecision|addGatewayStructure>
 
 Если allowed=false — сообщи причину и предложи альтернативу.
 
@@ -61,14 +61,17 @@ ${stepSaveSnapshot(dataTypeId)}
 Вызови соответствующий инструмент:
 
 **WRITE (настройка существующих элементов):**
-- Свойства(имя и т.п.): \`bpmn_update_element_property\`
+- Простые поля (name, isCancelEvent, isDeleteEvent, isDearchiveEvent, messageId, eventName): \`bpmn_update_element_property\`
 - Условие: \`bpmn_set_condition_expression\`
 - Decisions: \`bpmn_toggle_decisions\`
 - RDM/Number Structure: \`bpmn_set_rdm_or_number_structure\`
 - Message Event: \`bpmn_set_message_event\`
 
+⚠️ **Ограничение:** \`bpmn_update_element_property\` меняет только простые поля: name, isCancelEvent, isDeleteEvent, isDearchiveEvent, messageId, eventName. Для смены API-метода ServiceTask, шаблона SendTask, исполнителя UserTask, скрипта ScriptTask — удалите элемент (\`bpmn_delete_element\`) и создайте заново через \`bpmn_add_*\`.
+
 **CREATE (если нужен новый элемент):**
-- Новый элемент: \`bpmn_add_element(dataTypeId, elementType, name, params?)\`
+- Новый элемент: \`bpmn_add_element(dataTypeId, elementType, name, params?)\` — \`bpmn_add_element\` вернёт redirect на специализированный \`bpmn_add_*\`, следуй ему
+- Поддерживаемые типы: UserTask, ServiceTask, SendTask, ScriptTask, ExclusiveGateway, InclusiveGateway, SubProcess, StartEvent, EndEvent, BoundaryEvent, IntermediateCatchEvent, IntermediateThrowEvent
 - Новая связь: \`bpmn_connect_elements\`
 - Удаление связи: \`bpmn_delete_element\` (с confirm: true)
 

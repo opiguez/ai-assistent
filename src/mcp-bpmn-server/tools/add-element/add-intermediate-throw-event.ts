@@ -61,9 +61,7 @@ async function handleAddIntermediateThrowEvent(
     });
 
     if (!saveResult.success) {
-      return errorResponse(
-        saveResult.error || 'Ошибка保存ния изменений события',
-      );
+      return errorResponse(saveResult.error || 'Ошибка изменений события');
     }
 
     return successResponse({

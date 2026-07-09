@@ -710,10 +710,9 @@ class BpmnXmlService {
     });
 
     // Инициализируем массив графических элементов плоскости, если его нет
-    if (!plane.planeElements) {
-      plane.planeElements = [];
-    }
-    plane.planeElements.push(shape);
+    const planeElements = plane.get('planeElement') || [];
+    planeElements.push(shape);
+    plane.set('planeElement', planeElements);
   }
 
   /**
@@ -724,11 +723,12 @@ class BpmnXmlService {
     if (!plane) return;
 
     const shapeId = `${elementId}_di`;
-    const planeElements = plane.planeElements || [];
+    const planeElements = plane.get('planeElement') || [];
 
     const idx = planeElements.findIndex((el: any) => el.id === shapeId);
     if (idx !== -1) {
       planeElements.splice(idx, 1);
+      plane.set('planeElement', planeElements);
     }
   }
 
@@ -758,10 +758,9 @@ class BpmnXmlService {
       waypoint: points,
     });
 
-    if (!plane.planeElements) {
-      plane.planeElements = [];
-    }
-    plane.planeElements.push(edge);
+    const planeElements = plane.get('planeElement') || [];
+    planeElements.push(edge);
+    plane.set('planeElement', planeElements);
   }
 
   /**
@@ -772,12 +771,12 @@ class BpmnXmlService {
     if (!plane) return;
 
     const edgeId = `${flowId}_di`;
-    const planeElements =
-      plane.get('planeElement') || plane.planeElements || [];
+    const planeElements = plane.get('planeElement') || [];
 
     const idx = planeElements.findIndex((el: any) => el.id === edgeId);
     if (idx !== -1) {
       planeElements.splice(idx, 1);
+      plane.set('planeElement', planeElements);
     }
   }
 }

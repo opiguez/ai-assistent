@@ -31,10 +31,6 @@ export default function registerDesignPatternsPrompt(server: McpServer) {
 | **RDM/Number Structure** | Ветвление по значению справочника/поля | \`bpmn_set_rdm_or_number_structure\` |
 | **Condition Expression** | Ветвление по вычисляемому условию (FEEL) | \`bpmn_set_condition_expression\` |
 
-### Примеры FEEL-выражений:
-- \`= "approved"\` — строка
-- \`= true\` — boolean
-- \`= amount > 1000\` — число
 `,
 
         execution: `
@@ -42,8 +38,12 @@ export default function registerDesignPatternsPrompt(server: McpServer) {
 
 | Паттерн | Когда | Инструмент |
 |---------|-------|------------|
-| **ScriptTask** | Внутренняя логика (вычисления) | через фронтенд |
-| **UserTask** | Действие человека | \`bpmn_update_element_property\` |
+| **UserTask** | Действие человека | \`bpmn_add_user_task\` |
+| **ServiceTask** | Вызов API метода | \`bpmn_add_service_task\` (нужен apiSpecGroupId, targetModule, targetService, targetMethod) |
+| **SendTask** | Email-уведомление | \`bpmn_add_send_task\` |
+| **ScriptTask** | Внутренняя логика (вычисления) | \`bpmn_add_script_task\` |
+
+⚠️ **Ограничение:** \`bpmn_update_element_property\` меняет только простые поля: name, isCancelEvent, isDeleteEvent, isDearchiveEvent, messageId, eventName. Для смены API-метода ServiceTask, шаблона SendTask, исполнителя UserTask, скрипта ScriptTask — удалите элемент (\`bpmn_delete_element\`) и создайте заново через \`bpmn_add_*\`.
 `,
 
         messages: `

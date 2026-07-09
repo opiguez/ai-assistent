@@ -94,6 +94,34 @@ async function handleAddElement(args: {
       );
     }
 
+    if (args.elementType === 'bpmn:ScriptTask') {
+      return routingResponse(
+        'bpmn_add_script_task',
+        'Для ScriptTask требуются параметры scriptFormat, rawRequire, rawProduce, innerScript.',
+      );
+    }
+
+    if (args.elementType === 'bpmn:SubProcess') {
+      return routingResponse(
+        'bpmn_add_sub_process',
+        'Используйте этот инструмент для создания подпроцесса-контейнера.',
+      );
+    }
+
+    if (args.elementType === 'bpmn:IntermediateCatchEvent') {
+      return routingResponse(
+        'bpmn_add_intermediate_catch_event',
+        'Используйте этот инструмент для создания промежуточного события-перехватчика.',
+      );
+    }
+
+    if (args.elementType === 'bpmn:IntermediateThrowEvent') {
+      return routingResponse(
+        'bpmn_add_intermediate_throw_event',
+        'Используйте этот инструмент для создания промежуточного генерирующего события.',
+      );
+    }
+
     return errorResponse(
       `Для элемента "${args.elementType}" не найден выделенный инструмент создания. Проверьте конфигурацию MCP-сервера.`,
     );

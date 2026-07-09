@@ -137,13 +137,14 @@ export async function handleSetConditionExpression(
       } else if (propType === 'rdmStructure') {
         // КЕЙС 2: RDM Справочник -> JUEL: ${test_test1_select=='1'}
         const rawVariable = sourceNode.DataTypePropertyValue || 'variable';
-        const cleanVariable = rawVariable.replace(':', '_');
+        const cleanVariable = rawVariable.replace(/[:\-]/g, '_');
         expressionText = `\${${cleanVariable}=='${args.value}'}`;
       } else if (propType === 'realNumber') {
         // КЕЙС 3: Числовой шлюз -> JS: test_test1_number.prop("value").numberValue()>5
         const rawVariable = sourceNode.DataTypePropertyValue || 'variable';
+        const cleanVariable = rawVariable.replace(/[:\-]/g, '_');
         isJavaScript = true;
-        expressionText = `${rawVariable}.prop("value").numberValue()${args.operator}${args.value}`;
+        expressionText = `${cleanVariable}.prop("value").numberValue()${args.operator}${args.value}`;
       }
     }
 

@@ -50,10 +50,15 @@ ${stepReadSchema(dataTypeId)}
 ${stepSaveSnapshot(dataTypeId)}
 
 #### Шаг 4: Добавление нового элемента
-Вызови \`bpmn_add_element\` с нужным типом и именем:
+Вызови \`bpmn_add_element\` с нужным типом и именем — он вернёт redirect на специализированный \`bpmn_add_*\`, следуй ему:
 - UserTask: \`bpmn_add_element(dataTypeId, 'bpmn:UserTask', 'Имя', { assignee: { type: 'owner' } })\`
 - ServiceTask: \`bpmn_add_element(dataTypeId, 'bpmn:ServiceTask', 'Имя', { apiSpecGroupId, targetModule, targetService, targetMethod })\` — сначала \`bpmn_get_api_spec\`
-- Gateway: \`bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway', 'Имя')\`
+- SendTask: \`bpmn_add_element(dataTypeId, 'bpmn:SendTask', 'Имя')\`
+- ScriptTask: \`bpmn_add_element(dataTypeId, 'bpmn:ScriptTask', 'Имя')\`
+- Gateway: \`bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway', 'Имя')\` или \`bpmn:InclusiveGateway\`
+- SubProcess: \`bpmn_add_element(dataTypeId, 'bpmn:SubProcess', 'Имя')\`
+- BoundaryEvent: \`bpmn_add_element(dataTypeId, 'bpmn:BoundaryEvent', 'Имя', { attachedToRef: '<ID>' })\`
+- IntermediateCatchEvent / IntermediateThrowEvent
 
 #### Шаг 5: Перенастройка связей
 Если нужно вставить элемент в существующую цепочку:
@@ -67,9 +72,13 @@ ${stepSaveSnapshot(dataTypeId)}
 
 #### Шаг 6: Настройка свойств
 Настрой свойства нового элемента:
-- \`bpmn_toggle_decisions\` — UserTask decisions (создаёт ExclusiveGateway + flows)
+- \`bpmn_toggle_decisions\` — UserTask decisions (только флаг, ветки создаются через \`bpmn_connect_elements\`)
 - \`bpmn_set_condition_expression\` — условия на SequenceFlow
-- \`bpmn_set_rdm_structure\` — ветвление по справочнику
+- \`bpmn_set_rdm_or_number_structure\` — ветвление по справочнику/числу
+- \`bpmn_set_message_event\` — настройка Message Event
+- \`bpmn_update_element_property\` — простые поля (name, флаги)
+
+⚠️ **Ограничение:** \`bpmn_update_element_property\` меняет только простые поля: name, isCancelEvent, isDeleteEvent, isDearchiveEvent, messageId, eventName. Для смены API-метода ServiceTask, шаблона SendTask, исполнителя UserTask, скрипта ScriptTask — удалите элемент (\`bpmn_delete_element\`) и создайте заново через \`bpmn_add_*\`.
 
 ${stepValidate(dataTypeId)}
 
