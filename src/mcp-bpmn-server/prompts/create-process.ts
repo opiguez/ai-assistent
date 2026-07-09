@@ -47,18 +47,20 @@ export default function registerCreateProcessPrompt(server: McpServer) {
 3. \`bpmn_connect_elements\` с sourceId=<StartEvent ID>, targetId=<EndEvent ID>
 
 #### Шаг 4: Добавление элементов по описанию
-Для каждого элемента из описания вызови \`bpmn_add_element\`:
-- UserTask: elementType="bpmn:UserTask", name="Имя задачи", params.assignee={ type: "owner" }
-- ServiceTask: elementType="bpmn:ServiceTask", name="Имя сервиса", params={ apiSpecGroupId, targetModule, targetService, targetMethod }
-- SendTask: elementType="bpmn:SendTask", name="Имя отправки"
-- ScriptTask: elementType="bpmn:ScriptTask", name="Имя скрипта"
-- Gateway: elementType="bpmn:ExclusiveGateway" или "bpmn:InclusiveGateway"
-- SubProcess: elementType="bpmn:SubProcess"
-- BoundaryEvent: elementType="bpmn:BoundaryEvent", params.attachedToRef=<ID родительского элемента>
-- IntermediateCatchEvent: elementType="bpmn:IntermediateCatchEvent"
-- IntermediateThrowEvent: elementType="bpmn:IntermediateThrowEvent"
+Для каждого элемента вызови \`bpmn_add_element\` с dataTypeId и elementType — он вернёт redirect на специализированный \`bpmn_add_*\`, следуй ему:
 
-\`bpmn_add_element\` вернёт redirect на специализированный инструмент (\`bpmn_add_user_task\`, \`bpmn_add_service_task\` и т.д.) — следуй инструкциям из ответа.
+| Тип | elementType |
+|-----|-------------|
+| UserTask | bpmn:UserTask |
+| ServiceTask | bpmn:ServiceTask |
+| SendTask | bpmn:SendTask |
+| ScriptTask | bpmn:ScriptTask |
+| ExclusiveGateway | bpmn:ExclusiveGateway |
+| InclusiveGateway | bpmn:InclusiveGateway |
+| SubProcess | bpmn:SubProcess |
+| BoundaryEvent | bpmn:BoundaryEvent |
+| IntermediateCatchEvent | bpmn:IntermediateCatchEvent |
+| IntermediateThrowEvent | bpmn:IntermediateThrowEvent |
 
 #### Шаг 5: Соединение элементов
 Вызови \`bpmn_connect_elements\` для создания SequenceFlow между элементами.

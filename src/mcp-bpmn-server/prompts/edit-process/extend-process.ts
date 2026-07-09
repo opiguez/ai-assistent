@@ -50,15 +50,18 @@ ${stepReadSchema(dataTypeId)}
 ${stepSaveSnapshot(dataTypeId)}
 
 #### Шаг 4: Добавление нового элемента
-Вызови \`bpmn_add_element\` с нужным типом и именем — он вернёт redirect на специализированный \`bpmn_add_*\`, следуй ему:
-- UserTask: \`bpmn_add_element(dataTypeId, 'bpmn:UserTask', 'Имя', { assignee: { type: 'owner' } })\`
-- ServiceTask: \`bpmn_add_element(dataTypeId, 'bpmn:ServiceTask', 'Имя', { apiSpecGroupId, targetModule, targetService, targetMethod })\` — сначала \`bpmn_get_api_spec\`
-- SendTask: \`bpmn_add_element(dataTypeId, 'bpmn:SendTask', 'Имя')\`
-- ScriptTask: \`bpmn_add_element(dataTypeId, 'bpmn:ScriptTask', 'Имя')\`
-- Gateway: \`bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway', 'Имя')\` или \`bpmn:InclusiveGateway\`
-- SubProcess: \`bpmn_add_element(dataTypeId, 'bpmn:SubProcess', 'Имя')\`
-- BoundaryEvent: \`bpmn_add_element(dataTypeId, 'bpmn:BoundaryEvent', 'Имя', { attachedToRef: '<ID>' })\`
-- IntermediateCatchEvent / IntermediateThrowEvent
+Вызови \`bpmn_add_element(dataTypeId, elementType, name)\` — он вернёт redirect на специализированный \`bpmn_add_*\`, следуй ему:
+
+- UserTask → \`bpmn_add_user_task\`
+- ServiceTask → \`bpmn_add_service_task\` (сперва \`bpmn_get_api_spec\`)
+- SendTask → \`bpmn_add_send_task\`
+- ScriptTask → \`bpmn_add_script_task\`
+- ExclusiveGateway → \`bpmn_add_exclusive_gateway\`
+- InclusiveGateway → \`bpmn_add_inclusive_gateway\`
+- SubProcess → \`bpmn_add_sub_process\`
+- BoundaryEvent → \`bpmn_add_boundary_event\`
+- IntermediateCatchEvent → \`bpmn_add_intermediate_catch_event\`
+- IntermediateThrowEvent → \`bpmn_add_intermediate_throw_event\`
 
 #### Шаг 5: Перенастройка связей
 Если нужно вставить элемент в существующую цепочку:

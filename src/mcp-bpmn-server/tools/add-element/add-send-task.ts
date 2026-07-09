@@ -11,7 +11,7 @@ import {
   errorResponse,
 } from './shared.js';
 
-const AddSendTaskSchema = z.object({
+export const AddSendTaskSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных'),
   name: z
     .string()
@@ -33,7 +33,9 @@ const AddSendTaskSchema = z.object({
   sendTaskTemplate: z.string().optional().describe('ID шаблона письма'),
 });
 
-export async function handleAddSendTask(args: z.infer<typeof AddSendTaskSchema>) {
+export async function handleAddSendTask(
+  args: z.infer<typeof AddSendTaskSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 

@@ -136,7 +136,7 @@ export const addGenericElementTools = [
     {
       title: 'Add BPMN Element',
       description:
-        'Универсальный инструмент создания BPMN элементов. Роутит по конкретному инструменту в зависимости от elementType. Для ServiceTask обязательны params: apiSpecGroupId, targetModule, targetService, targetMethod. Для BoundaryEvent — params.attachedToRef.',
+        'Универсальный инструмент создания BPMN элементов. Роутит по конкретному инструменту в зависимости от elementType. Вызов redirect-ит на специализированный bpmn_add_*, который принимает все необходимые параметры.',
       inputSchema: AddElementSchema,
     },
     handleAddElement,

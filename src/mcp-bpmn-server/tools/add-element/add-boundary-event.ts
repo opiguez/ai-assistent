@@ -13,7 +13,7 @@ import {
   errorResponse,
 } from './shared.js';
 
-const AddBoundaryEventSchema = z.object({
+export const AddBoundaryEventSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных'),
   name: z.string().max(255).optional().describe('Имя события'),
   attachedToRef: z
@@ -43,7 +43,6 @@ export async function handleAddBoundaryEvent(
       state.parsed,
       'bpmn:BoundaryEvent',
       args.name,
-      args.attachedToRef,
     );
     if (!result) {
       return errorResponse('Не удалось инициализировать BoundaryEvent в XML');
