@@ -49,17 +49,14 @@ export async function handleDeleteElement(
     const newModel = { ...state.model };
 
     if (element.$type.includes('Gateway')) {
-      const incomingToGateway = Object.values(state.model).find(
-        (entry: any) => {
-          return (
-            entry.elementType === 'bpmn:SequenceFlow' &&
-            entry.targetRef === args.elementId
-          );
-        },
-      ) as any;
+      const incomingFlowsToGateway = Object.values(state.model).filter(
+        (entry: any) =>
+          entry.elementType === 'bpmn:SequenceFlow' &&
+          entry.targetRef === args.elementId,
+      );
 
-      if (incomingToGateway) {
-        const parentUserTaskId = incomingToGateway.sourceRef;
+      for (const incomingFlow of incomingFlowsToGateway) {
+        const parentUserTaskId = incomingFlow.sourceRef;
         const userTask = newModel[parentUserTaskId];
 
         if (
