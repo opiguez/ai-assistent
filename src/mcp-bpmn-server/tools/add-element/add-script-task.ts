@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../../services/bpmn-schema.service.js';
-import { bpmnXmlService } from '../../services/bpmn-xml.service.js';
+import {
+  bpmnXmlService,
+  ModdleElement,
+} from '../../services/bpmn-xml.service.js';
 import { defineTool } from '../../../shared/utils/base.js';
 import {
   ELEMENT_SIZES,
@@ -12,26 +15,75 @@ import {
 } from './shared.js';
 
 const AddScriptTaskSchema = z.object({
-  dataTypeId: z.string().describe('ID BPMN типа данных'),
+  dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
   name: z
     .string()
     .max(255)
     .optional()
-    .describe('Имя задачи. Если не указано — генерируется "Элемент N"'),
+    .describe('Имя задачи (отображаемый текст)'),
+  scriptFormat: z
+    .string()
+    .default('javascript')
+    .describe('Язык выполнения скрипта. По умолчанию: "javascript"'),
+  rawRequire: z
+    .array(z.string())
+    .optional()
+    .default([])
+    .describe(
+      'Массив СЫРЫХ входных переменных, которые нужны скрипту (напр. ["test:common-_assignee"]). Передавайте их в оригинальном формате с двоеточиями/дефисами!',
+    ),
+  rawProduce: z
+    .string()
+    .describe(
+      'СЫРОЕ имя переменной, куда запишется результат выполнения скрипта (напр. "test:common-_assignee"). Передавайте в оригинальном формате с двоеточиями/дефисами!',
+    ),
+  innerScript: z
+    .string()
+    .describe(
+      'Только ВНУТРЕННЕЕ тело скрипта без объявления функции calculate (напр. "return \\"1\\";"). Система сама обернет этот код в функцию.',
+    ),
 });
 
-async function handleAddScriptTask(args: { dataTypeId: string; name?: string }) {
+export async function handleAddScriptTask(
+  args: z.infer<typeof AddScriptTaskSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    if (!args.name) {
-      args.name = generateTaskName(state.model);
+    let taskName = args.name;
+    if (!taskName) {
+      taskName = generateTaskName(state.model);
     }
 
-    const result = bpmnXmlService.createElement(state.parsed, 'bpmn:ScriptTask', args.name);
+    const result = bpmnXmlService.createElement(
+      state.parsed,
+      'bpmn:ScriptTask',
+      taskName,
+    );
     if (!result) {
-      return errorResponse('Не удалось создать элемент');
+      return errorResponse('Не удалось создать ScriptTask в XML');
     }
+
+    const bpmnElement = result.element as ModdleElement;
+
+    const cleanProduce = args.rawProduce.replace(/[:\-]/g, '_');
+
+    const cleanRequireArray = args.rawRequire.map((req) =>
+      req.replace(/[:\-]/g, '__'),
+    );
+
+    const functionArguments = cleanRequireArray.join(', ');
+
+    const finalScriptBody = `
+        function calculate(${functionArguments}) {
+          var result;
+          ${args.innerScript}
+        }
+        calculate(${functionArguments});`;
+
+    bpmnElement.set('scriptFormat', args.scriptFormat);
+    bpmnElement.set('camunda:resultVariable', cleanProduce);
+    bpmnElement.set('script', finalScriptBody);
 
     const pos = calculatePosition(state.model, 'bpmn:ScriptTask');
     const size = ELEMENT_SIZES['bpmn:ScriptTask'];
@@ -46,16 +98,24 @@ async function handleAddScriptTask(args: { dataTypeId: string; name?: string }) 
     );
 
     const newModel = { ...state.model };
-    newModel[result.elementId] = createModelEntry(
+
+    const baseEntry = createModelEntry(
       result.elementId,
       'bpmn:ScriptTask',
-      args.name,
+      taskName,
       pos.x,
       pos.y,
       size.width,
       size.height,
-      args.dataTypeId,
     );
+
+    const scriptTaskEntry = {
+      ...baseEntry,
+      require: cleanRequireArray,
+      produce: cleanProduce,
+    };
+
+    newModel[result.elementId] = scriptTaskEntry;
 
     const updatedXml = await bpmnXmlService.generateXml(state.parsed);
     const saveResult = await bpmnSchemaService.saveProcess({
@@ -65,17 +125,19 @@ async function handleAddScriptTask(args: { dataTypeId: string; name?: string }) 
     });
 
     if (!saveResult.success) {
-      return errorResponse(saveResult.error || 'Ошибка сохранения');
+      return errorResponse(
+        saveResult.error || 'Ошибка при сохранении ScriptTask',
+      );
     }
 
     return successResponse({
       elementId: result.elementId,
       elementType: 'bpmn:ScriptTask',
-      name: args.name,
-      message: `Создан ScriptTask с ID "${result.elementId}"`,
+      name: taskName,
+      message: `Успешно создан ScriptTask с ID "${result.elementId}". Сгенерирован JS-скрипт с результатом в "${cleanProduce}".`,
     });
   } catch (e: any) {
-    return errorResponse(e?.message || 'Ошибка создания ScriptTask');
+    return errorResponse(e?.message || 'Внутренняя ошибка создания ScriptTask');
   }
 }
 

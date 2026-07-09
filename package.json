@@ -23,6 +23,7 @@
     "@types/bpmn-moddle": "10.0.0",
     "axios": "1.18.1",
     "bpmn-moddle": "10.0.0",
+    "camunda-bpmn-moddle": "7.0.1",
     "dotenv": "17.2.4",
     "express": "5.2.1",
     "graphql": "16.10.0",

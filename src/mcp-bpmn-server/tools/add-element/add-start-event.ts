@@ -15,18 +15,32 @@ const AddStartEventSchema = z.object({
   name: z.string().max(255).optional().describe('Имя события'),
 });
 
-async function handleAddStartEvent(args: { dataTypeId: string; name?: string }) {
+async function handleAddStartEvent(args: z.infer<typeof AddStartEventSchema>) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    const result = bpmnXmlService.createElement(state.parsed, 'bpmn:StartEvent', args.name);
+    const hasStartEvent = Object.values(state.model).some(
+      (element: any) => element.elementType === 'bpmn:StartEvent',
+    );
+    if (hasStartEvent) {
+      return errorResponse(
+        `В процессе "${args.dataTypeId}" уже существует стартовое событие. Создание второго запрещено правилами платформы.`,
+      );
+    }
+
+    const result = bpmnXmlService.createElement(
+      state.parsed,
+      'bpmn:StartEvent',
+      args.name,
+    );
     if (!result) {
       return errorResponse('Не удалось создать элемент');
     }
 
     const pos = calculatePosition(state.model, 'bpmn:StartEvent');
-    const size = ELEMENT_SIZES['bpmn:StartEvent'];
+    const size = ELEMENT_SIZES['bpmn:StartEvent'] || { width: 36, height: 36 };
 
+    // Отрисовка графики (DI)
     bpmnXmlService.addShapeToDiagram(
       state.parsed,
       result.elementId,
@@ -74,8 +88,7 @@ export const addStartEventTools = [
     'bpmn_add_start_event',
     {
       title: 'Add StartEvent',
-      description:
-        'Создаёт StartEvent. name опционален.',
+      description: 'Создаёт StartEvent. name опционален.',
       inputSchema: AddStartEventSchema,
     },
     handleAddStartEvent,

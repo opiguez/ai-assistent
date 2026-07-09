@@ -18,8 +18,14 @@ const AddSendTaskSchema = z.object({
     .max(255)
     .optional()
     .describe('Имя задачи. Если не указано — генерируется "Элемент N"'),
-  sendTaskType: z.string().optional().describe('camunda:type (напр. "external")'),
-  sendTaskTopic: z.string().optional().describe('camunda:topic (напр. "Notification Task")'),
+  sendTaskType: z
+    .string()
+    .optional()
+    .describe('camunda:type (напр. "external")'),
+  sendTaskTopic: z
+    .string()
+    .optional()
+    .describe('camunda:topic (напр. "Notification Task")'),
   sendTaskRecipients: z
     .string()
     .optional()
@@ -27,14 +33,7 @@ const AddSendTaskSchema = z.object({
   sendTaskTemplate: z.string().optional().describe('ID шаблона письма'),
 });
 
-async function handleAddSendTask(args: {
-  dataTypeId: string;
-  name?: string;
-  sendTaskType?: string;
-  sendTaskTopic?: string;
-  sendTaskRecipients?: string;
-  sendTaskTemplate?: string;
-}) {
+async function handleAddSendTask(args: z.infer<typeof AddSendTaskSchema>) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
@@ -42,56 +41,55 @@ async function handleAddSendTask(args: {
       args.name = generateTaskName(state.model);
     }
 
-    const result = bpmnXmlService.createElement(state.parsed, 'bpmn:SendTask', args.name);
+    const result = bpmnXmlService.createElement(
+      state.parsed,
+      'bpmn:SendTask',
+      args.name,
+    );
+
     if (!result) {
-      return errorResponse('Не удалось создать элемент');
+      return errorResponse('Не удалось создать SendTask в XML');
     }
 
-    if (args.sendTaskType) {
-      result.element.$attrs['camunda:type'] = args.sendTaskType;
+    const bpmnElement = result.element;
+    const moddle = (bpmnXmlService as any).moddle;
+
+    const type = args.sendTaskType || 'external';
+    const topic = args.sendTaskTopic || 'Notification Task';
+    bpmnElement.set('camunda:type', type);
+    bpmnElement.set('camunda:topic', topic);
+
+    // Мапим получателей и шаблоны в XML ExtensionElements (Camunda Input Parameters)
+    const inputParameters: any[] = [];
+
+    if (args.sendTaskRecipients) {
+      inputParameters.push(
+        moddle.create('camunda:InputParameter', {
+          name: 'sendTaskRecipients',
+          value: args.sendTaskRecipients,
+        }),
+      );
     }
-    if (args.sendTaskTopic) {
-      result.element.$attrs['camunda:topic'] = args.sendTaskTopic;
+
+    if (args.sendTaskTemplate) {
+      inputParameters.push(
+        moddle.create('camunda:InputParameter', {
+          name: 'sendTaskTemplate',
+          value: args.sendTaskTemplate,
+        }),
+      );
     }
-    if (args.sendTaskRecipients || args.sendTaskTemplate) {
-      const moddle = (bpmnXmlService as any).moddle;
+
+    // Если есть параметры, упаковываем их в ExtensionElements
+    if (inputParameters.length > 0) {
       const extensionElements = moddle.create('bpmn:ExtensionElements', {
-        values: [],
+        values: [moddle.create('camunda:InputOutput', { inputParameters })],
       });
-
-      const inputOutput = moddle.create('camunda:InputOutput', {
-        inputParameters: [],
-        outputParameters: [],
-      });
-
-      if (args.sendTaskRecipients) {
-        const recipientsParam = moddle.create('camunda:InputParameter', {
-          name: 'recipients',
-        });
-        const recipientsValue = moddle.create('bpmn:FormalExpression', {
-          body: args.sendTaskRecipients,
-        });
-        recipientsParam.set('value', recipientsValue);
-        inputOutput.get('inputParameters').push(recipientsParam);
-      }
-
-      if (args.sendTaskTemplate) {
-        const templateParam = moddle.create('camunda:InputParameter', {
-          name: 'template',
-        });
-        const templateValue = moddle.create('bpmn:FormalExpression', {
-          body: args.sendTaskTemplate,
-        });
-        templateParam.set('value', templateValue);
-        inputOutput.get('inputParameters').push(templateParam);
-      }
-
-      extensionElements.get('values').push(inputOutput);
-      result.element.set('extensionElements', extensionElements);
+      bpmnElement.set('extensionElements', extensionElements);
     }
 
-    const pos = calculatePosition(state.model, 'bpmn:SendTask');
     const size = ELEMENT_SIZES['bpmn:SendTask'];
+    const pos = calculatePosition(state.model, 'bpmn:SendTask');
 
     bpmnXmlService.addShapeToDiagram(
       state.parsed,
@@ -103,16 +101,31 @@ async function handleAddSendTask(args: {
     );
 
     const newModel = { ...state.model };
-    newModel[result.elementId] = createModelEntry(
+
+    const baseEntry = createModelEntry(
       result.elementId,
       'bpmn:SendTask',
-      args.name,
+      args.name || '',
       pos.x,
       pos.y,
       size.width,
       size.height,
-      args.dataTypeId,
     );
+
+    const sendTaskEntry = {
+      ...baseEntry,
+      require: [],
+      produce: [],
+      notificateCreator: false,
+      notificateAssignee: false,
+      outgoing: null,
+      sendTaskType: type,
+      sendTaskTopic: topic,
+      sendTaskRecipients: args.sendTaskRecipients || null,
+      sendTaskTemplate: args.sendTaskTemplate || null,
+    };
+
+    newModel[result.elementId] = sendTaskEntry;
 
     const updatedXml = await bpmnXmlService.generateXml(state.parsed);
     const saveResult = await bpmnSchemaService.saveProcess({
@@ -122,17 +135,19 @@ async function handleAddSendTask(args: {
     });
 
     if (!saveResult.success) {
-      return errorResponse(saveResult.error || 'Ошибка сохранения');
+      return errorResponse(saveResult.error || 'Ошибка сохранения SendTask');
     }
 
     return successResponse({
       elementId: result.elementId,
       elementType: 'bpmn:SendTask',
-      name: args.name,
-      message: `Создан SendTask с ID "${result.elementId}"`,
+      name: args.name || null,
+      message: `Успешно создан и сконфигурирован SendTask с ID "${result.elementId}"`,
     });
   } catch (e: any) {
-    return errorResponse(e?.message || 'Ошибка создания SendTask');
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка при создании SendTask',
+    );
   }
 }
 

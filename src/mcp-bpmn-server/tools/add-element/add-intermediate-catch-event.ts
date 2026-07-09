@@ -15,7 +15,9 @@ const AddIntermediateCatchEventSchema = z.object({
   name: z.string().max(255).optional().describe('Имя события'),
 });
 
-async function handleAddIntermediateCatchEvent(args: { dataTypeId: string; name?: string }) {
+async function handleAddIntermediateCatchEvent(
+  args: z.infer<typeof AddIntermediateCatchEventSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
@@ -25,7 +27,7 @@ async function handleAddIntermediateCatchEvent(args: { dataTypeId: string; name?
       args.name,
     );
     if (!result) {
-      return errorResponse('Не удалось создать элемент');
+      return errorResponse('Не удалось создать IntermediateCatchEvent в XML');
     }
 
     const pos = calculatePosition(state.model, 'bpmn:IntermediateCatchEvent');
@@ -59,17 +61,21 @@ async function handleAddIntermediateCatchEvent(args: { dataTypeId: string; name?
     });
 
     if (!saveResult.success) {
-      return errorResponse(saveResult.error || 'Ошибка сохранения');
+      return errorResponse(
+        saveResult.error || 'Ошибка сохранения изменений события',
+      );
     }
 
     return successResponse({
       elementId: result.elementId,
       elementType: 'bpmn:IntermediateCatchEvent',
       name: args.name || null,
-      message: `Создан IntermediateCatchEvent с ID "${result.elementId}"`,
+      message: `Успешно создан IntermediateCatchEvent с ID "${result.elementId}". Если это таймер или сигнал, настройте его тип следующим шагом.`,
     });
   } catch (e: any) {
-    return errorResponse(e?.message || 'Ошибка создания IntermediateCatchEvent');
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка создания IntermediateCatchEvent',
+    );
   }
 }
 
@@ -78,8 +84,7 @@ export const addIntermediateCatchEventTools = [
     'bpmn_add_intermediate_catch_event',
     {
       title: 'Add IntermediateCatchEvent',
-      description:
-        'Создаёт IntermediateCatchEvent. name опционален.',
+      description: 'Создаёт IntermediateCatchEvent. name опционален.',
       inputSchema: AddIntermediateCatchEventSchema,
     },
     handleAddIntermediateCatchEvent,

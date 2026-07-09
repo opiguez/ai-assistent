@@ -10,6 +10,11 @@ import {
   Option,
   RootElement,
 } from 'bpmn-moddle';
+import { createRequire } from 'module';
+
+// Безопасный способ загрузки JSON в ESM/Node.js без поломки сборщика esbuild/tsup
+const require = createRequire(import.meta.url);
+const camundaModdleDescriptor = require('camunda-bpmn-moddle/resources/camunda.json');
 
 // ─── Types ────────────────────────────────────────────────
 export interface ProcessElement {
@@ -31,12 +36,22 @@ export interface ProcessConnection {
   parentId?: string;
 }
 
+export type ModdleElement<T = BaseElement> = T & {
+  set(property: string, value: any): void;
+  get(property: string): any;
+  $type: string;
+  $attrs: Record<string, any>;
+  $parent?: ModdleElement;
+};
+
 // ─── Service ──────────────────────────────────────────────
 class BpmnXmlService {
   private moddle;
 
   constructor() {
-    this.moddle = new BpmnModdle();
+    this.moddle = new BpmnModdle({
+      camunda: camundaModdleDescriptor,
+    });
   }
 
   /**
@@ -394,7 +409,7 @@ class BpmnXmlService {
     elementType: string,
     name?: string,
     parentId?: string,
-  ): { elementId: string; element: any } | null {
+  ): { elementId: string; element: ModdleElement } | null {
     // Находим родителя в родном индексе по ID, либо берем корень схемы
     const parent = parentId
       ? parsed.elementsById[parentId]
@@ -411,7 +426,10 @@ class BpmnXmlService {
     if (name) elementProps.name = name;
 
     // Создаем инстанс элемента через свойство класса this.moddle
-    const element = this.moddle.create(elementType, elementProps);
+    const element = this.moddle.create(
+      elementType,
+      elementProps,
+    ) as ModdleElement;
 
     // Инициализируем массив flowElements, если его еще нет у родителя
     if (!parentElement.flowElements) {
@@ -429,23 +447,20 @@ class BpmnXmlService {
    * Создаёт SequenceFlow между двумя элементами.
    */
   addSequenceFlow(
-    parsed: BPMNModel, // Используем родной интерфейс из либы
+    parsed: BPMNModel,
     sourceId: string,
     targetId: string,
-    conditionExpression?: string,
     parentId?: string,
   ): { flowId: string; flow: any } | null {
     const source = parsed.elementsById[sourceId];
     const target = parsed.elementsById[targetId];
     if (!source || !target) return null;
 
-    // Определяем родительский контейнер
     const parent = parentId
       ? parsed.elementsById[parentId]
       : parsed.rootElement;
     if (!parent) return null;
 
-    // Локальные приведения к any для обхода ограничений BaseElement в TypeScript
     const sourceEl = source as any;
     const targetEl = target as any;
     const parentEl = parent as any;
@@ -458,24 +473,15 @@ class BpmnXmlService {
       targetRef: target,
     };
 
-    // Создаем объект связи через нативное свойство класса
     const flow = this.moddle.create('bpmn:SequenceFlow', flowProps);
 
-    // Добавляем conditionExpression напрямую в объект, если он передан
-    if (conditionExpression) {
-      const condition = this.moddle.create('bpmn:FormalExpression', {
-        body: conditionExpression,
-      });
-      flow.conditionExpression = condition;
-    }
-
-    // Инициализируем массив flowElements у родителя, если его нет, и пушим стрелку
+    // Добавляем в элементы родительского контейнера
     if (!parentEl.flowElements) {
       parentEl.flowElements = [];
     }
     parentEl.flowElements.push(flow);
 
-    // Связываем source → outgoing и target → incoming напрямую через нативные свойства массивов
+    // Связываем массивы входящих/исходящих путей в XML
     if (!sourceEl.outgoing) {
       sourceEl.outgoing = [];
     }
@@ -486,10 +492,30 @@ class BpmnXmlService {
     }
     targetEl.incoming.push(flow);
 
-    // Обновляем встроенный в BPMNModel индекс элементов
     parsed.elementsById[id] = flow;
 
     return { flowId: id, flow };
+  }
+
+  setFlowCondition(
+    parsed: BPMNModel,
+    flowId: string,
+    expressionText: string,
+    language: string = 'javascript',
+  ): boolean {
+    const flow = parsed.elementsById[flowId];
+    if (!flow) return false;
+
+    const flowEl = flow as any;
+
+    const condition = this.moddle.create('bpmn:FormalExpression', {
+      body: expressionText,
+      'xsi:type': 'bpmn:tFormalExpression',
+      language: language,
+    });
+
+    flowEl.conditionExpression = condition;
+    return true;
   }
 
   /**

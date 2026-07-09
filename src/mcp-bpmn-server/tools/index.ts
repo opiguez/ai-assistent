@@ -20,10 +20,9 @@ import { validateProcessTools } from './validate-process.js';
 import { updateElementNameTools } from './update-element-name.js';
 import { updateElementPropertyTools } from './update-element-property.js';
 import { setConditionExpressionTools } from './set-condition-expression.js';
-import { setServiceTaskConfigTools } from './set-service-task-config.js';
 import { setSendTaskTemplateTools } from './set-send-task-template.js';
 import { toggleDecisionsTools } from './toggle-decisions.js';
-import { setRdmStructureTools } from './set-rdm-structure.js';
+import { setRdmAndNumberStructureTools } from './set-rdm-and-number-structure.js';
 import { setMessageEventTools } from './set-message-event.js';
 import { addElementTools } from './add-element/index.js';
 import { connectElementsTools } from './connect-elements.js';
@@ -53,10 +52,9 @@ const bpmnTools: ToolDef[] = [
   ...updateElementNameTools,
   ...updateElementPropertyTools,
   ...setConditionExpressionTools,
-  ...setServiceTaskConfigTools,
   ...setSendTaskTemplateTools,
   ...toggleDecisionsTools,
-  ...setRdmStructureTools,
+  ...setRdmAndNumberStructureTools,
   ...setMessageEventTools,
   ...addElementTools,
   ...connectElementsTools,

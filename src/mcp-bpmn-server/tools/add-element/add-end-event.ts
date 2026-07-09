@@ -15,17 +15,30 @@ const AddEndEventSchema = z.object({
   name: z.string().max(255).optional().describe('Имя события'),
 });
 
-async function handleAddEndEvent(args: { dataTypeId: string; name?: string }) {
+async function handleAddEndEvent(args: z.infer<typeof AddEndEventSchema>) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    const result = bpmnXmlService.createElement(state.parsed, 'bpmn:EndEvent', args.name);
-    if (!result) {
-      return errorResponse('Не удалось создать элемент');
+    const hasEndEvent = Object.values(state.model).some(
+      (element: any) => element.elementType === 'bpmn:EndEvent',
+    );
+    if (hasEndEvent) {
+      return errorResponse(
+        `В процессе "${args.dataTypeId}" уже существует конечное событие. По правилам платформы допускается строго один EndEvent.`,
+      );
     }
 
-    const pos = calculatePosition(state.model, 'bpmn:EndEvent');
+    const result = bpmnXmlService.createElement(
+      state.parsed,
+      'bpmn:EndEvent',
+      args.name,
+    );
+    if (!result) {
+      return errorResponse('Не удалось создать EndEvent в XML');
+    }
+
     const size = ELEMENT_SIZES['bpmn:EndEvent'];
+    const pos = calculatePosition(state.model, 'bpmn:EndEvent');
 
     bpmnXmlService.addShapeToDiagram(
       state.parsed,
@@ -55,17 +68,19 @@ async function handleAddEndEvent(args: { dataTypeId: string; name?: string }) {
     });
 
     if (!saveResult.success) {
-      return errorResponse(saveResult.error || 'Ошибка сохранения');
+      return errorResponse(
+        saveResult.error || 'Ошибка сохранения изменений в базе',
+      );
     }
 
     return successResponse({
       elementId: result.elementId,
       elementType: 'bpmn:EndEvent',
       name: args.name || null,
-      message: `Создан EndEvent с ID "${result.elementId}"`,
+      message: `Успешно создан единственный EndEvent с ID "${result.elementId}"`,
     });
   } catch (e: any) {
-    return errorResponse(e?.message || 'Ошибка создания EndEvent');
+    return errorResponse(e?.message || 'Внутренняя ошибка создания EndEvent');
   }
 }
 
@@ -74,8 +89,7 @@ export const addEndEventTools = [
     'bpmn_add_end_event',
     {
       title: 'Add EndEvent',
-      description:
-        'Создаёт EndEvent. name опционален.',
+      description: 'Создаёт EndEvent. name опционален.',
       inputSchema: AddEndEventSchema,
     },
     handleAddEndEvent,

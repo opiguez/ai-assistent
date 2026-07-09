@@ -1,116 +1,176 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
-import { bpmnXmlService } from '../services/bpmn-xml.service.js';
+import { bpmnXmlService, ModdleElement } from '../services/bpmn-xml.service.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 const SetConditionExpressionSchema = z.object({
-  dataTypeId: z.string().describe('ID BPMN типа данных'),
-  connectionId: z.string().describe('ID SequenceFlow'),
-  expression: z
+  dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
+  connectionId: z
     .string()
-    .optional()
+    .describe('ID линии SequenceFlow, на которую ставится условие'),
+  value: z
+    .string()
     .describe(
-      'FEEL выражение. Формат: = "значение" для строк, = true/false для булевых, = сумма > 1000 для числовых сравнений',
+      'Техническое значение условия. ' +
+        '1. Для шлюза решений (UserTask) — это порядковый номер кнопки (строка "1", "2" и т.д.) строго в соответствии с массивом decisions исходной задачи. ' +
+        '2. Для RDM-справочников — это value конкретного элемента/записи из выбранного справочника (напр., "1"). ' +
+        '3. Для числовых шлюзов (realNumber) — это только само число (напр., "5", "100") без знаков сравнения.',
     ),
-  conditionName: z
-    .string()
+  operator: z
+    .enum(['==', '>', '<', '>=', '<=', '!='])
     .optional()
+    .default('==')
     .describe(
-      'Отображаемое имя условия (лейбл на стрелке). Используй для decisions: "Подтвердить", "Отклонить".',
+      'Оператор сравнения. Используется ТОЛЬКО для числовых шлюзов (realNumber). Для RDM-справочников(rdmStructure) всегда передавайте "=="',
     ),
 });
 
-async function handleSetConditionExpression(args: {
-  dataTypeId: string;
-  connectionId: string;
-  expression?: string;
-  conditionName?: string;
-}) {
+export async function handleSetConditionExpression(
+  args: z.infer<typeof SetConditionExpressionSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    const element = bpmnXmlService.getElementById(state.parsed, args.connectionId);
-    if (!element || element.$type !== 'bpmn:SequenceFlow') {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `SequenceFlow с ID "${args.connectionId}" не найден`,
-            }),
-          },
-        ],
-      };
-    }
-
-    // Обновляем conditionExpression если задан
-    let updatedXml: string;
-    if (args.expression) {
-      updatedXml = await bpmnXmlService.setConditionExpression(
-        state.parsed,
-        args.connectionId,
-        args.expression,
+    const flowElement = bpmnXmlService.getElementById(
+      state.parsed,
+      args.connectionId,
+    ) as ModdleElement | undefined;
+    if (!flowElement || flowElement.$type !== 'bpmn:SequenceFlow') {
+      return errorResponse(
+        `SequenceFlow с ID "${args.connectionId}" не найден в XML`,
       );
-    } else {
-      updatedXml = await bpmnXmlService.generateXml(state.parsed);
     }
 
-    // Обновляем conditionName (лейбл) в custom model
-    const newModel = { ...state.model };
-    if (args.conditionName !== undefined) {
-      newModel[args.connectionId] = {
-        ...newModel[args.connectionId],
-        name: args.conditionName,
-      };
+    const flowDecor = state.model[args.connectionId];
+    if (!flowDecor) {
+      return errorResponse(
+        `Запись стрелки "${args.connectionId}" не найдена в JSON-decor.`,
+      );
     }
 
+    const sourceId = flowDecor.sourceRef;
+    const sourceNode = state.model[sourceId];
+    if (!sourceNode) {
+      return errorResponse(
+        `Исходный узел "${sourceId}" для стрелки не найден в модели.`,
+      );
+    }
+
+    // ====================================================================
+    // АВТОГЕНЕРАЦИЯ СТРОКИ ВЫРАЖЕНИЯ НА ОСНОВЕ ПРАВИЛ ПЛАТФОРМЫ
+    // ====================================================================
+    let expressionText = '';
+    let isJavaScript = false;
+
+    // Проверяем, что стрелка действительно выходит из шлюза
+    if (
+      sourceNode.elementType === 'bpmn:ExclusiveGateway' ||
+      sourceNode.elementType === 'bpmn:InclusiveGateway'
+    ) {
+      const propType = sourceNode.DataTypeProperty; // 'rdmStructure', 'realNumber' или undefined
+
+      if (!propType) {
+        const incomingToGateway = Object.entries(state.model).find(
+          ([_, entry]: [string, any]) => {
+            return (
+              entry.elementType === 'bpmn:SequenceFlow' &&
+              entry.targetRef === sourceId
+            );
+          },
+        );
+
+        let userTaskWithDecisions: any = null;
+        let parentUserTaskId: string | null = null;
+
+        if (incomingToGateway) {
+          const [_, parentFlow]: [string, any] = incomingToGateway;
+          const potentialUserTask = state.model[parentFlow.sourceRef];
+
+          // Проверяем, что это UserTask и на ней ДЕЙСТВИТЕЛЬНО включены решения
+          if (
+            potentialUserTask &&
+            potentialUserTask.elementType === 'bpmn:UserTask' &&
+            potentialUserTask.decisionsEnabled
+          ) {
+            userTaskWithDecisions = potentialUserTask;
+            parentUserTaskId = parentFlow.sourceRef;
+          }
+        }
+
+        if (!userTaskWithDecisions) {
+          return errorResponse(
+            `Шлюз "${sourceId}" еще не сконфигурирован. Сначала вызовите инструмент "bpmn_set_rdm_or_number_structure", чтобы задать тип условий (RDM или Number), либо убедитесь, что перед шлюзом стоит UserTask с активированными решениями (decisionsEnabled: true).`,
+          );
+        }
+
+        let buttonIndex = args.value;
+        const allButtons: string[] =
+          userTaskWithDecisions.decisionsUnused || [];
+        const currentFlowName = flowDecor.name;
+
+        const foundIdx = allButtons.indexOf(currentFlowName);
+        if (foundIdx !== -1) {
+          buttonIndex = String(foundIdx + 1);
+        } else {
+          return errorResponse(
+            `Ветка шлюза с названием "${currentFlowName}" не найдена в списке доступных решений родительской задачи "${parentUserTaskId}" (доступные решения: ${JSON.stringify(allButtons)}).`,
+          );
+        }
+
+        expressionText = `\${${sourceId}==${buttonIndex}}`;
+      } else if (propType === 'rdmStructure') {
+        // КЕЙС 2: RDM Справочник -> JUEL: ${test_test1_select=='1'}
+        const rawVariable = sourceNode.DataTypePropertyValue || 'variable';
+        const cleanVariable = rawVariable.replace(':', '_');
+        expressionText = `\${${cleanVariable}=='${args.value}'}`;
+      } else if (propType === 'realNumber') {
+        // КЕЙС 3: Числовой шлюз -> JS: test_test1_number.prop("value").numberValue()>5
+        const rawVariable = sourceNode.DataTypePropertyValue || 'variable';
+        isJavaScript = true;
+        expressionText = `${rawVariable}.prop("value").numberValue()${args.operator}${args.value}`;
+      }
+    }
+
+    if (!expressionText) {
+      return errorResponse(
+        `Не удалось определить контекст шлюза "${sourceId}" для генерации условия.`,
+      );
+    }
+
+    const successXmlUpdate = bpmnXmlService.setFlowCondition(
+      state.parsed,
+      args.connectionId,
+      expressionText,
+      isJavaScript ? 'javascript' : undefined,
+    );
+
+    if (!successXmlUpdate) {
+      return errorResponse('Не удалось вшить conditionExpression в объект XML');
+    }
+
+    const updatedXml = await bpmnXmlService.generateXml(state.parsed);
     const saveResult = await bpmnSchemaService.saveProcess({
       dataTypeId: args.dataTypeId,
       xml: updatedXml,
-      decor: JSON.stringify(newModel),
+      decor: JSON.stringify(state.model),
     });
 
     if (!saveResult.success) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: saveResult.error || 'Ошибка сохранения',
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        saveResult.error || 'Ошибка сохранения изменений в базе',
+      );
     }
 
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            connectionId: args.connectionId,
-            expression: args.expression || null,
-            conditionName: args.conditionName || null,
-            message: `SequenceFlow "${args.connectionId}" обновлен`,
-          }),
-        },
-      ],
-    };
+    return successResponse({
+      connectionId: args.connectionId,
+      generatedExpression: expressionText,
+      message: `На стрелку "${args.connectionId}" успешно установлено техническое условие: "${expressionText}"`,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка установки условия',
-          }),
-        },
-      ],
-    };
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка установки выражения на SequenceFlow',
+    );
   }
 }
 

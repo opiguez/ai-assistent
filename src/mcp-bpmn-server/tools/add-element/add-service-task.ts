@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../../services/bpmn-schema.service.js';
-import { bpmnXmlService } from '../../services/bpmn-xml.service.js';
+import {
+  bpmnXmlService,
+  ModdleElement,
+} from '../../services/bpmn-xml.service.js';
 import { defineTool } from '../../../shared/utils/base.js';
 import {
   ELEMENT_SIZES,
@@ -11,80 +14,86 @@ import {
   errorResponse,
 } from './shared.js';
 
-const AddServiceTaskSchema = z.object({
-  dataTypeId: z.string().describe('ID BPMN типа данных'),
+export const AddServiceTaskSchema = z.object({
+  dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
   name: z
     .string()
     .max(255)
     .optional()
-    .describe('Имя задачи. Если не указано — генерируется "Элемент N"'),
+    .describe('Имя задачи (отображаемый текст)'),
   apiSpecGroupId: z
     .string()
-    .describe('ID группы API спецификаций (apiSpecGroup). Обязателен для валидации'),
+    .describe(
+      'ID группы API спецификаций (apiSpecGroup). Обязателен для Low-Code валидации',
+    ),
   targetModule: z
     .string()
-    .describe('Имя модуля. Сохраняется как camunda:inputParameter "targetModule"'),
+    .describe(
+      'Имя целевого модуля Low-Code платформы (передается в camunda:inputParameter "targetModule")',
+    ),
   targetService: z
     .string()
-    .describe('Имя сервиса. Сохраняется как camunda:inputParameter "targetService"'),
+    .describe(
+      'Имя сервиса (передается в camunda:inputParameter "targetService")',
+    ),
   targetMethod: z
     .string()
-    .describe('Имя метода. Сохраняется как camunda:inputParameter "targetMethod"'),
+    .describe(
+      'Имя вызываемого метода API (передается в camunda:inputParameter "targetMethod")',
+    ),
   threadCount: z
     .string()
     .optional()
-    .describe('Количество потоков. Сохраняется как camunda:inputParameter "threadCount"'),
+    .describe(
+      'Количество потоков исполнения (передается в camunda:inputParameter "threadCount")',
+    ),
 });
 
-async function handleAddServiceTask(args: {
-  dataTypeId: string;
-  name?: string;
-  apiSpecGroupId: string;
-  targetModule: string;
-  targetService: string;
-  targetMethod: string;
-  threadCount?: string;
-}) {
+export async function handleAddServiceTask(
+  args: z.infer<typeof AddServiceTaskSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    if (!args.name) {
-      args.name = generateTaskName(state.model);
+    let taskName = args.name;
+    if (!taskName) {
+      taskName = generateTaskName(state.model);
     }
 
-    const result = bpmnXmlService.createElement(state.parsed, 'bpmn:ServiceTask', args.name);
+    const result = bpmnXmlService.createElement(
+      state.parsed,
+      'bpmn:ServiceTask',
+      taskName,
+    );
     if (!result) {
-      return errorResponse('Не удалось создать элемент');
+      return errorResponse('Не удалось создать ServiceTask в XML');
     }
 
-    result.element.$attrs['camunda:type'] = 'external';
-    result.element.$attrs['camunda:topic'] = 'BM Service Task';
+    const bpmnElement = result.element as ModdleElement;
+    const moddle = bpmnXmlService['moddle'];
 
-    const moddle = (bpmnXmlService as any).moddle;
-    const extensionElements = moddle.create('bpmn:ExtensionElements', {
-      values: [],
-    });
+    bpmnElement.set('camunda:type', 'external');
+    bpmnElement.set('camunda:topic', 'BM Service Task');
 
-    const inputOutput = moddle.create('camunda:InputOutput', {
-      inputParameters: [
-        moddle.create('camunda:InputParameter', {
-          name: 'targetModule',
-          value: args.targetModule,
-        }),
-        moddle.create('camunda:InputParameter', {
-          name: 'targetService',
-          value: args.targetService,
-        }),
-        moddle.create('camunda:InputParameter', {
-          name: 'targetMethod',
-          value: args.targetMethod,
-        }),
-      ],
-      outputParameters: [],
-    });
+    // Создаем коллекцию параметров InputParameter
+    const inputParameters: any[] = [
+      moddle.create('camunda:InputParameter', {
+        name: 'targetModule',
+        value: args.targetModule,
+      }),
+      moddle.create('camunda:InputParameter', {
+        name: 'targetService',
+        value: args.targetService,
+      }),
+      moddle.create('camunda:InputParameter', {
+        name: 'targetMethod',
+        value: args.targetMethod,
+      }),
+    ];
 
+    // Если передан поток выполнения — пушим его в обычный массив свойств
     if (args.threadCount) {
-      inputOutput.get('inputParameters').push(
+      inputParameters.push(
         moddle.create('camunda:InputParameter', {
           name: 'threadCount',
           value: args.threadCount,
@@ -92,11 +101,24 @@ async function handleAddServiceTask(args: {
       );
     }
 
-    extensionElements.get('values').push(inputOutput);
-    result.element.set('extensionElements', extensionElements);
+    // Создаем объект camunda:InputOutput
+    const inputOutput = moddle.create('camunda:InputOutput', {
+      inputParameters: inputParameters,
+      outputParameters: [],
+    });
+
+    // Упаковываем всё в контейнер ExtensionElements
+    const extensionElements = moddle.create('bpmn:ExtensionElements', {
+      values: [inputOutput],
+    });
+
+    bpmnElement.set('extensionElements', extensionElements);
 
     const pos = calculatePosition(state.model, 'bpmn:ServiceTask');
-    const size = ELEMENT_SIZES['bpmn:ServiceTask'];
+    const size = ELEMENT_SIZES['bpmn:ServiceTask'] || {
+      width: 100,
+      height: 80,
+    };
 
     bpmnXmlService.addShapeToDiagram(
       state.parsed,
@@ -108,21 +130,31 @@ async function handleAddServiceTask(args: {
     );
 
     const newModel = { ...state.model };
-    newModel[result.elementId] = createModelEntry(
+
+    // Получаем базовый чистый каркас записи (bounds и имя)
+    const baseEntry = createModelEntry(
       result.elementId,
       'bpmn:ServiceTask',
-      args.name,
+      taskName,
       pos.x,
       pos.y,
       size.width,
       size.height,
-      args.dataTypeId,
     );
 
-    newModel[result.elementId].apiSpecGroupId = args.apiSpecGroupId;
-    newModel[result.elementId].targetModule = args.targetModule;
-    newModel[result.elementId].targetService = args.targetService;
-    newModel[result.elementId].targetMethod = args.targetMethod;
+    const serviceTaskEntry = {
+      ...baseEntry,
+      require: [],
+      produce: [],
+      topic: 'BM Service Task',
+      apiSpecGroupId: args.apiSpecGroupId,
+      targetModule: args.targetModule,
+      targetService: args.targetService,
+      targetMethod: args.targetMethod,
+      ...(args.threadCount ? { threadCount: args.threadCount } : {}),
+    };
+
+    newModel[result.elementId] = serviceTaskEntry;
 
     const updatedXml = await bpmnXmlService.generateXml(state.parsed);
     const saveResult = await bpmnSchemaService.saveProcess({
@@ -132,21 +164,21 @@ async function handleAddServiceTask(args: {
     });
 
     if (!saveResult.success) {
-      return errorResponse(saveResult.error || 'Ошибка сохранения');
+      return errorResponse(
+        saveResult.error || 'Ошибка при сохранении ServiceTask',
+      );
     }
 
     return successResponse({
       elementId: result.elementId,
       elementType: 'bpmn:ServiceTask',
-      name: args.name,
-      apiSpecGroupId: args.apiSpecGroupId,
-      targetModule: args.targetModule,
-      targetService: args.targetService,
-      targetMethod: args.targetMethod,
-      message: `ServiceTask "${result.elementId}" создан: ${args.targetModule}/${args.targetService}/${args.targetMethod}`,
+      name: taskName,
+      message: `Успешно создан ServiceTask "${result.elementId}" для метода API: ${args.targetModule}/${args.targetService}/${args.targetMethod}`,
     });
   } catch (e: any) {
-    return errorResponse(e?.message || 'Ошибка создания ServiceTask');
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка создания ServiceTask',
+    );
   }
 }
 
@@ -155,8 +187,12 @@ export const addServiceTaskTools = [
     'bpmn_add_service_task',
     {
       title: 'Add ServiceTask',
-      description:
-        'Создаёт ServiceTask с полной конфигурацией: camunda:type="external", camunda:topic="BM Service Task", extensionElements > camunda:InputOutput с targetModule, targetService, targetMethod. apiSpecGroupId и targetModule/targetService/targetMethod обязательны. threadCount опционален.',
+      description: `Создаёт элемент bpmn:ServiceTask для интеграции с внешними API методами.
+Автоматически настраивает Camunda-расширения: camunda:type="external" и camunda:topic="BM Service Task".
+Вшивает параметры targetModule, targetService и targetMethod внутрь extensionElements > camunda:InputOutput.
+Внимание: параметры apiSpecGroupId, targetModule, targetService и targetMethod являются строго обязательными.
+Сначала используйте инструмент поиска API-спецификаций, чтобы получить валидный apiSpecGroupId.
+Параметр threadCount является опциональным и передается только при явном требовании многопоточности.`,
       inputSchema: AddServiceTaskSchema,
     },
     handleAddServiceTask,

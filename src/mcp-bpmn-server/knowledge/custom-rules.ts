@@ -1,6 +1,5 @@
 /**
  * Custom BPMN Rules
- * Правила валидации из Rules.js wf-modeler + backend validation.
  * AI должен знать эти правила для корректного проектирования
  * и минимизации итераций с бэкендом.
  */
@@ -17,27 +16,13 @@ export const BPMN_RULES = {
       cancelDeleteException:
         'Если есть Cancel/Delete события — нельзя удалять их',
     },
-    decisionElements: {
-      description:
-        'Элементы (UserTask с decisionsEnabled + ExclusiveGateway + SequenceFlow) нельзя удалять',
-      protected:
-        'UserTask с decisionsEnabled, ExclusiveGateway подключённый к нему, SequenceFlow между ними',
-    },
-    customStructureElements: {
-      description:
-        'Элементы custom structure (ExclusiveGateway/InclusiveGateway с DataTypeProperty + их SequenceFlow) нельзя удалять',
-      protected: 'Gateway с DataTypeProperty, SequenceFlow исходящая из него',
-    },
-    labels: {
-      description: 'Labels нельзя удалять напрямую',
-    },
   },
 
   /**
    * Запрет изменения типа элемента.
    */
   changeType: {
-    exclusiveGatewayInDecisions: {
+    exclusiveGatewayInGenericDecisions: {
       description:
         'ExclusiveGateway, входящая в который идёт от UserTask с decisionsEnabled — нельзя менять тип',
     },
@@ -77,15 +62,8 @@ export const BPMN_RULES = {
       description: 'Error Boundary Event можно прикрепить ТОЛЬКО к ServiceTask',
       allowedHosts: ['bpmn:ServiceTask'],
     },
-    nonInterruptingStartEvent: {
-      description:
-        'Non-interrupting StartEvent в SubProcess нельзя создавать через drag',
-    },
     dearchiveInSubProcess: {
       description: 'Dearchive Event нельзя создавать внутри SubProcess',
-    },
-    cancelDeleteDrag: {
-      description: 'Cancel/Delete события нельзя создавать через drag',
     },
     intermediateEvents: {
       description:
@@ -96,22 +74,11 @@ export const BPMN_RULES = {
       description: 'BoundaryEvent нельзя переприкрепить к другому элементу',
     },
   },
-
-  /**
-   * Direct edit (двойной клик).
-   */
-  directEdit: {
-    disabled: [
-      'Decision SequenceFlow',
-      'SendTask',
-      'Custom Structure SequenceFlow',
-    ],
-  },
 };
 
 /**
  * Структурные правила процесса.
- * Эти правила НЕ проверяются Rules.js, но ловятся backend валидацией.
+ * Ловятся backend валидацией.
  * Знание их экономит итерации.
  */
 export const STRUCTURAL_RULES = {
@@ -316,21 +283,25 @@ export const ELEMENT_CONFIGURATIONS = {
     ],
   },
   gatewayWithRdmStructure: {
-    description: 'ExclusiveGateway с RDM структурой',
+    description:
+      'ExclusiveGateway с условиями на основе справочника RDM (Select)',
     steps: [
-      '1. Создать ExclusiveGateway: bpmn_add_element(dataTypeId, "bpmn:ExclusiveGateway")',
-      '2. Назначить RDM структуру: bpmn_set_rdm_structure(dataTypeId, gatewayId, rdmPropertyId)',
-      '3. Соединить исходящие SequenceFlow: bpmn_connect_elements',
+      '1. Создать базовый шлюз: bpmn_add_element(dataTypeId, "bpmn:ExclusiveGateway", name?)',
+      '2. Привязать RDM структуру: bpmn_set_rdm_or_number_structure(dataTypeId, elementId, typeProperty: "rdmStructure", propertyValue)',
+      '3. Провести исходящие линии к следующим шагам: bpmn_connect_elements(dataTypeId, userTaskId, forkGatewayId, ...otherOptions)',
+      '4. Настроить условия на созданных линиях: bpmn_set_condition_expression(dataTypeId, flowId, conditionValue, name)',
     ],
   },
-  // gatewayWithRealNumber: {
-  //   description: 'ExclusiveGateway с Number значениями',
-  //   steps: [
-  //     '1. Создать ExclusiveGateway: bpmn_add_element(dataTypeId, "bpmn:ExclusiveGateway")',
-  //     '2. Назначить RDM структуру: bpmn_set_rdm_structure(dataTypeId, gatewayId, rdmPropertyId)',
-  //     '3. Соединить исходящие SequenceFlow: bpmn_connect_elements',
-  //   ],
-  // },
+  gatewayWithRealNumber: {
+    description:
+      'ExclusiveGateway с условиями на основе числовых значений (NUMBERS)',
+    steps: [
+      '1. Создать базовый шлюз: bpmn_add_element(dataTypeId, "bpmn:ExclusiveGateway", name?)',
+      '2. Привязать числовую переменную: bpmn_set_rdm_or_number_structure(dataTypeId, elementId, typeProperty: "realNumber", propertyValue)',
+      '3. Провести исходящие линии к следующим шагам:  bpmn_connect_elements(dataTypeId, userTaskId, forkGatewayId, ...otherOptions)',
+      '4. Настроить условия на созданных линиях: bpmn_set_condition_expression(dataTypeId, flowId, conditionValue, name)',
+    ],
+  },
   sendTaskWithEmail: {
     description: 'SendTask для email уведомлений',
     steps: [

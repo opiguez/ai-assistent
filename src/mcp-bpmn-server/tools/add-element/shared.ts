@@ -111,49 +111,21 @@ export function handleAssignee(
 }
 
 export function createModelEntry(
-  elementId: string,
+  elementId: string, // Оставим для совместимости или логирования
   elementType: string,
   name: string,
   x: number,
   y: number,
   width: number,
   height: number,
-  dataTypeId?: string,
 ): Record<string, any> {
-  const entry: Record<string, any> = {
-    bpmndi: { bounds: { x, y, width, height } },
+  return {
+    elementType,
     name: name || '',
+    bpmndi: {
+      bounds: { x, y, width, height },
+    },
   };
-
-  if (
-    elementType === 'bpmn:UserTask' ||
-    elementType === 'bpmn:ServiceTask' ||
-    elementType === 'bpmn:SendTask' ||
-    elementType === 'bpmn:ScriptTask'
-  ) {
-    entry.require = [];
-    entry.produce = [];
-    entry.notificateCreator = false;
-    entry.notificateAssignee = false;
-    entry.outgoing = null;
-
-    if (elementType === 'bpmn:UserTask' && dataTypeId) {
-      entry.views = {
-        navigateView: null,
-        editView: null,
-        childTableView: null,
-        cardView: null,
-        tileView: null,
-        calendarView: null,
-      };
-    }
-  }
-
-  if (elementType === 'bpmn:SubProcess') {
-    entry.isExpanded = true;
-  }
-
-  return entry;
 }
 
 export function successResponse(data: Record<string, any>) {
@@ -173,6 +145,27 @@ export function errorResponse(message: string) {
       {
         type: 'text' as const,
         text: JSON.stringify({ status: 'error', message }),
+      },
+    ],
+  };
+}
+
+export function routingResponse(targetTool: string, instructions: string) {
+  return {
+    isError: false,
+    content: [
+      {
+        type: 'text' as const,
+        text: JSON.stringify(
+          {
+            status: 'redirect',
+            suggestedTool: targetTool,
+            message: `Этот тип элемента требует специальной конфигурации. Пожалуйста, прекратите выполнение текущего шага и вызовите инструмент "${targetTool}".`,
+            details: instructions,
+          },
+          null,
+          2,
+        ),
       },
     ],
   };

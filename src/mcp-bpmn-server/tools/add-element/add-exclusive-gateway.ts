@@ -15,13 +15,19 @@ const AddExclusiveGatewaySchema = z.object({
   name: z.string().max(255).optional().describe('Имя шлюза'),
 });
 
-async function handleAddExclusiveGateway(args: { dataTypeId: string; name?: string }) {
+async function handleAddExclusiveGateway(
+  args: z.infer<typeof AddExclusiveGatewaySchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    const result = bpmnXmlService.createElement(state.parsed, 'bpmn:ExclusiveGateway', args.name);
+    const result = bpmnXmlService.createElement(
+      state.parsed,
+      'bpmn:ExclusiveGateway',
+      args.name,
+    );
     if (!result) {
-      return errorResponse('Не удалось создать элемент');
+      return errorResponse('Не удалось создать ExclusiveGateway в XML');
     }
 
     const pos = calculatePosition(state.model, 'bpmn:ExclusiveGateway');
@@ -55,17 +61,21 @@ async function handleAddExclusiveGateway(args: { dataTypeId: string; name?: stri
     });
 
     if (!saveResult.success) {
-      return errorResponse(saveResult.error || 'Ошибка сохранения');
+      return errorResponse(
+        saveResult.error || 'Ошибка сохранения изменений шлюза',
+      );
     }
 
     return successResponse({
       elementId: result.elementId,
       elementType: 'bpmn:ExclusiveGateway',
       name: args.name || null,
-      message: `Создан ExclusiveGateway с ID "${result.elementId}"`,
+      message: `Успешно создан ExclusiveGateway с ID "${result.elementId}"`,
     });
   } catch (e: any) {
-    return errorResponse(e?.message || 'Ошибка создания ExclusiveGateway');
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка создания ExclusiveGateway',
+    );
   }
 }
 
@@ -74,8 +84,7 @@ export const addExclusiveGatewayTools = [
     'bpmn_add_exclusive_gateway',
     {
       title: 'Add ExclusiveGateway',
-      description:
-        'Создаёт ExclusiveGateway (XOR). name опционален.',
+      description: 'Создаёт ExclusiveGateway (XOR). name опционален.',
       inputSchema: AddExclusiveGatewaySchema,
     },
     handleAddExclusiveGateway,

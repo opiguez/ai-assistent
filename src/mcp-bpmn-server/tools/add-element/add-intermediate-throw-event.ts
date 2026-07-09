@@ -15,7 +15,9 @@ const AddIntermediateThrowEventSchema = z.object({
   name: z.string().max(255).optional().describe('Имя события'),
 });
 
-async function handleAddIntermediateThrowEvent(args: { dataTypeId: string; name?: string }) {
+async function handleAddIntermediateThrowEvent(
+  args: z.infer<typeof AddIntermediateThrowEventSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
@@ -25,7 +27,7 @@ async function handleAddIntermediateThrowEvent(args: { dataTypeId: string; name?
       args.name,
     );
     if (!result) {
-      return errorResponse('Не удалось создать элемент');
+      return errorResponse('Не удалось создать IntermediateThrowEvent в XML');
     }
 
     const pos = calculatePosition(state.model, 'bpmn:IntermediateThrowEvent');
@@ -59,17 +61,21 @@ async function handleAddIntermediateThrowEvent(args: { dataTypeId: string; name?
     });
 
     if (!saveResult.success) {
-      return errorResponse(saveResult.error || 'Ошибка сохранения');
+      return errorResponse(
+        saveResult.error || 'Ошибка保存ния изменений события',
+      );
     }
 
     return successResponse({
       elementId: result.elementId,
       elementType: 'bpmn:IntermediateThrowEvent',
       name: args.name || null,
-      message: `Создан IntermediateThrowEvent с ID "${result.elementId}"`,
+      message: `Успешно создан IntermediateThrowEvent с ID "${result.elementId}". Если событие должно генерировать сигнал или сообщение, настройте его тип следующим шагом.`,
     });
   } catch (e: any) {
-    return errorResponse(e?.message || 'Ошибка создания IntermediateThrowEvent');
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка создания IntermediateThrowEvent',
+    );
   }
 }
 
@@ -78,8 +84,7 @@ export const addIntermediateThrowEventTools = [
     'bpmn_add_intermediate_throw_event',
     {
       title: 'Add IntermediateThrowEvent',
-      description:
-        'Создаёт IntermediateThrowEvent. name опционален.',
+      description: 'Создаёт IntermediateThrowEvent. name опционален.',
       inputSchema: AddIntermediateThrowEventSchema,
     },
     handleAddIntermediateThrowEvent,

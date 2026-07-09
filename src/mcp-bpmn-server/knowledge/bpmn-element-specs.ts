@@ -7,90 +7,95 @@
 // ─── Palette Elements ─────────────────────────────────────
 
 export const PALETTE_ELEMENTS = {
-  // ── Events ──
+  // ── Events (События) ──
   'bpmn:StartEvent': {
     category: 'event',
     displayName: 'Start Event',
-    description: 'Начало процесса. Один StartEvent обязателен.',
-    customizableProperties: ['name', 'eventDefinitions'],
-    canHaveBoundaryEvents: false,
-    canBeInSubprocess: true,
-    isInterrupting: true, // по умолчанию
-  },
-  'bpmn:StartEvent:Message': {
-    category: 'event',
-    displayName: 'De-archive Event',
     description:
-      'Message StartEvent для деархивации. Только на верхнем уровне процесса.',
-    customType: 'Dearchive',
-    canBeInSubprocess: false,
-    requiresParent: 'bpmn:Process',
+      'Начало процесса. По правилам платформы на схеме допускается строго один StartEvent.',
+    customizableProperties: ['name'],
+    canBeInSubprocess: true,
   },
   'bpmn:EndEvent': {
     category: 'event',
     displayName: 'End Event',
-    description: 'Завершение процесса.',
+    description:
+      'Завершение процесса. По правилам платформы на схеме допускается строго один EndEvent.',
     customizableProperties: ['name'],
-    canHaveBoundaryEvents: false,
+    canBeInSubprocess: true,
   },
-  'bpmn:IntermediateCatchEvent:Message': {
+  'bpmn:IntermediateCatchEvent': {
     category: 'event',
-    displayName: 'Message Catch Event',
-    description: 'Промежуточное событие перехвата сообщения.',
-    eventDefinitionType: 'bpmn:MessageEventDefinition',
+    displayName: 'Intermediate Catch Event',
+    description:
+      'Промежуточное событие перехвата (ожидания). Создает базовый каркас. Конкретный тип (Таймер/Сообщение) настраивается следующим шагом.',
+    customizableProperties: ['name'],
   },
-  'bpmn:IntermediateThrowEvent:Message': {
+  'bpmn:IntermediateThrowEvent': {
     category: 'event',
-    displayName: 'Message Throw Event',
-    description: 'Промежуточное событие отправки сообщения.',
-    eventDefinitionType: 'bpmn:MessageEventDefinition',
+    displayName: 'Intermediate Throw Event',
+    description:
+      'Промежуточное генерирующее событие (отправка сигнала/сообщения). Создает базовый каркас.',
+    customizableProperties: ['name'],
   },
-  'bpmn:IntermediateCatchEvent:Timer': {
+  'bpmn:BoundaryEvent': {
     category: 'event',
-    displayName: 'Timer Catch Event',
-    description: 'Промежуточное событие таймера.',
-    eventDefinitionType: 'bpmn:TimerEventDefinition',
-  },
-  'bpmn:BoundaryEvent:Error': {
-    category: 'event',
-    displayName: 'Error Boundary Event',
-    description: 'Граничное событие ошибки. Только для ServiceTask.',
-    canAttachTo: ['bpmn:ServiceTask'],
-    requiresAttachment: true,
+    displayName: 'Boundary Event',
+    description:
+      'Граничное промежуточное событие. Обязательно прикрепляется к контексту родительской задачи (Task или SubProcess).',
+    customizableProperties: ['name', 'attachedToRef'],
   },
 
-  // ── Activities ──
+  // ── Gateways (Шлюзы) ──
+  'bpmn:ExclusiveGateway': {
+    category: 'gateway',
+    displayName: 'Exclusive Gateway',
+    description:
+      'Эксклюзивный шлюз. Используется для ветвления логики: generic decision (на основе UserTask), NUMBERS (числовые условия) и RDM структур. Или как (merge) замыкающий элемент перед следующим шагом процесса.',
+    customizableProperties: ['name'],
+  },
+
+  'bpmn:InclusiveGateway': {
+    category: 'gateway',
+    displayName: 'Inclusive Gateway',
+    description:
+      'Включающий шлюз (развилка OR). Может активировать одну или несколько веток одновременно.',
+    customizableProperties: ['name'],
+  },
+
+  // ── Activities (Задачи) ──
   'bpmn:UserTask': {
     category: 'activity',
     displayName: 'User Task',
     description:
-      'Задача для пользователя. Поддерживает decisions, candidates, simplifiedView.',
+      'Задача, выполняемая пользователем вручную в интерфейсе Low-Code платформы. Требует назначения исполнителей и привязки экранных форм.',
     customizableProperties: [
       'name',
-      'candidateGroups',
-      'decisionsEnabled',
-      'candidateUsers',
+      'assignee',
+      'navigateView',
+      'editView',
+      'require',
     ],
-    hasCustomPanel: 'NAME',
-    supportsDecisions: true,
-    supportsCandidates: true,
-    supportsSimplifiedView: true,
   },
   'bpmn:SendTask': {
     category: 'activity',
     displayName: 'Send Task',
     description:
-      'Отправка email уведомлений. Использует шаблоны (postTemplates).',
-    customType: 'email', // по умолчанию, может быть KafkaMessage
-    hasCustomPanel: 'NAME',
-    supportsTemplate: true,
+      'Компонент отправки email-уведомлений. Позволяет задавать топики, получателей и использовать готовые шаблоны писем.',
+    customizableProperties: [
+      'name',
+      'sendTaskType',
+      'sendTaskTopic',
+      'sendTaskRecipients',
+      'sendTaskTemplate',
+    ],
   },
   'bpmn:ScriptTask': {
     category: 'activity',
     displayName: 'Script Task',
-    description: 'Скриптовая задача для автоматизации.',
-    customizableProperties: ['scriptFormat', 'script'],
-    hasCustomPanel: 'NAME',
+    description:
+      'Скриптовая задача для выполнения кастомной автоматизации (код выполняется на бэкенде платформы).',
+    customizableProperties: ['name', 'scriptFormat', 'script'],
   },
   'bpmn:ServiceTask:BM': {
     category: 'activity',
@@ -110,26 +115,6 @@ export const PALETTE_ELEMENTS = {
     topic: 'Rabis Sync Task',
     hasCustomPanel: 'NAME',
     supportsModuleConfig: true,
-  },
-
-  // ── Gateways ──
-  'bpmn:ExclusiveGateway': {
-    category: 'gateway',
-    displayName: 'Exclusive Gateway',
-    description:
-      'Эксклюзивный шлюз. Используется для generic decision, NUMBERS и RDM структур. Замыкающий элемент перед следующим элементом',
-    customizableProperties: ['name', 'default'],
-    supportsDecisions: true,
-    supportsRdmStructure: true,
-    supportsRealNumber: true,
-  },
-
-  'bpmn:InclusiveGateway': {
-    category: 'gateway',
-    displayName: 'Inclusive Gateway',
-    description:
-      'Инклюзивный шлюз (OR). Параллельное слияние всех активных входов.',
-    customizableProperties: ['name'],
   },
 
   // ── SubProcesses ──
@@ -175,13 +160,13 @@ export const CUSTOM_MODEL_PROPERTIES = {
     ],
   },
   DataTypeProperty: {
-    description: 'Тип данных для Decision Gateway (rdmStructure | realNumber)',
+    description: 'Тип данных для Gateway (rdmStructure | realNumber)',
     allowedValues: ['rdmStructure', 'realNumber'],
   },
   DataTypePropertyValue: {
-    description: 'ID свойства типа данных, используемого для decision',
+    description: 'ID свойства типа данных, используемого для Gateway',
   },
-  decisionsEnabled: {
+  genericDecisionsEnabled: {
     description: 'Включены ли generic decisions для UserTask',
     type: 'boolean',
   },
@@ -241,31 +226,26 @@ export const CUSTOM_MODEL_PROPERTIES = {
 export const COMPONENT_TYPES = {
   NONE: 'NONE',
   NAME: 'NAME',
-  DECISIONS: 'DECISIONS',
+  GENERIC_DECISIONS: 'GENERIC_DECISIONS',
   REAL_NUMBER: 'REAL_NUMBER',
   DEARCHIVE_EVENT: 'DEARCHIVE_EVENT',
   TEXT_ANNOTATION: 'TEXT_ANNOTATION',
   RDM_STRUCTURE: 'RDM_STRUCTURE',
-  DECISIONS_SELECT: 'DECISIONS_SELECT',
   DEFAULT_SEQUENCE_FLOW: 'DEFAULT_SEQUENCE_FLOW',
 } as const;
 
 // ─── Command Handlers ─────────────────────────────────────
 
 export const COMMAND_HANDLERS = {
-  serviceTask: {
-    setModule: 'bpmn_add_element (params.targetModule)',
-    setMethod: 'bpmn_add_element (params.targetService, params.targetMethod)',
-    setThreadCount: 'bpmn_add_element (params.threadCount)',
-    setConfig: 'bpmn_set_service_task_config',
-  },
-  decisions: {
+  genericDecisions: {
     toggle: 'bpmn_toggle_decisions',
-    assign: 'bpmn_connect_elements (conditionName)',
-    change: 'bpmn_set_condition_expression (conditionName)',
+    assign: 'bpmn_connect_elements',
+    change: 'bpmn_set_condition_expression',
   },
-  rdmStructure: {
-    assign: 'bpmn_set_rdm_structure',
+  rdmOrNumberGatewayStructure: {
+    setStructure: 'bpmn_set_rdm_or_number_structure',
+    assign: 'bpmn_connect_elements',
+    change: 'bpmn_set_condition_expression',
   },
   simplifiedView: {
     toggle: 'bpmn_update_element_property (simplifiedViewStep)',

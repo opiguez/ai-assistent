@@ -1,259 +1,233 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
-import { bpmnXmlService } from '../services/bpmn-xml.service.js';
+import { bpmnXmlService, ModdleElement } from '../services/bpmn-xml.service.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 const ConnectElementsSchema = z.object({
-  dataTypeId: z.string().describe('ID BPMN типа данных'),
-  sourceId: z.string().describe('ID исходного элемента'),
-  targetId: z.string().describe('ID целевого элемента'),
-  conditionExpression: z
-    .string()
-    .optional()
-    .describe(
-      'Условие для ветвления. Формат: ${gatewayId==numericId} (напр. ${Gateway_1==2}). Используй ${GatewayId==1} для "Подтвердить" и ${GatewayId==2} для "Отклонить"',
-    ),
+  dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
+  sourceId: z.string().describe('ID исходного элемента (откуда идет стрелка)'),
+  targetId: z.string().describe('ID целевого элемента (куда идет стрелка)'),
   conditionName: z
     .string()
     .optional()
     .describe(
-      'Отображаемое имя условия (лейбл на стрелке, напр. "Подтвердить" или "Отклонить")',
+      'Имя решения/ветки (напр. "Одобрить", "На упаковке", "Больше 5")',
     ),
 });
 
-async function handleConnectElements(args: {
-  dataTypeId: string;
-  sourceId: string;
-  targetId: string;
-  conditionExpression?: string;
-  conditionName?: string;
-}) {
+export async function handleConnectElements(
+  args: z.infer<typeof ConnectElementsSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    const source = bpmnXmlService.getElementById(state.parsed, args.sourceId);
-    const target = bpmnXmlService.getElementById(state.parsed, args.targetId);
+    const source = bpmnXmlService.getElementById(
+      state.parsed,
+      args.sourceId,
+    ) as ModdleElement | undefined;
+    const target = bpmnXmlService.getElementById(
+      state.parsed,
+      args.targetId,
+    ) as ModdleElement | undefined;
 
-    if (!source) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Исходный элемент "${args.sourceId}" не найден`,
-            }),
-          },
-        ],
-      };
-    }
+    if (!source)
+      return errorResponse(
+        `Исходный элемент "${args.sourceId}" не найден в XML`,
+      );
+    if (!target)
+      return errorResponse(
+        `Целевой элемент "${args.targetId}" не найден в XML`,
+      );
 
-    if (!target) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Целевой элемент "${args.targetId}" не найден`,
-            }),
-          },
-        ],
-      };
-    }
-
-    // --- НАЧАЛО БЛОКА ВАЛИДАЦИИ DECISIONS И ШЛЮЗОВ ---
     const sourceModel = state.model[args.sourceId] || {};
-    const isDecisionsEnabled = !!sourceModel.decisionsEnabled;
+    const targetModel = state.model[args.targetId] || {};
+
+    // --- 1. ОПРЕДЕЛЯЕМ ИСТИННЫЙ ИСТОЧНИК РЕШЕНИЙ (DECISIONS) С ШАГОМ НАЗАД ---
+    let userTaskModel: any = null;
+    let userTaskId: string | null = null;
+
+    const sourceIsGateway = source.$type && source.$type.includes('Gateway');
+
+    if (sourceIsGateway) {
+      // Ищем входящую в шлюз стрелку, чтобы проверить, не идет ли она из UserTask с кнопками
+      const incomingFlowEntry = Object.entries(state.model).find(
+        ([_, entry]: [string, any]) => {
+          return (
+            entry.elementType === 'bpmn:SequenceFlow' &&
+            entry.targetRef === args.sourceId
+          );
+        },
+      );
+
+      if (incomingFlowEntry) {
+        const [_, parentFlow]: [string, any] = incomingFlowEntry;
+        const potentialUserTask = state.model[parentFlow.sourceRef];
+
+        if (
+          potentialUserTask &&
+          potentialUserTask.elementType === 'bpmn:UserTask' &&
+          potentialUserTask.decisionsEnabled
+        ) {
+          userTaskModel = potentialUserTask;
+          userTaskId = parentFlow.sourceRef;
+        }
+      }
+    } else if (
+      source.$type === 'bpmn:UserTask' &&
+      sourceModel.decisionsEnabled
+    ) {
+      userTaskModel = sourceModel;
+      userTaskId = args.sourceId;
+    }
+
+    // --- 2. ВАЛИДАЦИЯ КНОПОК-РЕШЕНИЙ (Только если шлюз привязан к решениям UserTask) ---
     let updatedDecisionsUnused: string[] = [];
+    const isDecisionsContext = !!userTaskModel;
 
-    if (isDecisionsEnabled) {
-      // КРИТИЧЕСКАЯ ПРОВЕРКА: Целевой элемент обязан быть шлюзом
-      const isGateway = target.$type && target.$type.includes('Gateway');
-      if (!isGateway) {
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: JSON.stringify({
-                status: 'error',
-                message: `Невозможно соединить элемент напрямую. Для "${args.sourceId}" включен режим Decisions, поэтому его можно связать ТОЛЬКО со шлюзом (например, bpmn:ExclusiveGateway). Текущий целевой элемент имеет тип "${target.$type}".`,
-              }),
-            },
-          ],
-        };
+    if (isDecisionsContext) {
+      // Если тянем стрелку напрямую из UserTask, заставляем идти строго в шлюз
+      if (!sourceIsGateway) {
+        const isTargetGateway =
+          target.$type && target.$type.includes('Gateway');
+        if (!isTargetGateway) {
+          return errorResponse(
+            `Для задачи "${userTaskId}" включен режим Decisions. Свяжите её со шлюзом (ExclusiveGateway).`,
+          );
+        }
       }
 
-      const currentUnused = sourceModel.decisionsUnused || [];
-
-      // 1. Проверяем, передан ли conditionName
+      const currentUnused = userTaskModel.decisionsUnused || [];
       if (!args.conditionName) {
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: JSON.stringify({
-                status: 'error',
-                message: `Для элемента "${args.sourceId}" включен режим Decisions. Передайте "conditionName" (одно из доступных решений: ${JSON.stringify(currentUnused)}).`,
-              }),
-            },
-          ],
-        };
+        return errorResponse(
+          `Вы распределяете ветку для шлюза решений от UserTask "${userTaskId}". Передайте параметр "conditionName" (Доступные варианты: ${JSON.stringify(currentUnused)}).`,
+        );
       }
 
-      // 2. Проверяем, доступно ли еще это решение в массиве unused
       if (!currentUnused.includes(args.conditionName)) {
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: JSON.stringify({
-                status: 'error',
-                message: `Решение "${args.conditionName}" не найдено в списке доступных или уже было использовано. Доступные варианты: ${JSON.stringify(currentUnused)}.`,
-              }),
-            },
-          ],
-        };
+        return errorResponse(
+          `Решение/ветка "${args.conditionName}" не найдена или уже использована. Доступные варианты: ${JSON.stringify(currentUnused)}.`,
+        );
       }
 
-      // 3. Вычисляем новый массив неиспользованных решений (удаляем текущее)
       updatedDecisionsUnused = currentUnused.filter(
         (d: string) => d !== args.conditionName,
       );
     }
-    // --- КОНЕЦ БЛОКА ВАЛИДАЦИИ DECISIONS И ШЛЮЗОВ ---
 
-    // Создаем связь в XML
     const result = bpmnXmlService.addSequenceFlow(
       state.parsed,
       args.sourceId,
       args.targetId,
-      args.conditionExpression,
     );
+    if (!result) return errorResponse('Не удалось создать связь в XML');
 
-    if (!result) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: 'Не удалось создать связь между элементами',
-            }),
-          },
-        ],
-      };
-    }
-
-    const targetModel = state.model[args.targetId] || {};
-    const sourceBounds = sourceModel.bpmndi?.bounds;
-    const targetBounds = targetModel.bpmndi?.bounds;
+    // АВТОМАТИЧЕСКИЙ РАСЧЕТ WAYPOINTS (Ортогональный роутинг)
+    const sB = sourceModel.bpmndi?.bounds;
+    const tB = targetModel.bpmndi?.bounds;
 
     let waypoints = [
       { x: 0, y: 0 },
       { x: 100, y: 0 },
     ];
-    if (sourceBounds && targetBounds) {
-      const sx = sourceBounds.x + (sourceBounds.width || 100);
-      const sy = sourceBounds.y + (sourceBounds.height || 80) / 2;
-      const tx = targetBounds.x;
-      const ty = targetBounds.y + (targetBounds.height || 80) / 2;
-      waypoints = [
-        { x: sx, y: sy },
-        { x: tx, y: ty },
-      ];
+    let labelPos: any = undefined;
+
+    if (sB && tB) {
+      const sourceCenter = { x: sB.x + sB.width / 2, y: sB.y + sB.height / 2 };
+      const targetCenter = { x: tB.x + tB.width / 2, y: tB.y + tB.height / 2 };
+      const calculatedWaypoints: { x: number; y: number }[] = [];
+
+      if (
+        Math.abs(sourceCenter.x - targetCenter.x) >
+        Math.abs(sourceCenter.y - targetCenter.y)
+      ) {
+        const startX = targetCenter.x > sourceCenter.x ? sB.x + sB.width : sB.x;
+        const endX = targetCenter.x > sourceCenter.x ? tB.x : tB.x + tB.width;
+        const midX = startX + (endX - startX) / 2;
+
+        calculatedWaypoints.push({ x: startX, y: sourceCenter.y });
+        calculatedWaypoints.push({ x: midX, y: sourceCenter.y });
+        calculatedWaypoints.push({ x: midX, y: targetCenter.y });
+        calculatedWaypoints.push({ x: endX, y: targetCenter.y });
+      } else {
+        const startY =
+          targetCenter.y > sourceCenter.y ? sB.y + sB.height : sB.y;
+        const safeEndY =
+          targetCenter.y > sourceCenter.y ? tB.y : tB.y + tB.height;
+        const midY = startY + (safeEndY - startY) / 2;
+
+        calculatedWaypoints.push({ x: sourceCenter.x, y: startY });
+        calculatedWaypoints.push({ x: sourceCenter.x, y: midY });
+        calculatedWaypoints.push({ x: targetCenter.x, y: midY });
+        calculatedWaypoints.push({ x: targetCenter.x, y: safeEndY });
+      }
+
+      waypoints = calculatedWaypoints;
+
+      const midIdx = Math.floor(waypoints.length / 2);
+      labelPos = {
+        x: waypoints[midIdx].x - 30,
+        y: waypoints[midIdx].y - 10,
+        width: args.conditionName ? args.conditionName.length * 7 : 50,
+        height: 14,
+      };
     }
 
     bpmnXmlService.addEdgeToDiagram(state.parsed, result.flowId, waypoints);
 
-    // Клонируем и обновляем кастомную модель процессов
     const newModel = { ...state.model };
 
-    // Создаем запись для нового SequenceFlow
     newModel[result.flowId] = {
-      bpmndi: { waypoint: waypoints },
+      elementType: 'bpmn:SequenceFlow',
+      sourceRef: args.sourceId,
+      targetRef: args.targetId,
+      name: args.conditionName || '',
       require: [],
       produce: [],
+      bpmndi: {
+        waypoint: waypoints,
+        ...(args.conditionName ? { label: labelPos } : {}),
+      },
     };
 
-    if (args.conditionName) {
-      newModel[result.flowId].name = args.conditionName;
-    }
-
-    // Обновляем исходный элемент
     if (newModel[args.sourceId]) {
-      newModel[args.sourceId] = {
-        ...newModel[args.sourceId],
-        outgoing: result.flowId, // Так как связь идет только к одному шлюзу, строка здесь идеальна
-      };
+      if (sourceIsGateway) {
+        const currentOutgoing = newModel[args.sourceId].outgoing;
+        const outgoingArray = Array.isArray(currentOutgoing)
+          ? currentOutgoing
+          : currentOutgoing
+            ? [currentOutgoing]
+            : [];
 
-      // Если решения были включены, сохраняем обновленный отфильтрованный массив
-      if (isDecisionsEnabled) {
-        newModel[args.sourceId].decisionsUnused = updatedDecisionsUnused;
+        newModel[args.sourceId].outgoing = [...outgoingArray, result.flowId];
+      } else {
+        newModel[args.sourceId].outgoing = result.flowId;
       }
     }
 
-    const updatedXml = await bpmnXmlService.generateXml(state.parsed);
+    // Обновляем неиспользованные кнопки в UserTask
+    if (isDecisionsContext && userTaskId && newModel[userTaskId]) {
+      newModel[userTaskId].decisionsUnused = updatedDecisionsUnused;
+    }
 
+    const updatedXml = await bpmnXmlService.generateXml(state.parsed);
     const saveResult = await bpmnSchemaService.saveProcess({
       dataTypeId: args.dataTypeId,
       xml: updatedXml,
       decor: JSON.stringify(newModel),
     });
 
-    if (!saveResult.success) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: saveResult.error || 'Ошибка сохранения',
-            }),
-          },
-        ],
-      };
-    }
+    if (!saveResult.success)
+      return errorResponse(saveResult.error || 'Ошибка сохранения');
 
-    // Формируем финальное сообщение о статусе решений
-    let decisionStatusMessage = '';
-    if (isDecisionsEnabled) {
-      decisionStatusMessage =
-        updatedDecisionsUnused.length === 0
-          ? ' Все решения этой задачи успешно распределены по веткам шлюза.'
-          : ` Связь со шлюзом создана. Остались нераспределенные решения: ${JSON.stringify(updatedDecisionsUnused)}. Направьте их в этот же шлюз (или другие шлюзы, если применимо).`;
-    }
-
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            flowId: result.flowId,
-            source: args.sourceId,
-            target: args.targetId,
-            conditionExpression: args.conditionExpression || null,
-            decisionsUnused: isDecisionsEnabled
-              ? updatedDecisionsUnused
-              : undefined,
-            message: `SequenceFlow создан: ${args.sourceId} → ${args.targetId}.${decisionStatusMessage}`,
-          }),
-        },
-      ],
-    };
+    return successResponse({
+      flowId: result.flowId,
+      source: args.sourceId,
+      target: args.targetId,
+      message: `Связь успешно создана. Линия названа: "${args.conditionName || 'без имени'}".`,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка создания связи',
-          }),
-        },
-      ],
-    };
+    return errorResponse(e?.message || 'Внутренняя ошибка создания связи');
   }
 }
 

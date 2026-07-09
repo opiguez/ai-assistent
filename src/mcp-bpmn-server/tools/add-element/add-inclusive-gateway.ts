@@ -15,13 +15,19 @@ const AddInclusiveGatewaySchema = z.object({
   name: z.string().max(255).optional().describe('Имя шлюза'),
 });
 
-async function handleAddInclusiveGateway(args: { dataTypeId: string; name?: string }) {
+async function handleAddInclusiveGateway(
+  args: z.infer<typeof AddInclusiveGatewaySchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    const result = bpmnXmlService.createElement(state.parsed, 'bpmn:InclusiveGateway', args.name);
+    const result = bpmnXmlService.createElement(
+      state.parsed,
+      'bpmn:InclusiveGateway',
+      args.name,
+    );
     if (!result) {
-      return errorResponse('Не удалось создать элемент');
+      return errorResponse('Не удалось создать InclusiveGateway в XML');
     }
 
     const pos = calculatePosition(state.model, 'bpmn:InclusiveGateway');
@@ -55,17 +61,21 @@ async function handleAddInclusiveGateway(args: { dataTypeId: string; name?: stri
     });
 
     if (!saveResult.success) {
-      return errorResponse(saveResult.error || 'Ошибка сохранения');
+      return errorResponse(
+        saveResult.error || 'Ошибка сохранения изменений шлюза',
+      );
     }
 
     return successResponse({
       elementId: result.elementId,
       elementType: 'bpmn:InclusiveGateway',
       name: args.name || null,
-      message: `Создан InclusiveGateway с ID "${result.elementId}"`,
+      message: `Успешно создан InclusiveGateway с ID "${result.elementId}"`,
     });
   } catch (e: any) {
-    return errorResponse(e?.message || 'Ошибка создания InclusiveGateway');
+    return errorResponse(
+      e?.message || 'Внутренняя ошибка создания InclusiveGateway',
+    );
   }
 }
 
@@ -74,8 +84,7 @@ export const addInclusiveGatewayTools = [
     'bpmn_add_inclusive_gateway',
     {
       title: 'Add InclusiveGateway',
-      description:
-        'Создаёт InclusiveGateway (OR). name опционален.',
+      description: 'Создаёт InclusiveGateway (OR). name опционален.',
       inputSchema: AddInclusiveGatewaySchema,
     },
     handleAddInclusiveGateway,

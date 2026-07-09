@@ -30,15 +30,12 @@ const resources = [
             deletionRules: [
               'bpmn:Process — никогда не удалять',
               'StartEvent/EndEvent внутри SubProcess — нельзя удалять',
-              'UserTask с decisionsEnabled + ExclusiveGateway + SequenceFlow — нельзя удалять',
-              'Gateway с DataTypeProperty + SequenceFlow — нельзя удалять',
             ],
             structureRules: [
               'Процесс ОБЯЗАН иметь ровно 1 StartEvent и 1 EndEvent',
               'Все элементы должны быть связаны SequenceFlow от Start до End',
               'Task (UserTask, SendTask, ScriptTask, ServiceTask) — ровно 1 incoming + 1 outgoing SequenceFlow',
               'Gateway — минимум 2 исходящих для ветвления',
-              'SequenceFlow от Gateway ОБЯЗАН иметь conditionExpression',
             ],
             connectionRules: [
               'Task может иметь только одну исходящую non-Association связь',

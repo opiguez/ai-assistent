@@ -14,10 +14,7 @@ import {
 
 const AddUserTaskSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных'),
-  name: z
-    .string()
-    .max(255)
-    .describe('Имя задачи'),
+  name: z.string().max(255).describe('Имя задачи'),
   assignee: z
     .object({
       type: z
@@ -52,29 +49,28 @@ const AddUserTaskSchema = z.object({
     .describe('Дополнительные require (напр. ["bpmn:common:_owner"])'),
 });
 
-async function handleAddUserTask(args: {
-  dataTypeId: string;
-  name?: string;
-  assignee?: { type: string; value?: string };
-  navigateView?: string;
-  editView?: string;
-  require?: string[];
-}) {
+export async function handleAddUserTask(
+  args: z.infer<typeof AddUserTaskSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    if (!args.name) {
-      args.name = generateTaskName(state.model);
+    let taskName = args.name;
+    if (!taskName) {
+      taskName = generateTaskName(state.model);
     }
 
     const result = bpmnXmlService.createElement(
       state.parsed,
       'bpmn:UserTask',
-      args.name,
+      taskName,
     );
+
     if (!result) {
-      return errorResponse('Не удалось создать элемент');
+      return errorResponse('Не удалось создать UserTask в XML');
     }
+
+    const bpmnElement = result.element;
 
     const pos = calculatePosition(state.model, 'bpmn:UserTask');
     const size = ELEMENT_SIZES['bpmn:UserTask'];
@@ -89,46 +85,51 @@ async function handleAddUserTask(args: {
     );
 
     let requireFromAssignee: string[] = [];
+    const assigneeConfig = args.assignee || { type: 'owner' };
 
-    if (args.assignee) {
-      const match = args.dataTypeId.match(/\/modules\/([^\/]+)\/data-types\//);
-      const moduleName = match ? match[1] : 'Calculator';
-      const assigneeResult = handleAssignee(args.assignee, moduleName);
-      requireFromAssignee = assigneeResult.require;
-      for (const [key, val] of Object.entries(assigneeResult.attrs)) {
-        result.element.$attrs[key] = val;
-      }
+    const match = args.dataTypeId.match(/\/modules\/([^\/]+)\/data-types\//);
+    const moduleName = match ? match[1] : 'Calculator';
+
+    const assigneeResult = handleAssignee(assigneeConfig, moduleName);
+    requireFromAssignee = assigneeResult.require;
+
+    // ЗАПИСЬ ЧЕРЕЗ НАПРАВЛЕННЫЙ .set(): библиотека теперь знает Camunda-схему
+    for (const [key, val] of Object.entries(assigneeResult.attrs)) {
+      bpmnElement.set(key, val);
     }
 
     const newModel = { ...state.model };
-    newModel[result.elementId] = createModelEntry(
+
+    const baseEntry = createModelEntry(
       result.elementId,
       'bpmn:UserTask',
-      args.name,
+      taskName,
       pos.x,
       pos.y,
       size.width,
       size.height,
-      args.dataTypeId,
     );
 
-    if (requireFromAssignee.length > 0) {
-      newModel[result.elementId].require = requireFromAssignee;
-    }
+    const finalRequire = [...requireFromAssignee, ...(args.require || [])];
 
-    if (args.require) {
-      newModel[result.elementId].require = [
-        ...newModel[result.elementId].require,
-        ...args.require,
-      ];
-    }
+    const userTaskEntry = {
+      ...baseEntry,
+      require: finalRequire,
+      produce: [],
+      notificateCreator: false,
+      notificateAssignee: false,
+      outgoing: null,
+      views: {
+        navigateView: args.navigateView || null,
+        editView: args.editView || null,
+        childTableView: null,
+        cardView: null,
+        tileView: null,
+        calendarView: null,
+      },
+    };
 
-    if (args.navigateView && newModel[result.elementId].views) {
-      newModel[result.elementId].views.navigateView = args.navigateView;
-    }
-    if (args.editView && newModel[result.elementId].views) {
-      newModel[result.elementId].views.editView = args.editView;
-    }
+    newModel[result.elementId] = userTaskEntry;
 
     const updatedXml = await bpmnXmlService.generateXml(state.parsed);
     const saveResult = await bpmnSchemaService.saveProcess({
@@ -138,17 +139,19 @@ async function handleAddUserTask(args: {
     });
 
     if (!saveResult.success) {
-      return errorResponse(saveResult.error || 'Ошибка сохранения');
+      return errorResponse(
+        saveResult.error || 'Ошибка сохранения изменений процесса',
+      );
     }
 
     return successResponse({
       elementId: result.elementId,
       elementType: 'bpmn:UserTask',
-      name: args.name,
-      message: `Создан UserTask с ID "${result.elementId}"`,
+      name: taskName,
+      message: `Успешно создан и сконфигурирован UserTask с ID "${result.elementId}"`,
     });
   } catch (e: any) {
-    return errorResponse(e?.message || 'Ошибка создания UserTask');
+    return errorResponse(e?.message || 'Внутренняя ошибка создания UserTask');
   }
 }
 
