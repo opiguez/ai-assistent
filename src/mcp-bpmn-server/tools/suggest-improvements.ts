@@ -92,16 +92,16 @@ async function handleSuggestImprovements(args: { dataTypeId: string }) {
     const sendTasks = elements.filter((el) => el.type === 'bpmn:SendTask');
     for (const st of sendTasks) {
       const modelProps = state.model[st.id] || {};
-      // Проверяем имя свойства строго по нашей Low-Code Zod-схеме sendTaskTemplate!
-      if (!modelProps.sendTaskTemplate) {
+      // Проверяем имя свойства строго по нашей Low-Code Zod-схеме template!
+      if (!modelProps.template) {
         suggestions.push({
           type: 'no_template',
           severity: 'warning',
           elementId: st.id,
           elementType: st.type,
-          message: `Задача отправки уведомлений SendTask "${modelProps.name || st.name || st.id}" не имеет привязанного ID шаблона письма (sendTaskTemplate). Уведомление не уйдет.`,
+          message: `Задача отправки уведомлений SendTask "${modelProps.name || st.name || st.id}" не имеет привязанного ID шаблона письма (template). Уведомление не уйдет.`,
           suggestion:
-            'Рекомендуется пересоздать узел через инструмент "bpmn_add_send_task", явно передав корректный ID шаблона в параметр sendTaskTemplate.',
+            'Рекомендуется пересоздать узел через инструмент "bpmn_add_send_task", явно передав корректный ID шаблона в параметр template.',
         });
       }
     }

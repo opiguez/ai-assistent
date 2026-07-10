@@ -82,13 +82,7 @@ export const PALETTE_ELEMENTS = {
     displayName: 'Send Task',
     description:
       'Компонент отправки email-уведомлений. Позволяет задавать топики, получателей и использовать готовые шаблоны писем.',
-    customizableProperties: [
-      'name',
-      'sendTaskType',
-      'sendTaskTopic',
-      'sendTaskRecipients',
-      'sendTaskTemplate',
-    ],
+    customizableProperties: ['name', 'recipients', 'template'],
   },
   'bpmn:ScriptTask': {
     category: 'activity',

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 // ─── Create ──────────────────────────────────────────────
 
@@ -30,31 +31,13 @@ async function handleCreatePostTemplate(args: {
       name: args.name,
       description: args.description,
     });
-
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            postTemplate: result,
-            message: `PostTemplate создан: ${args.displayName || args.name || result.id}`,
-          }, null, 2),
-        },
-      ],
-    };
+    return successResponse({
+      status: 'success',
+      postTemplate: result,
+      message: `PostTemplate создан: ${args.displayName || args.name || result.id}`,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка создания PostTemplate',
-          }),
-        },
-      ],
-    };
+    return errorResponse(e?.message || 'Ошибка создания PostTemplate');
   }
 }
 
@@ -62,7 +45,10 @@ async function handleCreatePostTemplate(args: {
 
 const UpdatePostTemplateSchema = z.object({
   id: z.string().describe('ID PostTemplate'),
-  bodyTemplate: z.string().optional().describe('Тело шаблона письма (HTML/текст)'),
+  bodyTemplate: z
+    .string()
+    .optional()
+    .describe('Тело шаблона письма (HTML/текст)'),
   subjectTemplate: z.string().optional().describe('Шаблон темы письма'),
   displayName: z.string().optional().describe('Отображаемое имя'),
   name: z.string().optional().describe('Имя (key)'),
@@ -79,31 +65,13 @@ async function handleUpdatePostTemplate(args: {
 }) {
   try {
     const result = await bpmnSchemaService.updatePostTemplate(args);
-
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            postTemplate: result,
-            message: `PostTemplate ${args.id} обновлён`,
-          }, null, 2),
-        },
-      ],
-    };
+    return successResponse({
+      status: 'success',
+      postTemplate: result,
+      message: `PostTemplate ${args.id} обновлён`,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка обновления PostTemplate',
-          }),
-        },
-      ],
-    };
+    return errorResponse(e?.message || 'Ошибка обновления PostTemplate');
   }
 }
 
@@ -111,39 +79,26 @@ async function handleUpdatePostTemplate(args: {
 
 const DeletePostTemplateSchema = z.object({
   id: z.string().describe('ID PostTemplate для удаления'),
-  confirm: z.literal(true).describe('Подтверждение удаления (обязательно true)'),
+  confirm: z
+    .literal(true)
+    .describe('Подтверждение удаления (обязательно true)'),
 });
 
-async function handleDeletePostTemplate(args: { id: string; confirm: boolean }) {
+async function handleDeletePostTemplate(args: {
+  id: string;
+  confirm: boolean;
+}) {
   try {
     const success = await bpmnSchemaService.deletePostTemplate(args.id);
-
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: success ? 'success' : 'error',
-            id: args.id,
-            message: success
-              ? `PostTemplate ${args.id} удалён`
-              : `Не удалось удалить PostTemplate ${args.id}`,
-          }),
-        },
-      ],
-    };
+    return successResponse({
+      status: success ? 'success' : 'error',
+      id: args.id,
+      message: success
+        ? `PostTemplate ${args.id} удалён`
+        : `Не удалось удалить PostTemplate ${args.id}`,
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка удаления PostTemplate',
-          }),
-        },
-      ],
-    };
+    return errorResponse(e?.message || 'Ошибка удаления PostTemplate');
   }
 }
 
@@ -153,7 +108,10 @@ const ValidatePostTemplateSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных (parentId)'),
   bodyTemplate: z.string().describe('Тело шаблона письма (HTML/текст)'),
   subjectTemplate: z.string().describe('Шаблон темы письма'),
-  id: z.string().optional().describe('ID PostTemplate (если обновление существующего)'),
+  id: z
+    .string()
+    .optional()
+    .describe('ID PostTemplate (если обновление существующего)'),
 });
 
 async function handleValidatePostTemplate(args: {
@@ -169,33 +127,15 @@ async function handleValidatePostTemplate(args: {
       subjectTemplate: args.subjectTemplate,
       id: args.id,
     });
-
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            valid,
-            message: valid
-              ? 'PostTemplate валиден'
-              : 'PostTemplate не прошёл валидацию',
-          }),
-        },
-      ],
-    };
+    return successResponse({
+      status: 'success',
+      valid,
+      message: valid
+        ? 'PostTemplate валиден'
+        : 'PostTemplate не прошёл валидацию',
+    });
   } catch (e: any) {
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'error',
-            message: e?.message || 'Ошибка валидации PostTemplate',
-          }),
-        },
-      ],
-    };
+    return errorResponse(e?.message || 'Ошибка валидации PostTemplate');
   }
 }
 
@@ -224,8 +164,7 @@ export const crudPostTemplateTools = [
     'bpmn_delete_post_template',
     {
       title: 'Delete Post Template',
-      description:
-        'Удаляет шаблон письма (PostTemplate) по ID.',
+      description: 'Удаляет шаблон письма (PostTemplate) по ID.',
       inputSchema: DeletePostTemplateSchema,
     },
     handleDeletePostTemplate,

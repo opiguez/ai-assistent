@@ -135,39 +135,55 @@ export async function handleConnectElements(
     if (sB && tB) {
       const sourceCenter = { x: sB.x + sB.width / 2, y: sB.y + sB.height / 2 };
       const targetCenter = { x: tB.x + tB.width / 2, y: tB.y + tB.height / 2 };
-      const calculatedWaypoints: { x: number; y: number }[] = [];
+      let calculatedWaypoints: { x: number; y: number }[] = [];
 
-      if (
-        Math.abs(sourceCenter.x - targetCenter.x) >
-        Math.abs(sourceCenter.y - targetCenter.y)
-      ) {
-        const startX = targetCenter.x > sourceCenter.x ? sB.x + sB.width : sB.x;
-        const endX = targetCenter.x > sourceCenter.x ? tB.x : tB.x + tB.width;
-        const midX = startX + (endX - startX) / 2;
+      // ПРОВЕРКА НА ПРЯМУЮ ЛИНИЮ: Если разница по высоте между центрами меньше 15 пикселей
+      if (Math.abs(sourceCenter.y - targetCenter.y) < 15) {
+        // Рисуем строгую прямую из 2 точек на одной высоте (высота центра источника)
+        const startX = sB.x + sB.width;
+        const endX = tB.x;
+        const straightY = sourceCenter.y;
 
-        calculatedWaypoints.push({ x: startX, y: sourceCenter.y });
-        calculatedWaypoints.push({ x: midX, y: sourceCenter.y });
-        calculatedWaypoints.push({ x: midX, y: targetCenter.y });
-        calculatedWaypoints.push({ x: endX, y: targetCenter.y });
+        calculatedWaypoints.push({ x: startX, y: straightY });
+        calculatedWaypoints.push({ x: endX, y: straightY });
       } else {
-        const startY =
-          targetCenter.y > sourceCenter.y ? sB.y + sB.height : sB.y;
-        const safeEndY =
-          targetCenter.y > sourceCenter.y ? tB.y : tB.y + tB.height;
-        const midY = startY + (safeEndY - startY) / 2;
+        // ОРТОГОНАЛЬНЫЙ РОУТЕР для шлюзов и сложных изгибов
+        if (
+          Math.abs(sourceCenter.x - targetCenter.x) >
+          Math.abs(sourceCenter.y - targetCenter.y)
+        ) {
+          const startX =
+            targetCenter.x > sourceCenter.x ? sB.x + sB.width : sB.x;
+          const endX = targetCenter.x > sourceCenter.x ? tB.x : tB.x + tB.width;
+          const midX = startX + (endX - startX) / 2;
 
-        calculatedWaypoints.push({ x: sourceCenter.x, y: startY });
-        calculatedWaypoints.push({ x: sourceCenter.x, y: midY });
-        calculatedWaypoints.push({ x: targetCenter.x, y: midY });
-        calculatedWaypoints.push({ x: targetCenter.x, y: safeEndY });
+          calculatedWaypoints.push({ x: startX, y: sourceCenter.y });
+          calculatedWaypoints.push({ x: midX, y: sourceCenter.y });
+          calculatedWaypoints.push({ x: midX, y: targetCenter.y });
+          calculatedWaypoints.push({ x: endX, y: targetCenter.y });
+        } else {
+          const startY =
+            targetCenter.y > sourceCenter.y ? sB.y + sB.height : sB.y;
+          const safeEndY =
+            targetCenter.y > sourceCenter.y ? tB.y : tB.y + tB.height;
+          const midY = startY + (safeEndY - startY) / 2;
+
+          calculatedWaypoints.push({ x: sourceCenter.x, y: startY });
+          calculatedWaypoints.push({ x: sourceCenter.x, y: midY });
+          calculatedWaypoints.push({ x: targetCenter.x, y: midY });
+          calculatedWaypoints.push({ x: targetCenter.x, y: safeEndY });
+        }
       }
 
       waypoints = calculatedWaypoints;
 
-      const midIdx = Math.floor(waypoints.length / 2);
+      // Безопасный расчет позиции подписи для любого типа линии (прямой или изогнутой)
+      const firstPoint = waypoints[0];
+      const lastPoint = waypoints[waypoints.length - 1];
+
       labelPos = {
-        x: waypoints[midIdx].x - 30,
-        y: waypoints[midIdx].y - 10,
+        x: firstPoint.x + (lastPoint.x - firstPoint.x) / 2 - 25,
+        y: firstPoint.y - 20,
         width: args.conditionName ? args.conditionName.length * 7 : 50,
         height: 14,
       };
@@ -179,8 +195,6 @@ export async function handleConnectElements(
 
     newModel[result.flowId] = {
       elementType: 'bpmn:SequenceFlow',
-      sourceRef: args.sourceId,
-      targetRef: args.targetId,
       name: args.conditionName || '',
       require: [],
       produce: [],

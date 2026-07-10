@@ -41,10 +41,16 @@ import {
 } from '../tools/add-element/add-sub-process.js';
 import { handleAddExclusiveGateway } from '../tools/add-element/add-exclusive-gateway.js';
 import { handleAddInclusiveGateway } from '../tools/add-element/add-inclusive-gateway.js';
-import { handleAddBoundaryEvent } from '../tools/add-element/add-boundary-event.js';
+import {
+  AddBoundaryEventSchema,
+  handleAddBoundaryEvent,
+} from '../tools/add-element/add-boundary-event.js';
 import { handleAddIntermediateCatchEvent } from '../tools/add-element/add-intermediate-catch-event.js';
 import { handleAddIntermediateThrowEvent } from '../tools/add-element/add-intermediate-throw-event.js';
-import { handleAddSendTask } from '../tools/add-element/add-send-task.js';
+import {
+  AddSendTaskSchema,
+  handleAddSendTask,
+} from '../tools/add-element/add-send-task.js';
 
 // ─── Write / configure tools ──────────────────────────────
 import {
@@ -68,21 +74,6 @@ import {
 const DataTypeIdNameSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных'),
   name: z.string().max(255).optional().describe('Имя'),
-});
-
-const AddSendTaskLocalSchema = z.object({
-  dataTypeId: z.string().describe('ID BPMN типа данных'),
-  name: z.string().max(255).optional().describe('Имя задачи'),
-  sendTaskType: z.string().optional().describe('camunda:type'),
-  sendTaskTopic: z.string().optional().describe('camunda:topic'),
-  sendTaskRecipients: z.string().optional().describe('JSON-строка получателей'),
-  sendTaskTemplate: z.string().optional().describe('ID шаблона письма'),
-});
-
-const AddBoundaryEventLocalSchema = z.object({
-  dataTypeId: z.string().describe('ID BPMN типа данных'),
-  name: z.string().max(255).optional().describe('Имя события'),
-  attachedToRef: z.string().describe('ID родительского элемента'),
 });
 
 // ─── Helper ───────────────────────────────────────────────
@@ -302,17 +293,16 @@ addPath(
   {
     dataTypeId: str('ID BPMN типа данных'),
     name: str('Имя задачи (опционально)'),
-    sendTaskType: str('camunda:type'),
-    sendTaskTopic: str('camunda:topic'),
-    sendTaskRecipients: str('JSON-строка получателей'),
-    sendTaskTemplate: str('ID шаблона письма'),
+    recipients: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Массив получателей(их name)',
+    },
+    template: str('ID шаблона письма'),
   },
   ['dataTypeId'],
 );
-router.post(
-  '/add-send-task',
-  wrapRoute(AddSendTaskLocalSchema, handleAddSendTask),
-);
+router.post('/add-send-task', wrapRoute(AddSendTaskSchema, handleAddSendTask));
 
 addPath(
   '/add-script-task',
@@ -381,7 +371,7 @@ addPath(
 );
 router.post(
   '/add-boundary-event',
-  wrapRoute(AddBoundaryEventLocalSchema, handleAddBoundaryEvent),
+  wrapRoute(AddBoundaryEventSchema, handleAddBoundaryEvent),
 );
 
 addPath(

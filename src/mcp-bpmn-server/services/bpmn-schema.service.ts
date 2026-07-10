@@ -485,8 +485,35 @@ class BpmnSchemaService {
     const res = await rabisClient.chain.query
       .groups({
         params: {
-          search: search || undefined,
+          search: search || '',
           pagination: { pageIndex: 0, pageSize: 1000 },
+        },
+      })
+      .get({
+        items: {
+          uid: true,
+          name: true,
+          displayName: true,
+        },
+      });
+
+    const items = (res as any)?.items || [];
+    return items.map((item: any) => ({
+      uid: item.uid,
+      name: item.name,
+      displayName: item.displayName,
+    }));
+  }
+
+  // ─── Users (READ-ONLY) ────────────────────────────────
+
+  async loadUsers(
+    search?: string,
+  ): Promise<Array<{ uid: string; name: string; displayName: string }>> {
+    const res = await rabisClient.chain.query
+      .users({
+        params: {
+          search: search || '',
         },
       })
       .get({

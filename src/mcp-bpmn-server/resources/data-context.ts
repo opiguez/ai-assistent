@@ -14,9 +14,14 @@ const resources = [
     uri: 'bpmn://process/{dataTypeId}/data-context' as const,
     config: {
       title: 'BPMN Data Context',
-      description:
-        'DATA-контекст процесса: свойства данных (dataTypeProperties), RDM структуры (rdmStructures), шаблоны писем (postTemplates), группы пользователей, BPMN сообщения, представления. Используй для настройки UserTask (generic decisions), ServiceTask (API привязки), Gateway (rdmStructure (ветвление по справочнику)/realNumber (числовое условие)), SendTask (шаблоны писем).',
       mimeType: 'application/json',
+      description: `DATA-контекст процесса (переменные, справочники, пользователи, группы, шаблоны). 
+        СТРОГИЕ ПРАВИЛА НАСТРОЙКИ ЭЛЕМЕНТОВ ДЛЯ ИИ:
+        1. UserTask (Пользовательские задачи): Использовать массивы 'userGroups'(группы), переменные(dataTypeProperties.genericProperties). Можно назначить конкретную view'.
+        2. ServiceTask (Системные задачи / API): Настраивать привязки и маппинг параметров исключительно через переменные из 'dataTypeProperties'.
+        3. Gateway (Исключающий/Параллельный шлюз): Для ветвления по справочникам использовать 'rdmStructures'. Для числовых условий использовать 'dataTypeProperties.realNumber'
+        4. SendTask (Отправка уведомлений): Использовать списки 'postTemplates' (шаблоны писем), 'users' (адресаты) и.
+        Перед настройкой любого элемента ты ОБЯЗАН прочитать этот контекст, чтобы не выдумать несуществующие ID ролей или переменных.`,
     },
     read: async (uri: URL) => {
       try {
@@ -41,8 +46,37 @@ const resources = [
           };
         }
 
-        const state = await bpmnSchemaService.loadAndParseProcess(dataTypeId);
-        const userGroups = await bpmnSchemaService.loadUserGroups();
+        const [stateResult, groupsResult, usersResult] =
+          await Promise.allSettled([
+            bpmnSchemaService.loadAndParseProcess(dataTypeId),
+            bpmnSchemaService.loadUserGroups(),
+            bpmnSchemaService.loadUsers(),
+          ]);
+
+        if (stateResult.status === 'rejected') {
+          throw new Error(
+            `Критическая ошибка загрузки схемы процесса: ${stateResult.reason?.message || stateResult.reason}`,
+          );
+        }
+        const state = stateResult.value;
+
+        const userGroups =
+          groupsResult.status === 'fulfilled' ? groupsResult.value || [] : [];
+        const users =
+          usersResult.status === 'fulfilled' ? usersResult.value || [] : [];
+
+        if (groupsResult.status === 'rejected') {
+          console.error(
+            '[MCP Resource] Не удалось загрузить группы пользователей:',
+            groupsResult.reason,
+          );
+        }
+        if (usersResult.status === 'rejected') {
+          console.error(
+            '[MCP Resource] Не удалось загрузить список пользователей:',
+            usersResult.reason,
+          );
+        }
 
         const result = {
           dataTypeId,
@@ -52,6 +86,7 @@ const resources = [
           rdmStructures: state.data.rdmStructures,
           postTemplates: state.data.postTemplates,
           userGroups,
+          users,
           bpmnMessages: state.data.bpmnMessages,
           views: state.data.views,
           summary: {
@@ -61,6 +96,7 @@ const resources = [
             bpmnMessagesCount: state.data.bpmnMessages.length,
             userGroupsCount: userGroups.length,
             viewsCount: state.data.views.length,
+            users: users.length,
           },
         };
 

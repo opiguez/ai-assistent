@@ -410,38 +410,50 @@ class BpmnXmlService {
     elementType: string,
     name?: string,
     parentId?: string,
-  ): { elementId: string; element: ModdleElement } | null {
-    // Находим родителя в родном индексе по ID, либо берем корень схемы
-    const parent = parentId
-      ? parsed.elementsById[parentId]
-      : parsed.rootElement;
+  ): { elementId: string; element: ModdleElement; parentId: string } | null {
+    // Ищем родителя
+    let parent: any = parentId ? parsed.elementsById[parentId] : null;
+
+    // Если parentId не передан — это автоматический режим (ищем главный процесс)
+    if (!parent && parsed.rootElement) {
+      const root = parsed.rootElement as any;
+      if (root.$type === 'bpmn:Definitions') {
+        parent = root.rootElements?.find(
+          (el: any) => el.$type === 'bpmn:Process',
+        );
+      } else if (root.$type === 'bpmn:Process') {
+        parent = root;
+      }
+    }
+
+    // Если вообще ничего не нашли, фолбэчимся на корень
+    if (!parent) {
+      parent = parsed.rootElement;
+    }
 
     if (!parent) return null;
 
-    // Приводим родителя к any, чтобы TS не ругался на динамическое свойство flowElements
     const parentElement = parent as any;
-
+    const actualParentId = parentElement.id as string;
     const id = this.generateId(elementType.replace('bpmn:', '').toLowerCase());
 
     const elementProps: Record<string, any> = { id };
     if (name) elementProps.name = name;
 
-    // Создаем инстанс элемента через свойство класса this.moddle
     const element = this.moddle.create(
       elementType,
       elementProps,
     ) as ModdleElement;
 
-    // Инициализируем массив flowElements, если его еще нет у родителя
-    if (!parentElement.flowElements) {
-      parentElement.flowElements = [];
-    }
-    parentElement.flowElements.push(element);
+    // Инициализируем массив для элементов (работает и для Process, и для SubProcess)
+    const currentFlowElements = parentElement.get('flowElements') || [];
+    currentFlowElements.push(element);
 
-    // Обновляем встроенный в BPMNModel индекс элементов
+    // Записываем обновленный массив обратно через .set()
+    parentElement.set('flowElements', currentFlowElements);
+
     parsed.elementsById[id] = element;
-
-    return { elementId: id, element };
+    return { elementId: id, element, parentId: actualParentId };
   }
 
   /**
@@ -457,13 +469,24 @@ class BpmnXmlService {
     const target = parsed.elementsById[targetId];
     if (!source || !target) return null;
 
-    const parent = parentId
-      ? parsed.elementsById[parentId]
-      : parsed.rootElement;
-    if (!parent) return null;
-
     const sourceEl = source as any;
     const targetEl = target as any;
+
+    // 1. ОПРЕДЕЛЯЕМ ПРАВИЛЬНОГО РОДИТЕЛЯ
+    let parent = parentId ? parsed.elementsById[parentId] : sourceEl.$parent;
+
+    if (!parent && parsed.rootElement) {
+      const root = parsed.rootElement as any;
+      if (root.$type === 'bpmn:Definitions') {
+        parent = root.rootElements?.find(
+          (el: any) => el.$type === 'bpmn:Process',
+        );
+      } else if (root.$type === 'bpmn:Process') {
+        parent = root;
+      }
+    }
+
+    if (!parent) return null;
     const parentEl = parent as any;
 
     const id = this.generateId('flow');
@@ -474,24 +497,23 @@ class BpmnXmlService {
       targetRef: target,
     };
 
-    const flow = this.moddle.create('bpmn:SequenceFlow', flowProps);
+    const flow = this.moddle.create('bpmn:SequenceFlow', flowProps) as any;
+    flow.$parent = parentEl;
 
-    // Добавляем в элементы родительского контейнера
-    if (!parentEl.flowElements) {
-      parentEl.flowElements = [];
-    }
-    parentEl.flowElements.push(flow);
+    // 2. ДОБАВЛЯЕМ В КОНТЕЙНЕР (PROCESS/SUBPROCESS)
+    const currentFlowElements = parentEl.get('flowElements') || [];
+    currentFlowElements.push(flow);
+    parentEl.set('flowElements', currentFlowElements);
 
-    // Связываем массивы входящих/исходящих путей в XML
-    if (!sourceEl.outgoing) {
-      sourceEl.outgoing = [];
-    }
-    sourceEl.outgoing.push(flow);
+    // 3. СВЯЗЫВАЕМ С ИСХОДЯЩИМ ЭЛЕМЕНТОМ (SOURCE)
+    const currentOutgoing = sourceEl.get('outgoing') || [];
+    currentOutgoing.push(flow);
+    sourceEl.set('outgoing', currentOutgoing);
 
-    if (!targetEl.incoming) {
-      targetEl.incoming = [];
-    }
-    targetEl.incoming.push(flow);
+    // 4. СВЯЗЫВАЕМ С ВХОДЯЩИМ ЭЛЕМЕНТОМ (TARGET)
+    const currentIncoming = targetEl.get('incoming') || [];
+    currentIncoming.push(flow);
+    targetEl.set('incoming', currentIncoming);
 
     parsed.elementsById[id] = flow;
 

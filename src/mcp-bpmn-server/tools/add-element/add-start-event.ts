@@ -15,7 +15,9 @@ const AddStartEventSchema = z.object({
   name: z.string().max(255).optional().describe('Имя события'),
 });
 
-export async function handleAddStartEvent(args: z.infer<typeof AddStartEventSchema>) {
+export async function handleAddStartEvent(
+  args: z.infer<typeof AddStartEventSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
@@ -51,6 +53,14 @@ export async function handleAddStartEvent(args: z.infer<typeof AddStartEventSche
     );
 
     const newModel = { ...state.model };
+
+    // Проверяем, инициализирован ли процесс в вашей кастомной модели
+    if (!newModel[result.parentId]) {
+      newModel[result.parentId] = {
+        require: [],
+        produce: [],
+      };
+    }
     newModel[result.elementId] = createModelEntry(
       result.elementId,
       'bpmn:StartEvent',

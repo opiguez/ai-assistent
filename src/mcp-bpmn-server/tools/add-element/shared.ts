@@ -45,29 +45,37 @@ export function calculatePosition(
     return { x: snap(p.x + p.width - 18), y: snap(p.y + p.height - 6) };
   }
 
-  const size = ELEMENT_SIZES[elementType] || { width: 100, height: 80 };
-  const GAP = 100;
-  const MAX_X = 900;
-  const START_X = 100;
-  const CENTER_Y = 150;
+  const size = ELEMENT_SIZES[elementType];
+
+  const BASE_GAP = 120; // Хороший просторный отступ
+  const START_X = 100; // Начало холста
+  const CANVAS_CENTER_Y = 200; // Единая горизонтальная линия центра холста
 
   const allBounds = Object.values(model)
     .filter((e) => e?.bpmndi?.bounds)
     .map((e) => e.bpmndi.bounds);
 
+  //Если холст пустой, ставим первый элемент (StartEvent) по центру
   if (allBounds.length === 0) {
-    return { x: START_X, y: snap(CENTER_Y - size.height / 2) };
+    return {
+      x: START_X,
+      y: snap(CANVAS_CENTER_Y - size.height / 2),
+    };
   }
 
+  // БЕСКОНЕЧНЫЙ ХОЛСТ: Ищем самый правый край среди ВСЕХ элементов и шагаем вправо
   const maxX = Math.max(...allBounds.map((b) => b.x + b.width));
-  let newX = maxX + GAP;
+  const newX = maxX + BASE_GAP;
 
-  if (newX + size.width > MAX_X) {
-    const maxY = Math.max(...allBounds.map((b) => b.y + b.height));
-    return { x: START_X, y: snap(maxY + GAP) };
-  }
+  // Расчет Y: сначала находим идеальный верхний край,
+  // а затем округляем его так, чтобы центр остался максимально близко к оси
+  const idealY = CANVAS_CENTER_Y - size.height / 2;
+  const newY = snap(idealY);
 
-  return { x: snap(newX), y: snap(CENTER_Y - size.height / 2) };
+  return {
+    x: snap(newX),
+    y: newY,
+  };
 }
 
 export function handleAssignee(

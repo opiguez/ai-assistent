@@ -29,7 +29,7 @@ import { deleteElementTools } from './delete-element.js';
 // Phase 4: CRUD for metadata
 import { crudPostTemplateTools } from './crud-post-template.js';
 import { crudBpmnMessageTools } from './crud-bpmn-message.js';
-import { getUserGroupsTools } from './get-user-groups.js';
+import { getUsersTools } from './get-user-groups-and-users.js';
 
 // Diagnostics
 import { logValidationErrorsTools } from './log-validation-errors.js';
@@ -57,7 +57,7 @@ const bpmnTools: ToolDef[] = [
   ...deleteElementTools,
   ...crudPostTemplateTools,
   ...crudBpmnMessageTools,
-  ...getUserGroupsTools,
+  ...getUsersTools,
   ...logValidationErrorsTools,
   ...snapshotProcessTools,
 ];

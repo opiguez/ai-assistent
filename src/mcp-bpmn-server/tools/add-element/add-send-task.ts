@@ -18,20 +18,46 @@ export const AddSendTaskSchema = z.object({
     .max(255)
     .optional()
     .describe('Имя задачи. Если не указано — генерируется "Элемент N"'),
-  sendTaskType: z
+  recipients: z
+    .array(z.string())
+    .min(1, 'Необходимо указать хотя бы одного получателя')
+    .describe(
+      'Массив логинов получателей из контекста данных (users), например: ["admin", "some_name_of_user"]',
+    ),
+  template: z
     .string()
-    .optional()
-    .describe('camunda:type (напр. "external")'),
-  sendTaskTopic: z
-    .string()
-    .optional()
-    .describe('camunda:topic (напр. "Notification Task")'),
-  sendTaskRecipients: z
-    .string()
-    .optional()
-    .describe('JSON-строка массива получателей (напр. \'["userOf(admin)"]\')'),
-  sendTaskTemplate: z.string().optional().describe('ID шаблона письма'),
+    .describe(
+      "ID шаблона письма (Берем конкретный из postTemplates[] в свойствах dataType')",
+    ),
 });
+
+function transformUsers(users: Array<string>) {
+  if (!Array.isArray(users)) {
+    return [];
+  }
+  return users.map((user: string) => `userOf(${user})`);
+}
+
+/**
+ * Извлекает UUID шаблона из полного пути postTemplate
+ * Пример: "/modules/test/.../post-templates/e5ee8045d56b494ab961b050dff92" -> "e5ee8045d56b494ab961b050dff92"
+ */
+function extractTemplateUuid(fullPath: string): string {
+  if (!fullPath) return '';
+
+  // Регулярное выражение ищет hex-последовательность (с дефисами или без) на конце строки
+  const match = fullPath.match(
+    /([a-f0-9]{8}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{12}|[a-f0-9]{32})$/i,
+  );
+
+  if (match) {
+    return match[1];
+  }
+
+  // Фолбэк: если регулярка не сработала, просто берем последний сегмент пути после слэша
+  const segments = fullPath.split('/').filter(Boolean);
+  return segments.length > 0 ? segments[segments.length - 1] : '';
+}
 
 export async function handleAddSendTask(
   args: z.infer<typeof AddSendTaskSchema>,
@@ -56,28 +82,28 @@ export async function handleAddSendTask(
     const bpmnElement = result.element;
     const moddle = (bpmnXmlService as any).moddle;
 
-    const type = args.sendTaskType || 'external';
-    const topic = args.sendTaskTopic || 'Notification Task';
+    const type = 'external';
+    const topic = 'Notification Task';
     bpmnElement.set('camunda:type', type);
     bpmnElement.set('camunda:topic', topic);
 
     // Мапим получателей и шаблоны в XML ExtensionElements (Camunda Input Parameters)
     const inputParameters: any[] = [];
 
-    if (args.sendTaskRecipients) {
+    if (args.recipients) {
       inputParameters.push(
         moddle.create('camunda:InputParameter', {
-          name: 'sendTaskRecipients',
-          value: args.sendTaskRecipients,
+          name: 'recipients',
+          value: JSON.stringify(transformUsers(args.recipients)),
         }),
       );
     }
 
-    if (args.sendTaskTemplate) {
+    if (args.template) {
       inputParameters.push(
         moddle.create('camunda:InputParameter', {
-          name: 'sendTaskTemplate',
-          value: args.sendTaskTemplate,
+          name: 'template',
+          value: extractTemplateUuid(args.template),
         }),
       );
     }
@@ -118,13 +144,8 @@ export async function handleAddSendTask(
       ...baseEntry,
       require: [],
       produce: [],
-      notificateCreator: false,
-      notificateAssignee: false,
-      outgoing: null,
-      sendTaskType: type,
-      sendTaskTopic: topic,
-      sendTaskRecipients: args.sendTaskRecipients || null,
-      sendTaskTemplate: args.sendTaskTemplate || null,
+      value: transformUsers(args.recipients) || [],
+      template: extractTemplateUuid(args.template ? args.template : ''),
     };
 
     newModel[result.elementId] = sendTaskEntry;
