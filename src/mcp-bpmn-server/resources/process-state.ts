@@ -14,7 +14,7 @@ const resources = [
     config: {
       title: 'BPMN Process State',
       description:
-        'Текущее состояние BPMN процесса: элементы (Tasks, Events, Gateways), связи (SequenceFlow), custom model (decisions, topic, template), статус валидации.',
+        'Текущее состояние BPMN процесса: элементы (Tasks, Events, Gateways), связи (SequenceFlow), custom model, статус валидации.',
       mimeType: 'application/json',
     },
     read: async (uri: URL) => {
@@ -29,7 +29,10 @@ const resources = [
               {
                 uri: uri.href,
                 text: JSON.stringify(
-                  { error: 'dataTypeId is required in URI: bpmn://process/{dataTypeId}/state' },
+                  {
+                    error:
+                      'dataTypeId is required in URI: bpmn://process/{dataTypeId}/state',
+                  },
                   null,
                   2,
                 ),
@@ -42,11 +45,9 @@ const resources = [
         const elements = bpmnXmlService.extractElements(state.parsed);
         const connections = bpmnXmlService.extractConnections(state.parsed);
 
-        // Определяем processId
         const processElement = state.parsed.rootElement;
         const processId = processElement?.id || null;
 
-        // Валидация (read-only, без сохранения)
         let valid = false;
         let validationErrors: string[] = [];
         try {

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
 import { bpmnXmlService } from '../services/bpmn-xml.service.js';
 import { defineTool } from '../../shared/utils/base.js';
+import { errorResponse, successResponse } from './add-element/shared.js';
 
 const SetMessageEventSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных'),
@@ -10,28 +11,15 @@ const SetMessageEventSchema = z.object({
   eventName: z.string().describe('Имя события (topic name)'),
 });
 
-async function handleSetMessageEvent(args: {
-  dataTypeId: string;
-  elementId: string;
-  messageId: string;
-  eventName: string;
-}) {
+async function handleSetMessageEvent(
+  args: z.infer<typeof SetMessageEventSchema>,
+) {
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
     const element = bpmnXmlService.getElementById(state.parsed, args.elementId);
     if (!element) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Элемент с ID "${args.elementId}" не найден`,
-            }),
-          },
-        ],
-      };
+      return errorResponse(`Элемент с ID "${args.elementId}" не найден`);
     }
 
     if (
@@ -40,17 +28,9 @@ async function handleSetMessageEvent(args: {
       element.$type !== 'bpmn:SendTask' &&
       element.$type !== 'bpmn:ReceiveTask'
     ) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: `Message Event можно настроить только на IntermediateThrowEvent, IntermediateCatchEvent, SendTask или ReceiveTask (тип: ${element.$type})`,
-            }),
-          },
-        ],
-      };
+      return errorResponse(
+        `Message Event можно настроить только на IntermediateThrowEvent, IntermediateCatchEvent, SendTask или ReceiveTask (тип: ${element.$type})`,
+      );
     }
 
     const newModel = { ...state.model };
@@ -69,33 +49,15 @@ async function handleSetMessageEvent(args: {
     });
 
     if (!saveResult.success) {
-      return {
-        content: [
-          {
-            type: 'text' as const,
-            text: JSON.stringify({
-              status: 'error',
-              message: saveResult.error || 'Ошибка сохранения',
-            }),
-          },
-        ],
-      };
+      return errorResponse(saveResult.error || 'Ошибка сохранения');
     }
-
-    return {
-      content: [
-        {
-          type: 'text' as const,
-          text: JSON.stringify({
-            status: 'success',
-            elementId: args.elementId,
-            messageId: args.messageId,
-            eventName: args.eventName,
-            message: `Message Event "${args.elementId}" настроен: messageId="${args.messageId}", eventName="${args.eventName}"`,
-          }),
-        },
-      ],
-    };
+    return successResponse({
+      status: 'success',
+      elementId: args.elementId,
+      messageId: args.messageId,
+      eventName: args.eventName,
+      message: `Message Event "${args.elementId}" настроен: messageId="${args.messageId}", eventName="${args.eventName}"`,
+    });
   } catch (e: any) {
     return {
       content: [

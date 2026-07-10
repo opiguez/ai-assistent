@@ -153,7 +153,6 @@ WRITE: bpmn_update_element_property, bpmn_set_condition_expression, bpmn_set_ser
 CREATE: bpmn_add_element (универсальный), bpmn_connect_elements, bpmn_delete_element
 UNDO: bpmn_save_snapshot, bpmn_restore_snapshot
 CRUD: bpmn_create_post_template, bpmn_update_post_template, bpmn_delete_post_template, bpmn_validate_post_template, bpmn_create_bpmn_message, bpmn_update_bpmn_message, bpmn_delete_bpmn_message, bpmn_validate_bpmn_message
-DIAG: bpmn_log_validation_errors
 
 BPMN РЕСУРСЫ (чтение через MCP):
 - bpmn://process/{dataTypeId}/state — текущее состояние процесса (элементы, связи, custom model)

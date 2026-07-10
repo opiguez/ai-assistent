@@ -18,8 +18,8 @@
 
 export function stepReadSchema(dataTypeId: string): string {
   return `#### Шаг 1: Анализ текущей структуры
-1. \`bpmn_get_process_schema\` — общая структура процесса
-2. \`bpmn_get_process_topology\` — граф анализ (пути, ветвления, dead-ends)
+1. \`bpmn_get_process_schema\` с dataTypeId="${dataTypeId} — общая структура процесса
+2. \`bpmn_get_process_topology\` с dataTypeId="${dataTypeId} — граф анализ (пути, ветвления, dead-ends)
 3. Определи: процесс пустой (только Start/End) или заполненный?`;
 }
 

@@ -45,7 +45,6 @@ const resources = [
             creationRules: [
               'Error Boundary Event — только на ServiceTask',
               'IntermediateThrow/CatchEvent — только на Process/SubProcess/SequenceFlow',
-              'BoundaryEvent нельзя переприкрепить',
             ],
             directEditDisabled: [
               'Decision SequenceFlow',
