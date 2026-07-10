@@ -69,21 +69,21 @@ async function handleAddElement(args: {
     if (args.elementType === 'bpmn:UserTask') {
       return routingResponse(
         'bpmn_add_user_task',
-        'Для UserTask требуются параметры назначения (assignee) и инициализация представлений (views).',
+        'Для UserTask смотреть параметры внутри инструмента.',
       );
     }
 
     if (args.elementType === 'bpmn:ServiceTask') {
       return routingResponse(
         'bpmn_add_service_task',
-        'Для ServiceTask требуются Low-Code параметры интеграции: apiSpecGroupId, targetModule, targetService, targetMethod.',
+        'Для ServiceTask смотреть параметры внутри инструмента',
       );
     }
 
     if (args.elementType === 'bpmn:SendTask') {
       return routingResponse(
         'bpmn_add_send_task',
-        'Необходимо передать параметры sendTaskType (например, "external") и sendTaskTopic.',
+        'Для SendTask смотреть параметры внутри инструмента.',
       );
     }
 
@@ -97,7 +97,7 @@ async function handleAddElement(args: {
     if (args.elementType === 'bpmn:ScriptTask') {
       return routingResponse(
         'bpmn_add_script_task',
-        'Для ScriptTask требуются параметры scriptFormat, rawRequire, rawProduce, innerScript.',
+        'Используйте этот инструмент для создания ScriptTask.',
       );
     }
 
