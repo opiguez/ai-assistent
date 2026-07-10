@@ -31,9 +31,6 @@ import { crudPostTemplateTools } from './crud-post-template.js';
 import { crudBpmnMessageTools } from './crud-bpmn-message.js';
 import { getUsersTools } from './get-user-groups-and-users.js';
 
-// Diagnostics
-import { logValidationErrorsTools } from './log-validation-errors.js';
-
 // Undo
 import { snapshotProcessTools } from './snapshot-process.js';
 
@@ -58,7 +55,6 @@ const bpmnTools: ToolDef[] = [
   ...crudPostTemplateTools,
   ...crudBpmnMessageTools,
   ...getUsersTools,
-  ...logValidationErrorsTools,
   ...snapshotProcessTools,
 ];
 
