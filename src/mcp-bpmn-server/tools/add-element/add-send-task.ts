@@ -22,20 +22,59 @@ export const AddSendTaskSchema = z.object({
     .array(z.string())
     .min(1, 'Необходимо указать хотя бы одного получателя')
     .describe(
-      'Массив логинов получателей из контекста данных (users), например: ["admin", "some_name_of_user"]',
+      `Массив name получателей из контекста данных (users), например: ["admin", "some_name_of_user"], 
+      либо массив переменных(типа USER или SELECTION)(key), например ["Calculator:_common-_test1"]`,
     ),
   template: z
     .string()
     .describe(
-      "ID шаблона письма (Берем конкретный из postTemplates[] в свойствах dataType')",
+      "ID шаблона письма (Берем конкретный id из элемента из postTemplates[] в dataType')",
     ),
 });
 
-function transformUsers(users: Array<string>) {
-  if (!Array.isArray(users)) {
-    return [];
-  }
-  return users.map((user: string) => `userOf(${user})`);
+function transformRecipients(
+  recipients: string[],
+  genericProperties: Record<string, any>,
+) {
+  if (!Array.isArray(recipients)) return [];
+
+  const propsMap: Record<string, string> = {};
+  const genericProps = genericProperties || {};
+
+  // Проходим по всем группам типов
+  Object.keys(genericProps).forEach((typeGroup) => {
+    const propsArray = genericProps[typeGroup];
+    if (Array.isArray(propsArray)) {
+      propsArray.forEach((prop: any) => {
+        if (prop?.key && prop?.propertyTypeEnum) {
+          propsMap[prop.key] = prop.propertyTypeEnum;
+        }
+      });
+    }
+  });
+
+  return recipients.map((item: string) => {
+    const foundType = propsMap[item];
+
+    if (foundType) {
+      // Если тип USER -> макрос valueOf
+      if (foundType === 'USER') {
+        return `valueOf("${item}")`;
+      }
+      // Если тип выборки/справочника (singleSelect) -> макрос selectOf
+      if (foundType === 'SELECTION') {
+        return `selectOf("${item}")`;
+      }
+
+      throw new Error(
+        `Переменная "${item}" имеет тип "${foundType}". 
+        Использовать переменные этого типа в качестве получателей SendTask запрещено. Разрешены только USER и SELECTION.`,
+      );
+    }
+
+    // Если ключа вообще нет в метаданных -> это жестко прописанный логин пользователя
+    return `userOf(${item})`;
+  });
 }
 
 /**
@@ -87,6 +126,12 @@ export async function handleAddSendTask(
     bpmnElement.set('camunda:type', type);
     bpmnElement.set('camunda:topic', topic);
 
+    const finalRecipients = transformRecipients(
+      args.recipients,
+      state.data.dataTypeProperties.genericProperties,
+    );
+    const cleanTemplateUuid = extractTemplateUuid(args.template || '');
+
     // Мапим получателей и шаблоны в XML ExtensionElements (Camunda Input Parameters)
     const inputParameters: any[] = [];
 
@@ -94,7 +139,7 @@ export async function handleAddSendTask(
       inputParameters.push(
         moddle.create('camunda:InputParameter', {
           name: 'recipients',
-          value: JSON.stringify(transformUsers(args.recipients)),
+          value: JSON.stringify(finalRecipients),
         }),
       );
     }
@@ -103,7 +148,7 @@ export async function handleAddSendTask(
       inputParameters.push(
         moddle.create('camunda:InputParameter', {
           name: 'template',
-          value: extractTemplateUuid(args.template),
+          value: cleanTemplateUuid,
         }),
       );
     }
@@ -144,8 +189,8 @@ export async function handleAddSendTask(
       ...baseEntry,
       require: [],
       produce: [],
-      value: transformUsers(args.recipients) || [],
-      template: extractTemplateUuid(args.template ? args.template : ''),
+      value: finalRecipients,
+      template: cleanTemplateUuid,
     };
 
     newModel[result.elementId] = sendTaskEntry;
