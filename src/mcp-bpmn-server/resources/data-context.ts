@@ -24,20 +24,20 @@ const resources = [
 
         ## users (пользователи) — [{ uid, name, displayName }]
         - bpmn_add_user_task → assignee.type='user', value=user.name
-        - bpmn_add_send_task → recipients: user.name (обернётся в userOf(name))
+        - bpmn_add_send_task → recipients: user.name
 
         ## postTemplates (шаблоны писем) — [{ id, name, displayName, subjectTemplate }]
-        - bpmn_add_send_task → template: postTemplate.id (UUID, извлекается из строки)
+        - bpmn_add_send_task → template: postTemplate.id
 
         ## bpmnMessages (сообщения) — [{ id, name, displayName, status, properties: { dataJson } }]
-        - bpmn_set_message_event → messageId, eventName (произвольные, сохраняются в decor)
+        - bpmn_set_message_event → messageId, eventName
 
         ## rdmStructures (справочники) — { [referenceDataTypeId]: { rdmObjects: [{ id, label, value, isDefault }] } }
         - bpmn_set_rdm_or_number_structure → typeProperty='rdmStructure', propertyValue=key SELECT-поля из dataTypeProperties.singleSelect
         - bpmn_set_condition_expression → value=rdmObject.value для RDM-ветвления
 
         ## dataTypeProperties (переменные процесса)
-        ### realNumber — { [id]: { key, displayName, jsonSchema, sourceRdmStructure } }
+        ### realNumber — { [id]: { key, displayName, jsonSchema, sourceRdmStructure } } (если sourceRdmStructure задан)
         - bpmn_set_rdm_or_number_structure → typeProperty='realNumber', propertyValue=field.key
         - bpmn_set_condition_expression → value=число, operator=">","<","==" и т.д.
 
@@ -46,7 +46,7 @@ const resources = [
 
         ### genericProperties — { [typeEnum]: Array<{ key, displayName, propertyTypeEnum }> }
         - USER → bpmn_add_user_task: assignee.type='variable', value=field.key
-        - USER / SELECTION → bpmn_add_send_task: recipients: field.key (USER→valueOf(key), SELECTION→selectOf(key))
+        - USER / SELECTION → bpmn_add_send_task: recipients: field.key
         - любые типы → bpmn_add_script_task: rawRequire/rawProduce = field.key
 
         ## views (формы) — [{ id, name, displayName, viewType: { viewTypeEnum, displayName }, status }]

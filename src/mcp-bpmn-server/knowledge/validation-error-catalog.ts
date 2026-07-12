@@ -366,35 +366,6 @@ export const VALIDATION_ERROR_CATALOG: Record<string, ValidationErrorEntry> = {
     category: 'element',
   },
 
-  // ─── ServiceTask ──────────────────────────────────────────
-  'system.dse.wf.validation.result.service_task_required_input_param_is_absent':
-    {
-      message: {
-        ru: 'Для сервисной задачи не определены входные параметры',
-        en: 'No input parameters are defined for the service task',
-      },
-      fix: {
-        ru: 'Настроить входные параметры ServiceTask через bpmn_set_service_task_config',
-        en: 'Configure ServiceTask input parameters via bpmn_set_service_task_config',
-      },
-      tool: 'bpmn_set_service_task_config',
-      severity: 'warning',
-      category: 'element',
-    },
-  'system.dse.wf.validation.result.method_doesnt_exist': {
-    message: {
-      ru: 'Метод {{0}}.{{1}} не существует',
-      en: 'Method {{0}}.{{1}} does not exist',
-    },
-    fix: {
-      ru: 'Проверить привязку ServiceTask к API — метод не найден. Обратитесь в поддержку',
-      en: 'Check ServiceTask API binding — method not found. Contact support',
-    },
-    tool: 'bpmn_set_service_task_config',
-    severity: 'error',
-    category: 'element',
-  },
-
   // ─── Candidate Groups ─────────────────────────────────────
   'system.dse.wf.validation.result.candidate_group_defines_n_groups': {
     message: {
