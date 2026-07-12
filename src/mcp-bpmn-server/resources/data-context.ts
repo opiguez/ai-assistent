@@ -15,13 +15,45 @@ const resources = [
     config: {
       title: 'BPMN Data Context',
       mimeType: 'application/json',
-      description: `DATA-контекст процесса (переменные, справочники, пользователи, группы, шаблоны). 
-        СТРОГИЕ ПРАВИЛА НАСТРОЙКИ ЭЛЕМЕНТОВ ДЛЯ ИИ:
-        1. UserTask (Пользовательские задачи): Использовать массивы 'userGroups'(группы), переменные(dataTypeProperties.genericProperties). Можно назначить конкретную view'.
-        2. ServiceTask (Системные задачи / API): Настраивать привязки и маппинг параметров исключительно через переменные из 'dataTypeProperties'.
-        3. Gateway (Исключающий/Параллельный шлюз): Для ветвления по справочникам использовать 'rdmStructures'. Для числовых условий использовать 'dataTypeProperties.realNumber'
-        4. SendTask (Отправка уведомлений): Использовать списки 'postTemplates' (шаблоны писем), 'users' (адресаты) и.
-        Перед настройкой любого элемента ты ОБЯЗАН прочитать этот контекст, чтобы не выдумать несуществующие ID ролей или переменных.`,
+      description: `DATA-контекст процесса (переменные, справочники, пользователи, группы, шаблоны).
+
+        МАППИНГ ПОЛЕЙ → ИНСТРУМЕНТЫ:
+
+        ## userGroups (группы пользователей) — [{ uid, name, displayName }]
+        - bpmn_add_user_task → assignee.type='group', value=group.name
+
+        ## users (пользователи) — [{ uid, name, displayName }]
+        - bpmn_add_user_task → assignee.type='user', value=user.name
+        - bpmn_add_send_task → recipients: user.name (обернётся в userOf(name))
+
+        ## postTemplates (шаблоны писем) — [{ id, name, displayName, subjectTemplate }]
+        - bpmn_add_send_task → template: postTemplate.id (UUID, извлекается из строки)
+
+        ## bpmnMessages (сообщения) — [{ id, name, displayName, status, properties: { dataJson } }]
+        - bpmn_set_message_event → messageId, eventName (произвольные, сохраняются в decor)
+
+        ## rdmStructures (справочники) — { [referenceDataTypeId]: { rdmObjects: [{ id, label, value, isDefault }] } }
+        - bpmn_set_rdm_or_number_structure → typeProperty='rdmStructure', propertyValue=key SELECT-поля из dataTypeProperties.singleSelect
+        - bpmn_set_condition_expression → value=rdmObject.value для RDM-ветвления
+
+        ## dataTypeProperties (переменные процесса)
+        ### realNumber — { [id]: { key, displayName, jsonSchema, sourceRdmStructure } }
+        - bpmn_set_rdm_or_number_structure → typeProperty='realNumber', propertyValue=field.key
+        - bpmn_set_condition_expression → value=число, operator=">","<","==" и т.д.
+
+        ### singleSelect — { [id]: { key, displayName, sourceRdmStructure } }
+        - bpmn_set_rdm_or_number_structure → typeProperty='rdmStructure', propertyValue=field.key (если sourceRdmStructure задан)
+
+        ### genericProperties — { [typeEnum]: Array<{ key, displayName, propertyTypeEnum }> }
+        - USER → bpmn_add_user_task: assignee.type='variable', value=field.key
+        - USER / SELECTION → bpmn_add_send_task: recipients: field.key (USER→valueOf(key), SELECTION→selectOf(key))
+        - любые типы → bpmn_add_script_task: rawRequire/rawProduce = field.key
+
+        ## views (формы) — [{ id, name, displayName, viewType: { viewTypeEnum, displayName }, status }]
+        - bpmn_add_user_task → navigateView, editView: view.id или view.name
+
+        ПРАВИЛО: этот контекст статичен и меняется только при выходе из редактора процесса.
+        Не читай его перед каждым вызовом — достаточно прочитать один раз в начале работы.`,
     },
     read: async (uri: URL) => {
       try {
@@ -46,37 +78,7 @@ const resources = [
           };
         }
 
-        const [stateResult, groupsResult, usersResult] =
-          await Promise.allSettled([
-            bpmnSchemaService.loadAndParseProcess(dataTypeId),
-            bpmnSchemaService.loadUserGroups(),
-            bpmnSchemaService.loadUsers(),
-          ]);
-
-        if (stateResult.status === 'rejected') {
-          throw new Error(
-            `Критическая ошибка загрузки схемы процесса: ${stateResult.reason?.message || stateResult.reason}`,
-          );
-        }
-        const state = stateResult.value;
-
-        const userGroups =
-          groupsResult.status === 'fulfilled' ? groupsResult.value || [] : [];
-        const users =
-          usersResult.status === 'fulfilled' ? usersResult.value || [] : [];
-
-        if (groupsResult.status === 'rejected') {
-          console.error(
-            '[MCP Resource] Не удалось загрузить группы пользователей:',
-            groupsResult.reason,
-          );
-        }
-        if (usersResult.status === 'rejected') {
-          console.error(
-            '[MCP Resource] Не удалось загрузить список пользователей:',
-            usersResult.reason,
-          );
-        }
+        const state = await bpmnSchemaService.loadAndParseProcess(dataTypeId);
 
         const result = {
           dataTypeId,
@@ -85,8 +87,8 @@ const resources = [
           dataTypeProperties: state.data.dataTypeProperties,
           rdmStructures: state.data.rdmStructures,
           postTemplates: state.data.postTemplates,
-          userGroups,
-          users,
+          userGroups: state.data.userGroups,
+          users: state.data.users,
           bpmnMessages: state.data.bpmnMessages,
           views: state.data.views,
           summary: {
@@ -94,9 +96,9 @@ const resources = [
             rdmStructuresCount: Object.keys(state.data.rdmStructures).length,
             postTemplatesCount: state.data.postTemplates.length,
             bpmnMessagesCount: state.data.bpmnMessages.length,
-            userGroupsCount: userGroups.length,
+            userGroupsCount: state.data.userGroups.length,
             viewsCount: state.data.views.length,
-            users: users.length,
+            users: state.data.users.length,
           },
         };
 

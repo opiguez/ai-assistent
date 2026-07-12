@@ -159,7 +159,6 @@ class BpmnXmlService {
         ) || [];
 
     const properties: Record<string, any> = {};
-    if (el.name !== undefined) properties.name = el.name;
 
     // Извлечение Event definitions
     const eventDefs =

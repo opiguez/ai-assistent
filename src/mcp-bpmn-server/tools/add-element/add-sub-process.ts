@@ -187,8 +187,7 @@ export const addSubProcessTools = [
     'bpmn_add_sub_process',
     {
       title: 'Add SubProcess',
-      description:
-        'Создаёт SubProcess (300×200, isExpanded, name опционален) с вложенными StartEvent → SequenceFlow → EndEvent.',
+      description: 'Создаёт SubProcess (300×200, isExpanded, name опционален) с вложенными StartEvent → SequenceFlow → EndEvent.',
       inputSchema: AddSubProcessSchema,
     },
     handleAddSubProcess,

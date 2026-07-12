@@ -195,8 +195,13 @@ export const setConditionExpressionTools = [
     'bpmn_set_condition_expression',
     {
       title: 'Set Condition Expression',
-      description:
-        'Устанавливает условное выражение (conditionExpression) и/или лейбл (conditionName) для SequenceFlow. Формат FEEL: = "approved" для строк, = true для булевых. Используется для ExclusiveGateway и decisions.',
+      description: `Устанавливает условное выражение (conditionExpression) для SequenceFlow. Используется для ExclusiveGateway и decisions.
+Для RDM-шлюзов (rdmStructure): value=ID записи из справочника, operator="==".
+Для числовых шлюзов (realNumber): value=число, operator=">", "<", ">=", "<=", "==", "!=".
+Для шлюзов решений (UserTask Decisions): value=порядковый номер кнопки.
+Доступные данные из контекста (bpmn://process/{dataTypeId}/data-context):
+  - rdmStructures[i].rdmObjects → value (RDM condition), label (имя ветки)
+  - dataTypeProperties.realNumber → key (для числовых условий)`,
       inputSchema: SetConditionExpressionSchema,
     },
     handleSetConditionExpression,

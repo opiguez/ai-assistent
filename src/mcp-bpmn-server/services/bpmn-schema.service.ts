@@ -4,14 +4,22 @@
  * Использует rabisClient (genql) для запросов.
  */
 import { BPMNModel } from 'bpmn-moddle';
-import { rabisClient } from '../../shared/services/rabisClient.service.js';
+import {
+  authBuffer,
+  ENDPOINT,
+  rabisClient,
+} from '../../shared/services/rabisClient.service.js';
 import { bpmnXmlService } from './bpmn-xml.service.js';
 import {
   BpmnMessage,
+  DataPropertyAttributes,
   Group,
   PostTemplate,
+  User,
   View,
 } from '../../generated/client/schema.js';
+import { enumMetadataObjectStatusEnum } from '../../generated/client/index.js';
+import axios from 'axios';
 
 // ─── Types ────────────────────────────────────────────────
 export interface BpmnProcessData {
@@ -37,7 +45,8 @@ export interface BpmnProcessData {
     }
   >;
   postTemplates: PostTemplate[];
-  userGroups: Group[];
+  userGroups: Array<Partial<Group>>;
+  users: Array<Partial<User>>;
   views: View[];
 }
 
@@ -89,6 +98,8 @@ class BpmnSchemaService {
       bpmnProcessType: {
         bpmnXml: true,
         decorJson: true,
+        validationResultsJson: true,
+        valid: true,
       },
       bpmnMessages: {
         id: true,
@@ -133,9 +144,7 @@ class BpmnSchemaService {
 
     // Parse dataTypeProperties into categorized structure
     const properties = res.properties || [];
-    const allFields = properties.flatMap((g) => g.properties || []);
 
-    // Build categorized dataTypeProperties
     const dataTypeProperties = {
       singleSelect: {} as Record<string, any>,
       multipleSelect: {} as Record<string, any>,
@@ -144,8 +153,34 @@ class BpmnSchemaService {
       genericProperties: {} as Record<string, any>,
     };
 
+    const allFields = properties.flatMap((propertyGroup) => {
+      return propertyGroup.properties
+        .filter(
+          (property) =>
+            property.status !== enumMetadataObjectStatusEnum.ARCHIVED,
+        )
+        .map((property) => {
+          return {
+            id: property.id,
+            displayName: property.displayName,
+            key: property.key,
+            jsonSchema: property.jsonSchema,
+            propertyTypeEnum: property.propertyType.propertyTypeEnum,
+            sourceRdmStructure: (property as DataPropertyAttributes)
+              .referenceDataTypeId
+              ? (property as DataPropertyAttributes).referenceDataTypeId
+              : null,
+            parent: {
+              id: propertyGroup.id,
+              name: propertyGroup.name,
+              displayName: propertyGroup.displayName,
+            },
+          };
+        });
+    });
+
     for (const field of allFields) {
-      const typeEnum = field.propertyType?.propertyTypeEnum;
+      const typeEnum = field.propertyTypeEnum;
       if (typeEnum === 'SELECTION') {
         dataTypeProperties.singleSelect[field.id] = field;
       } else if (typeEnum === 'MULTI_SELECTION') {
@@ -162,6 +197,40 @@ class BpmnSchemaService {
       }
     }
 
+    const referenceDataTypeIds = getReferenceDataTypeIds(dataTypeProperties);
+
+    const [rdmStructuresResult, groupsResult, usersResult] =
+      await Promise.allSettled([
+        this.getDataTypePropertySelectionsOptions(referenceDataTypeIds),
+        this.loadUserGroups(),
+        this.loadUsers(),
+      ]);
+
+    if (rdmStructuresResult.status === 'rejected') {
+      throw new Error(
+        `Критическая ошибка загрузки справочников: ${rdmStructuresResult.reason?.message || rdmStructuresResult.reason}`,
+      );
+    }
+    const rdmStructures = rdmStructuresResult.value;
+
+    const userGroups =
+      groupsResult.status === 'fulfilled' ? groupsResult.value || [] : [];
+    const users =
+      usersResult.status === 'fulfilled' ? usersResult.value || [] : [];
+
+    if (groupsResult.status === 'rejected') {
+      console.error(
+        '[MCP Resource] Не удалось загрузить группы пользователей:',
+        groupsResult.reason,
+      );
+    }
+    if (usersResult.status === 'rejected') {
+      console.error(
+        '[MCP Resource] Не удалось загрузить список пользователей:',
+        usersResult.reason,
+      );
+    }
+
     return {
       dataTypeId,
       name: res.name,
@@ -169,15 +238,132 @@ class BpmnSchemaService {
       bpmnXml: bpmnProcessType?.bpmnXml || '',
       decorJson: bpmnProcessType?.decorJson || '{}',
       valid: false,
-      validationResults: null,
+      validationResults: JSON.parse(
+        res.bpmnProcessType?.validationResultsJson as string,
+      ),
       bpmnMessages: (res.bpmnMessages as unknown as BpmnMessage[]) || [],
       dataTypeProperties,
-      rdmStructures: {}, // Populated separately if needed
+      rdmStructures,
       postTemplates: (res.postTemplates as unknown as PostTemplate[]) || [],
-      userGroups: [], // Would need separate query
+      userGroups,
+      users, // Would need separate query
       views: (res.views as unknown as View[]) || [],
     };
   }
+
+  async getDataTypePropertySelectionsOptions(
+    referenceDataTypeIds: Array<string>,
+  ): Promise<Record<string, { rdmObjects: Array<Record<string, any>> }>> {
+    const results = await Promise.allSettled(
+      referenceDataTypeIds.map((id) =>
+        this.getDataTypePropertySelectionOptions(id),
+      ),
+    );
+
+    const successfulResults = results
+      .filter(
+        (result): result is PromiseFulfilledResult<any> =>
+          result.status === 'fulfilled',
+      )
+      .map((result) => result.value);
+
+    return successfulResults.reduce(
+      (acc, current) => {
+        return { ...acc, ...current };
+      },
+      {} as Record<string, { rdmObjects: Array<Record<string, any>> }>,
+    );
+  }
+
+  /**
+   * Функция для получения опций выбора объекта данных.
+   * @param {string} referenceDataTypeId - ID типа данных.
+   */
+  getDataTypePropertySelectionOptions = async (referenceDataTypeId: string) => {
+    const graphQLQuery = {
+      query: `
+      query GetQuery($referenceDataTypeId: ID!, $parentValues: [String], $keys: [String!]) {
+        dataObjectSelectionOptions(
+          referenceDataTypeId: $referenceDataTypeId
+          parentValues: $parentValues
+        ) {
+          id
+          properties(keys: $keys) {
+            key
+            value {
+              ...booleanValue
+              ...stringValue
+            }
+          }
+        }
+      }
+      
+      fragment booleanValue on BooleanValue {
+        booleanField: value
+      }
+      
+      fragment stringValue on StringValue {
+        stringField: value
+      }
+    `,
+      variables: {
+        referenceDataTypeId,
+        keys: [
+          '_rdm-_common:_value',
+          '_rdm-_common:_label',
+          '_rdm-_common:_is_default',
+        ],
+      },
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Basic ${authBuffer}`,
+    };
+
+    try {
+      const response = await axios.post(ENDPOINT, graphQLQuery, { headers });
+
+      if (response.data.errors) {
+        throw new Error(JSON.stringify(response.data.errors));
+      }
+
+      const arr = response.data.data.dataObjectSelectionOptions.map(
+        (item: any) => {
+          const transformedObject = {
+            id: item.id,
+          } as Record<string, any>;
+
+          item.properties.forEach((property: Record<string, any>) => {
+            switch (property.key) {
+              case '_rdm-_common:_label':
+                transformedObject.label = property.value.stringValue;
+                break;
+
+              case '_rdm-_common:_value':
+                transformedObject.value = property.value.stringValue;
+                break;
+
+              case '_rdm-_common:_is_default':
+                transformedObject.isDefault = property.value.booleanValue;
+                break;
+            }
+          });
+
+          return transformedObject;
+        },
+      );
+
+      return {
+        [referenceDataTypeId]: {
+          rdmObjects: arr,
+        },
+      };
+    } catch (error: any) {
+      console.error('Ошибка при выполнении GraphQL запроса:', error.message);
+      throw error;
+    }
+  };
 
   /**
    * Загружает и парсит BPMN процесс.
@@ -531,6 +717,28 @@ class BpmnSchemaService {
       displayName: item.displayName,
     }));
   }
+}
+
+function getReferenceDataTypeIds(props: Record<string, any>) {
+  const ids: Array<string> = [];
+
+  if (Object.keys(props['singleSelect']).length) {
+    ids.push(
+      ...Object.values(props['singleSelect']).map(
+        (item: any) => item.sourceRdmStructure,
+      ),
+    );
+  }
+
+  if (Object.keys(props['multipleSelect']).length) {
+    ids.push(
+      ...Object.values(props['multipleSelect']).map(
+        (item: any) => item.sourceRdmStructure,
+      ),
+    );
+  }
+
+  return Array.from(new Set(ids));
 }
 
 export const bpmnSchemaService = new BpmnSchemaService();

@@ -146,8 +146,9 @@ export const addScriptTaskTools = [
     'bpmn_add_script_task',
     {
       title: 'Add ScriptTask',
-      description:
-        'Создаёт ScriptTask. Если name не указан — генерируется "Элемент N".',
+      description: `Создаёт ScriptTask. Если name не указан — генерируется "Элемент N".
+Доступные данные из контекста (bpmn://process/{dataTypeId}/data-context):
+  - dataTypeProperties → rawRequire/rawProduce = field.key (существующая переменная из dataTypeProperties)`,
       inputSchema: AddScriptTaskSchema,
     },
     handleAddScriptTask,

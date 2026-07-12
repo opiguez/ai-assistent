@@ -250,8 +250,8 @@ export const connectElementsTools = [
     'bpmn_connect_elements',
     {
       title: 'Connect BPMN Elements',
-      description:
-        'Создаёт SequenceFlow между двумя BPMN элементами. Для условий используй формат ${gatewayId==numericId} (напр. ${Gateway_1==2}). Для лейблов на стрелках используй conditionName.',
+      description: `Создаёт SequenceFlow между двумя BPMN элементами. Для условий используй формат \${gatewayId==numericId} (напр. \${Gateway_1==2}). Для лейблов на стрелках используй conditionName.
+При decisionsEnabled у UserTask: связывай UserTask → ExclusiveGateway, затем из шлюза к целевым задачам. Условия на стрелках Decisions настраиваются автоматически.`,
       inputSchema: ConnectElementsSchema,
     },
     handleConnectElements,

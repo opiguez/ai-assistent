@@ -22,13 +22,14 @@ export const AddSendTaskSchema = z.object({
     .array(z.string())
     .min(1, 'Необходимо указать хотя бы одного получателя')
     .describe(
-      `Массив name получателей из контекста данных (users), например: ["admin", "some_name_of_user"], 
-      либо массив переменных(типа USER или SELECTION)(key), например ["Calculator:_common-_test1"]`,
+      `Массив получателей: user.name из users (обернётся в userOf(name)), 
+      либо field.key из dataTypeProperties.genericProperties[USER] (обернётся в valueOf(key)),
+      либо field.key из dataTypeProperties.genericProperties[SELECTION] (обернётся в selectOf(key))`,
     ),
   template: z
     .string()
     .describe(
-      "ID шаблона письма (Берем конкретный id из элемента из postTemplates[] в dataType')",
+      "ID шаблона письма: postTemplate.id из data-context (UUID, извлекается автоматически)",
     ),
 });
 
@@ -224,8 +225,12 @@ export const addSendTaskTools = [
     'bpmn_add_send_task',
     {
       title: 'Add SendTask',
-      description:
-        'Создаёт SendTask с camunda:type/topic и extensionElements (recipients/template). Если name не указан — генерируется "Элемент N".',
+      description: `Создаёт SendTask с camunda:type/topic и extensionElements (recipients/template). Если name не указан — генерируется "Элемент N".
+Доступные данные из контекста (bpmn://process/{dataTypeId}/data-context):
+  - postTemplates → template = postTemplate.id (UUID)
+  - users → recipients = user.name (обёрнется в userOf)
+  - dataTypeProperties.genericProperties[USER] → recipients = field.key (обёрнется в valueOf)
+  - dataTypeProperties.genericProperties[SELECTION] → recipients = field.key (обёрнется в selectOf)`,
       inputSchema: AddSendTaskSchema,
     },
     handleAddSendTask,

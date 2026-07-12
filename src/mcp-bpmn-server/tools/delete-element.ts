@@ -127,8 +127,9 @@ export const deleteElementTools = [
     'bpmn_delete_element',
     {
       title: 'Delete BPMN Element',
-      description:
-        'Удаляет BPMN элемент и все связанные SequenceFlow. Требуется подтверждение (confirm: true). Проверяет constraints перед удалением. StartEvent и EndEvent нельзя удалять.',
+      description: `Удаляет BPMN элемент и все связанные SequenceFlow. Требуется подтверждение (confirm: true). Проверяет constraints перед удалением. StartEvent и EndEvent нельзя удалять.
+ПЕРЕД удалением используй bpmn_get_element_constraints для проверки операции 'delete'.
+Внимание: удаление Gateway с RDM/Number структурой требует сначала очистки структуры через bpmn_set_rdm_or_number_structure.`,
       inputSchema: DeleteElementSchema,
     },
     handleDeleteElement,

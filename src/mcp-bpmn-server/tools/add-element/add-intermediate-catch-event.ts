@@ -84,7 +84,7 @@ export const addIntermediateCatchEventTools = [
     'bpmn_add_intermediate_catch_event',
     {
       title: 'Add IntermediateCatchEvent',
-      description: 'Создаёт IntermediateCatchEvent. name опционален.',
+      description: `Создаёт IntermediateCatchEvent. name опционален. Для настройки типа (Timer/Message) используй bpmn_set_message_event.`,
       inputSchema: AddIntermediateCatchEventSchema,
     },
     handleAddIntermediateCatchEvent,

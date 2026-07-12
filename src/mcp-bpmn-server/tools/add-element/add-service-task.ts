@@ -191,8 +191,8 @@ export const addServiceTaskTools = [
 Автоматически настраивает Camunda-расширения: camunda:type="external" и camunda:topic="BM Service Task".
 Вшивает параметры targetModule, targetService и targetMethod внутрь extensionElements > camunda:InputOutput.
 Внимание: параметры apiSpecGroupId, targetModule, targetService и targetMethod являются строго обязательными.
-Сначала используйте инструмент поиска API-спецификаций, чтобы получить валидный apiSpecGroupId.
-Параметр threadCount является опциональным и передается только при явном требовании многопоточности.`,
+Сначала используйте \`bpmn_get_api_spec\`, чтобы получить валидный apiSpecGroupId.
+Параметр threadCount является опциональным.`,
       inputSchema: AddServiceTaskSchema,
     },
     handleAddServiceTask,

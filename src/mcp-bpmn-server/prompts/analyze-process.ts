@@ -22,23 +22,28 @@ export default function registerAnalyzeProcessPrompt(server: McpServer) {
 
 **DataTypeID:** ${dataTypeId}
 
-### Шаг 1: Чтение текущего состояния
+### Шаг 1: Контекст данных процесса
+Прочитай \`bpmn://process/${dataTypeId}/data-context\` — чтобы понимать:
+  - Какие userGroups, postTemplates, bpmnMessages, rdmStructures, dataTypeProperties доступны
+  - Сверять элементы схемы с реальными данными
+
+### Шаг 2: Чтение текущего состояния
 Вызови \`bpmn_get_process_schema\` с dataTypeId="${dataTypeId}" для получения структуры процесса.
 Вызови \`bpmn_get_process_topology\` для анализа графа (пути, виснущие элементы, петли).
 
-### Шаг 2: Проверка custom Model
+### Шаг 3: Проверка custom Model
 Проверь элементы:
 - UserTask с decisionsEnabled → \`bpmn_toggle_decisions\`
 - Gateway без DataTypeProperty → \`bpmn_set_rdm_or_number_structure\`
 - Свойства элемента → \`bpmn_get_element_properties\`
 
-### Шаг 3: Валидация
+### Шаг 4: Валидация
 Вызови \`bpmn_validate_process\` с dataTypeId="${dataTypeId}" для проверки валидности.
 
-### Шаг 4: Рекомендации
+### Шаг 5: Рекомендации
 Вызови \`bpmn_suggest_improvements\` с dataTypeId="${dataTypeId}" для предложений по улучшению.
 
-### Шаг 5: Итоговый отчёт
+### Шаг 6: Итоговый отчёт
 Представь краткий отчёт:
 1. Общая структура (сколько элементов, типов, связей)
 2. Проблемы (ошибки валидации, отсутствующие настройки)

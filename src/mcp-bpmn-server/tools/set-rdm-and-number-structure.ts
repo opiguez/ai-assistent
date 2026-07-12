@@ -90,8 +90,10 @@ export const setRdmAndNumberStructureTools = [
     'bpmn_set_rdm_or_number_structure',
     {
       title: 'Set RDM Structure',
-      description:
-        'Назначает RDM/RealNumber Structure (DataTypeProperty) на Exclusive/Inclusive Gateway. Привязывает Gateway к конкретному RDM/RealNumber свойству для ветвления по значениям.',
+      description: `Назначает RDM/RealNumber Structure (DataTypeProperty) на Exclusive/Inclusive Gateway. Привязывает Gateway к конкретному RDM/RealNumber свойству для ветвления по значениям.
+Доступные данные из контекста (bpmn://process/{dataTypeId}/data-context):
+  - dataTypeProperties.singleSelect → typeProperty='rdmStructure', propertyValue=field.key (где sourceRdmStructure задан)
+  - dataTypeProperties.realNumber → typeProperty='realNumber', propertyValue=field.key`,
       inputSchema: SetRdmOrNumberStructureSchema,
     },
     handleSetRdmOrNumberStructure,

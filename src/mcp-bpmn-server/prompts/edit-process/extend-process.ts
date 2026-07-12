@@ -42,14 +42,19 @@ export default function registerExtendProcessPrompt(server: McpServer) {
 
 ${stepReadSchema(dataTypeId)}
 
-#### Шаг 2: Определение точки вставки
+#### Шаг 2: Контекст данных процесса
+Прочитай \`bpmn://process/${dataTypeId}/data-context\` — чтобы понимать:
+  - Какие userGroups, postTemplates, bpmnMessages, rdmStructures, dataTypeProperties доступны
+  - Использовать актуальные ID при настройке новых элементов
+
+#### Шаг 3: Определение точки вставки
 - Где должен появиться новый элемент?
 - Какие существующие связи нужно разорвать?
 - Какой элемент является source/target для нового?
 
 ${stepSaveSnapshot(dataTypeId)}
 
-#### Шаг 4: Добавление нового элемента
+#### Шаг 5: Добавление нового элемента
 Вызови \`bpmn_add_element(dataTypeId, elementType, name)\` — он вернёт redirect на специализированный \`bpmn_add_*\`, следуй ему:
 
 - UserTask → \`bpmn_add_user_task\`
@@ -63,7 +68,7 @@ ${stepSaveSnapshot(dataTypeId)}
 - IntermediateCatchEvent → \`bpmn_add_intermediate_catch_event\`
 - IntermediateThrowEvent → \`bpmn_add_intermediate_throw_event\`
 
-#### Шаг 5: Перенастройка связей
+#### Шаг 6: Перенастройка связей
 Если нужно вставить элемент в существующую цепочку:
 1. \`bpmn_delete_element\` старой связи (с confirm: true)
 2. \`bpmn_connect_elements\` от source к новому элементу
@@ -73,7 +78,7 @@ ${stepSaveSnapshot(dataTypeId)}
 1. \`bpmn_connect_elements\` от source к новому элементу
 2. \`bpmn_connect_elements\` от нового элемента к следующему
 
-#### Шаг 6: Настройка свойств
+#### Шаг 7: Настройка свойств
 Настрой свойства нового элемента:
 - \`bpmn_toggle_decisions\` — UserTask decisions (только флаг, ветки создаются через \`bpmn_connect_elements\`)
 - \`bpmn_set_condition_expression\` — условия на SequenceFlow
@@ -86,6 +91,8 @@ ${stepSaveSnapshot(dataTypeId)}
 ${stepValidate(dataTypeId)}
 
 ${stepReport('добавлено')}
+
+> **Важно:** При добавлении элементов, требующих настройки (UserTask → group, SendTask → template, Gateway → rdmStructure), сверяйся с данными из контекста (\`bpmn://process/${dataTypeId}/data-context\`), чтобы не использовать несуществующие ID.
 `;
 
       return {

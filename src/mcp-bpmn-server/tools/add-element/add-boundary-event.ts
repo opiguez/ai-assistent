@@ -116,8 +116,8 @@ export const addBoundaryEventTools = [
     'bpmn_add_boundary_event',
     {
       title: 'Add BoundaryEvent',
-      description:
-        'Создаёт BoundaryEvent, прикреплённый к Task/SubProcess. attachedToRef — обязателен. name опционален.',
+      description: `Создаёт BoundaryEvent, прикреплённый к Task/SubProcess. attachedToRef — обязателен. name опционален.
+Внимание: Error Boundary Event можно прикрепить ТОЛЬКО к ServiceTask. BoundaryEvent не может иметь входящих SequenceFlow.`,
       inputSchema: AddBoundaryEventSchema,
     },
     handleAddBoundaryEvent,

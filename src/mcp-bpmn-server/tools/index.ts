@@ -29,7 +29,6 @@ import { deleteElementTools } from './delete-element.js';
 // Phase 4: CRUD for metadata
 import { crudPostTemplateTools } from './crud-post-template.js';
 import { crudBpmnMessageTools } from './crud-bpmn-message.js';
-import { getUsersTools } from './get-user-groups-and-users.js';
 
 // Undo
 import { snapshotProcessTools } from './snapshot-process.js';
@@ -54,7 +53,6 @@ const bpmnTools: ToolDef[] = [
   ...deleteElementTools,
   ...crudPostTemplateTools,
   ...crudBpmnMessageTools,
-  ...getUsersTools,
   ...snapshotProcessTools,
 ];
 

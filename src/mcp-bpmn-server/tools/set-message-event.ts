@@ -78,8 +78,8 @@ export const setMessageEventTools = [
     'bpmn_set_message_event',
     {
       title: 'Set Message Event',
-      description:
-        'Настраивает Message Intermediate Throw/Catch Event: задаёт messageId (correlation key) и eventName (topic name). Поддерживается также для SendTask/ReceiveTask.',
+      description: `Настраивает Message Intermediate Throw/Catch Event: задаёт messageId (correlation key) и eventName (topic name) в decor модели. Поддерживается также для SendTask/ReceiveTask.
+messageId и eventName — произвольные строки, сохраняются как есть. bpmnMessages из контекста используются как подсказка — id сообщений (UUID) можно использовать как messageId.`,
       inputSchema: SetMessageEventSchema,
     },
     handleSetMessageEvent,

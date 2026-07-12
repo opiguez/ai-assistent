@@ -18,9 +18,10 @@ export const UpdateElementPropertySchema = z.object({
       'isDearchiveEvent',
       'messageId',
       'eventName',
+      'simplifiedViewStep',
     ])
     .describe(
-      'Имя Low-Code свойства в custom Model (JSON-decor) для точечного изменения',
+      'Имя Low-Code свойства в custom Model (JSON-decor) для точечного изменения. Поддерживаемые: name, simplifiedViewStep, isCancelEvent, isDeleteEvent, isDearchiveEvent, messageId, eventName',
     ),
   value: z
     .union([z.string(), z.boolean(), z.number()])
@@ -111,6 +112,7 @@ export const updateElementPropertyTools = [
       description: `Точечно изменяет кастомные флаговые или строковые Low-Code свойства элемента внутри JSON-decor.
 Используется для переключения служебных маркеров процессов (напр., 'isCancelEvent', 'messageId', 'eventName')
 Внимание: этот инструмент предназначен СТРОГО для плоских вспомогательных свойств.
+Допустимые свойства: name, simplifiedViewStep, isCancelEvent, isDeleteEvent, isDearchiveEvent, messageId, eventName.
 Для настройки исполнителей (assignee), шаблонов уведомлений, условий шлюзов (RDM/Number) и кнопок UserTask ОБЯЗАТЕЛЬНО используйте соответствующие специализированные инструменты!`,
       inputSchema: UpdateElementPropertySchema,
     },

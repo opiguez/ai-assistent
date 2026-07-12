@@ -144,6 +144,15 @@ function checkConnect(
 ): ConstraintResult {
   const type = element.$type;
 
+  // BoundaryEvent не может иметь входящие SequenceFlow
+  if (type === 'bpmn:BoundaryEvent') {
+    return {
+      allowed: false,
+      reason:
+        'BoundaryEvent не может иметь входящих связей SequenceFlow. Он прикрепляется к родительскому элементу через attachedToRef.',
+    };
+  }
+
   // ИСПРАВЛЕНО: Логика для UserTask в режиме решений (Decisions)
   if (type === 'bpmn:UserTask' && modelElementProps.decisionsEnabled) {
     const outgoing = element.get('outgoing') || [];
@@ -211,6 +220,25 @@ function checkAddBoundaryEvent(element: ModdleElement): ConstraintResult {
         'Error Boundary Event можно прикрепить ТОЛЬКО к ServiceTask API-интеграции',
     };
   }
+
+  // Проверка лимита boundary events на одном ServiceTask
+  const parentId = element.id;
+  const existingBoundaryCount = Object.values(
+    element.$parent as any,
+  ).filter(
+    (e: any) =>
+      e?.attachedToRef === parentId ||
+      e?.$type === 'bpmn:BoundaryEvent',
+  ).length;
+
+  if (existingBoundaryCount >= 2) {
+    return {
+      allowed: false,
+      reason:
+        'На один ServiceTask можно прикрепить не более 2 BoundaryEvent (ошибка + таймер)',
+    };
+  }
+
   return { allowed: true };
 }
 
@@ -289,6 +317,15 @@ function checkAddGatewayStructure(
       allowed: false,
       reason:
         'Структуру условий (RDM или Number) можно назначить только на Exclusive или Inclusive Gateway',
+    };
+  }
+
+  // Проверка, что у шлюза есть хотя бы 2 исходящие связи (иначе настройка структуры бессмысленна)
+  const outgoing = element.get('outgoing') || [];
+  if (outgoing.length < 2) {
+    return {
+      allowed: false,
+      reason: `Сначала создайте минимум 2 исходящие SequenceFlow из шлюза "${element.id}", чтобы настроить на нём структуру условий (RDM/Number). Сейчас исходящих связей: ${outgoing.length}.`,
     };
   }
 

@@ -106,7 +106,8 @@ export const toggleDecisionsTools = [
     {
       title: 'Toggle Decisions',
       description: `Включает или выключает decisions для UserTask. Только устанавливает флаг decisionsEnabled в custom model и 
-        базовый набор decisionsUnused - когда использованы, массив пустой. Создание элементов и связей — через bpmn_add_element и bpmn_connect_elements.`,
+        базовый набор decisionsUnused - когда использованы, массив пустой. Создание элементов и связей — через bpmn_add_element и bpmn_connect_elements.
+Данные из контекста не требуются — decisions — это просто флаги/кнопки, не связанные с переменными.`,
       inputSchema: ToggleDecisionsSchema,
     },
     handleToggleDecisions,

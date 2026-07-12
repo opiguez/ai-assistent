@@ -42,14 +42,19 @@ export default function registerModifyProcessPrompt(server: McpServer) {
 
 ${stepReadSchema(dataTypeId)}
 
-#### Шаг 2: Поиск целевого элемента
+#### Шаг 2: Контекст данных процесса
+Прочитай \`bpmn://process/${dataTypeId}/data-context\` — чтобы понимать:
+  - Какие userGroups, postTemplates, bpmnMessages, rdmStructures, dataTypeProperties доступны
+  - Сверять изменения с актуальными данными (при смене assignee, template, rdmStructure)
+
+#### Шаг 3: Поиск целевого элемента
 Определи ID элемента, который нужно изменить, по описанию из инструкции.
 Если нужно — вызови \`bpmn_get_element_properties\` для уточнения текущих значений.
 Если нужна общая структура — \`bpmn_get_process_topology\`.
 
 ${stepSaveSnapshot(dataTypeId)}
 
-#### Шаг 4: Проверка ограничений
+#### Шаг 5: Проверка ограничений
 Вызови \`bpmn_get_element_constraints\` с:
 - dataTypeId="${dataTypeId}"
 - elementId=<ID целевого элемента>
@@ -57,7 +62,7 @@ ${stepSaveSnapshot(dataTypeId)}
 
 Если allowed=false — сообщи причину и предложи альтернативу.
 
-#### Шаг 5: Модификация
+#### Шаг 6: Модификация
 Вызови соответствующий инструмент:
 
 **WRITE (настройка существующих элементов):**
@@ -76,6 +81,9 @@ ${stepSaveSnapshot(dataTypeId)}
 - Удаление связи: \`bpmn_delete_element\` (с confirm: true)
 
 ${stepValidate(dataTypeId)}
+
+#### Шаг 8: Повторная проверка контекста
+Если валидация выявила ошибки, связанные с данными (неверный template, несуществующая группа), перечитай \`bpmn://process/${dataTypeId}/data-context\` для сверки.
 
 ${stepReport('изменено')}
 `;

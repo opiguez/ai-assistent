@@ -22,13 +22,13 @@ export const AddUserTaskSchema = z.object({
         .default('owner')
 
         .describe(
-          'owner — владелец, user — пользователь, group — группа, variable — переменная',
+          'owner — владелец (автор процесса), user — пользователь, group — группа, variable — переменная типа USER',
         ),
       value: z
         .string()
         .optional()
         .describe(
-          'Для type=user — логин, group — ID группы, variable — moduleName:type:_varName',
+          'Для type=user — user.name из контекста, group — group.name из контекста, variable — field.key из dataTypeProperties.genericProperties[USER]',
         ),
     })
     .optional()
@@ -160,8 +160,12 @@ export const addUserTaskTools = [
     'bpmn_add_user_task',
     {
       title: 'Add UserTask',
-      description:
-        'Создаёт UserTask. Если name не указан — генерируется "Элемент N". assignee настраивает camunda:candidateUsers/candidateGroups и require. navigateView/editView заполняются в decor.',
+      description: `Создаёт UserTask. name — обязателен. assignee настраивает camunda:candidateUsers/candidateGroups и require. navigateView/editView заполняются в decor.
+Доступные данные из контекста (bpmn://process/{dataTypeId}/data-context):
+  - userGroups → assignee.type='group', value=group.name
+  - users → assignee.type='user', value=user.name
+  - dataTypeProperties.genericProperties[USER] → assignee.type='variable', value=field.key
+  - views → navigateView/editView = view.id`,
       inputSchema: AddUserTaskSchema,
     },
     handleAddUserTask,

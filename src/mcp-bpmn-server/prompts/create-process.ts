@@ -34,19 +34,28 @@ export default function registerCreateProcessPrompt(server: McpServer) {
 
 ### Workflow (строго последовательный):
 
-#### Шаг 1: Каталог доступных элементов
+#### Шаг 1: Контекст данных процесса
+Прочитай \`bpmn://process/{dataTypeId}/data-context\` — получи:
+  - userGroups (для назначения UserTask)
+  - postTemplates (для SendTask)
+  - bpmnMessages (для Message Events)
+  - rdmStructures (для Gateway)
+  - dataTypeProperties (для переменных и условий)
+  - users (для прямых назначений)
+
+#### Шаг 2: Каталог доступных элементов
 Вызови \`bpmn_get_available_element_types\` для справочника доступных BPMN элементов.
 
-#### Шаг 2: Подготовка
+#### Шаг 3: Подготовка
 Прочитай API-спецификацию: \`bpmn_get_api_spec\` — нужна для ServiceTask (получи apiSpecGroupId).
 
-#### Шаг 3: Создание скелета
+#### Шаг 4: Создание скелета
 Создай базовую структуру процесса:
 1. \`bpmn_add_element\` с dataTypeId="${dataTypeId}", elementType="bpmn:StartEvent", name="Start"
 2. \`bpmn_add_element\` с dataTypeId="${dataTypeId}", elementType="bpmn:EndEvent", name="End"
 3. \`bpmn_connect_elements\` с sourceId=<StartEvent ID>, targetId=<EndEvent ID>
 
-#### Шаг 4: Добавление элементов по описанию
+#### Шаг 5: Добавление элементов по описанию
 Для каждого элемента вызови \`bpmn_add_element\` с dataTypeId и elementType — он вернёт redirect на специализированный \`bpmn_add_*\`, следуй ему:
 
 | Тип | elementType |
@@ -62,11 +71,11 @@ export default function registerCreateProcessPrompt(server: McpServer) {
 | IntermediateCatchEvent | bpmn:IntermediateCatchEvent |
 | IntermediateThrowEvent | bpmn:IntermediateThrowEvent |
 
-#### Шаг 5: Соединение элементов
+#### Шаг 6: Соединение элементов
 Вызови \`bpmn_connect_elements\` для создания SequenceFlow между элементами.
 Сначала создай основной поток, затем ветвления.
 
-#### Шаг 6: Настройка свойств
+#### Шаг 7: Настройка свойств
 Для каждого элемента настрой свойства:
 - UserTask decisions: \`bpmn_toggle_decisions\` (устанавливает флаг enabled, ветки создаются отдельно через \`bpmn_connect_elements\`)
 - Condition на стрелке: \`bpmn_set_condition_expression\`
@@ -76,11 +85,11 @@ export default function registerCreateProcessPrompt(server: McpServer) {
 
 ⚠️ **Ограничение:** \`bpmn_update_element_property\` меняет только простые поля: name, isCancelEvent, isDeleteEvent, isDearchiveEvent, messageId, eventName. Для смены API-метода ServiceTask, шаблона SendTask, исполнителя UserTask, скрипта ScriptTask — удалите элемент (\`bpmn_delete_element\`) и создайте заново через \`bpmn_add_*\`.
 
-#### Шаг 7: Валидация
+#### Шаг 8: Валидация
 Вызови \`bpmn_validate_process\` с dataTypeId="${dataTypeId}".
 Если valid=false — проанализируй ошибки и повтори шаги 4-6.
 
-#### Шаг 8: Отчёт
+#### Шаг 9: Отчёт
 Опиши созданную структуру:
 - Сколько элементов создано
 - Какие типы элементов используются

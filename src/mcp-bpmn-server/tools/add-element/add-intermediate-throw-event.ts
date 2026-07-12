@@ -82,7 +82,7 @@ export const addIntermediateThrowEventTools = [
     'bpmn_add_intermediate_throw_event',
     {
       title: 'Add IntermediateThrowEvent',
-      description: 'Создаёт IntermediateThrowEvent. name опционален.',
+      description: `Создаёт IntermediateThrowEvent. name опционален. После создания используй bpmn_set_message_event для настройки типа (Message).`,
       inputSchema: AddIntermediateThrowEventSchema,
     },
     handleAddIntermediateThrowEvent,

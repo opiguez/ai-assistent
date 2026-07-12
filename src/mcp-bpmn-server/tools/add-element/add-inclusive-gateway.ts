@@ -84,7 +84,7 @@ export const addInclusiveGatewayTools = [
     'bpmn_add_inclusive_gateway',
     {
       title: 'Add InclusiveGateway',
-      description: 'Создаёт InclusiveGateway (OR). name опционален.',
+      description: `Создаёт InclusiveGateway (OR). name опционален. После создания настрой шлюз через bpmn_set_rdm_or_number_structure (данные из data-context).`,
       inputSchema: AddInclusiveGatewaySchema,
     },
     handleAddInclusiveGateway,

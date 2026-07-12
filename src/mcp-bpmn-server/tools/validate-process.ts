@@ -46,8 +46,7 @@ export const validateProcessTools = [
     'bpmn_validate_process',
     {
       title: 'Validate Process',
-      description:
-        'Запускает валидацию BPMN процесса на бэкенде. Возвращает ошибки (error/warning) с человекочитаемыми описаниями и инструментами для исправления, решения (decisions), и unsupported элементы. Используй после изменений для проверки корректности схемы.',
+      description: `Запускает валидацию BPMN процесса на бэкенде. Возвращает ошибки (error/warning) с человекочитаемыми описаниями и инструментами для исправления, решения (decisions), и unsupported элементы. Используй после изменений для проверки корректности схемы.`,
       inputSchema: ValidateProcessSchema,
     },
     handleValidateProcess,

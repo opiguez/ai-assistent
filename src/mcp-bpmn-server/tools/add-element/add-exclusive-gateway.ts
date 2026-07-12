@@ -84,7 +84,7 @@ export const addExclusiveGatewayTools = [
     'bpmn_add_exclusive_gateway',
     {
       title: 'Add ExclusiveGateway',
-      description: 'Создаёт ExclusiveGateway (XOR). name опционален.',
+      description: `Создаёт ExclusiveGateway (XOR). name опционален. После создания настрой шлюз через bpmn_set_rdm_or_number_structure (данные из data-context) или bpmn_toggle_decisions.`,
       inputSchema: AddExclusiveGatewaySchema,
     },
     handleAddExclusiveGateway,

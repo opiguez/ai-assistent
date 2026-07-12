@@ -1,11 +1,6 @@
-/**
- * BPMN Process State Resource
- * URI: bpmn://process/{dataTypeId}/state
- * Возвращает текущее состояние BPMN процесса: элементы, связи, custom model.
- */
 import { McpServer } from '@modelcontextprotocol/server';
 import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
-import { bpmnXmlService } from '../services/bpmn-xml.service.js';
+import { getProcessSnapshot } from '../services/process-snapshot.service.js';
 
 const resources = [
   {
@@ -19,9 +14,8 @@ const resources = [
     },
     read: async (uri: URL) => {
       try {
-        // Извлекаем dataTypeId из URI: bpmn://process/{dataTypeId}/state
         const parts = uri.pathname.split('/');
-        const dataTypeId = parts[2]; // process/{id}/state → index 2
+        const dataTypeId = parts[2];
 
         if (!dataTypeId) {
           return {
@@ -41,15 +35,10 @@ const resources = [
           };
         }
 
-        const state = await bpmnSchemaService.loadAndParseProcess(dataTypeId);
-        const elements = bpmnXmlService.extractElements(state.parsed);
-        const connections = bpmnXmlService.extractConnections(state.parsed);
-
-        const processElement = state.parsed.rootElement;
-        const processId = processElement?.id || null;
+        const { state, elements, connections } = await getProcessSnapshot(dataTypeId);
 
         let valid = false;
-        let validationErrors: string[] = [];
+
         try {
           valid = await bpmnSchemaService.isProcessValid(
             dataTypeId,
@@ -64,16 +53,15 @@ const resources = [
           dataTypeId,
           name: state.data.name,
           displayName: state.data.displayName,
-          processId,
           valid,
-          validationErrors,
+          validationErrors: extractValidationErrors(
+            state.data.validationResults,
+          ),
           elementsCount: elements.length,
           connectionsCount: connections.length,
           elements,
           connections,
           model: state.model,
-          bpmnMessages: state.data.bpmnMessages,
-          postTemplates: state.data.postTemplates,
         };
 
         return {
@@ -104,6 +92,58 @@ const resources = [
     },
   },
 ];
+
+interface ValidationError {
+  elementType: string;
+  elementId: string;
+  message: string;
+  invalidElement: string;
+}
+
+function extractValidationErrors(data: Record<string, any> | null) {
+  if (!data) return [];
+  const errors: Array<ValidationError> = [];
+
+  function traverse(node: Record<string, any>) {
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        traverse(item);
+      }
+      return;
+    }
+
+    if (typeof node === 'object' && node !== null) {
+      if (
+        Array.isArray(node.validationResults) &&
+        node.validationResults.length > 0
+      ) {
+        const elementType = node['@type'] || 'unknown_type';
+        const elementId = node.id || 'unknown_id';
+
+        for (const res of node.validationResults) {
+          if (res && res.message) {
+            errors.push({
+              elementType: elementType,
+              elementId: elementId,
+              message: res.message,
+              invalidElement:
+                res.element || (res.messageParams ? res.messageParams[0] : ''),
+            });
+          }
+        }
+      }
+
+      for (const key in node) {
+        if (Object.prototype.hasOwnProperty.call(node, key)) {
+          traverse(node[key]);
+        }
+      }
+    }
+  }
+
+  traverse(data);
+  return errors;
+}
 
 export default function registerResources(server: McpServer) {
   resources.forEach((resource) => {
