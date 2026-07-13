@@ -12,17 +12,17 @@ export const SetConditionExpressionSchema = z.object({
   value: z
     .string()
     .describe(
-      'Техническое значение условия. ' +
-        '1. Для шлюза решений (UserTask) — это порядковый номер кнопки (строка "1", "2" и т.д.) строго в соответствии с массивом decisions исходной задачи. ' +
-        '2. Для RDM-справочников — это value конкретного элемента/записи из выбранного справочника (напр., "1"). ' +
-        '3. Для числовых шлюзов (realNumber) — это только само число (напр., "5", "100") без знаков сравнения.',
+      'Значение условия. ' +
+        '1. Для шлюза решений (UserTask) — порядковый номер кнопки строками "1", "2" и т.д. в соответствии с массивом decisions исходной задачи. ' +
+        '2. Для RDM-справочников (rdmStructure) — значение конкретной записи из справочника (напр., "1"). ' +
+        '3. Для числовых шлюзов (realNumber) — число для сравнения (напр., "500000"). Знак сравнения передаётся отдельно в operator.',
     ),
   operator: z
     .enum(['==', '>', '<', '>=', '<=', '!='])
     .optional()
     .default('==')
     .describe(
-      'Оператор сравнения. Используется ТОЛЬКО для числовых шлюзов (realNumber). Для RDM-справочников(rdmStructure) всегда передавайте "=="',
+      'Оператор сравнения. Используется ТОЛЬКО для числовых шлюзов (realNumber). Для RDM-справочников (rdmStructure) всегда передавайте "==".',
     ),
 });
 
@@ -196,9 +196,9 @@ export const setConditionExpressionTools = [
     {
       title: 'Set Condition Expression',
       description: `Устанавливает условное выражение (conditionExpression) для SequenceFlow. Используется для ExclusiveGateway и decisions.
-Для RDM-шлюзов (rdmStructure): value=ID записи из справочника, operator="==".
-Для числовых шлюзов (realNumber): value=число, operator=">", "<", ">=", "<=", "==", "!=".
-Для шлюзов решений (UserTask Decisions): value=порядковый номер кнопки.
+Для шлюзов решений (UserTask Decisions): value=порядковый номер кнопки (строка "1", "2" и т.д.), operator не используется.
+Для RDM-шлюзов (rdmStructure): value=значение записи из справочника, operator="==" (по умолчанию).
+Для числовых шлюзов (realNumber): value=число (строка, напр. "500000"), operator=">", "<", ">=", "<=", "==", "!=".
 Доступные данные из контекста (bpmn://process/{dataTypeId}/data-context):
   - rdmStructures[i].rdmObjects → value (RDM condition), label (имя ветки)
   - dataTypeProperties.realNumber → key (для числовых условий)`,

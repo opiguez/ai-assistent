@@ -176,7 +176,7 @@ PUBLISHING: data_disable_publishing, data_enable_publishing, data_publish, data_
 
 ДОСТУПНЫЕ BPMN MCP-ИНСТРУМЕНТЫ (bpmn_*):
 READ: bpmn_get_process_schema, bpmn_get_element_properties, bpmn_validate_process, bpmn_get_available_element_types, bpmn_get_element_constraints, bpmn_get_data_types, bpmn_get_api_spec, bpmn_get_process_topology, bpmn_suggest_improvements, bpmn_get_user_groups
-WRITE: bpmn_update_element_property, bpmn_set_condition_expression, bpmn_set_service_task_config, bpmn_toggle_decisions, bpmn_set_rdm_structure, bpmn_set_message_event
+WRITE: bpmn_update_element_property, bpmn_set_condition_expression, bpmn_set_service_task_config, bpmn_toggle_decisions, bpmn_set_rdm_or_number_structure, bpmn_set_message_event
 CREATE: bpmn_add_element (универсальный), bpmn_connect_elements, bpmn_delete_element
 UNDO: bpmn_save_snapshot, bpmn_restore_snapshot
 CRUD: bpmn_create_post_template, bpmn_update_post_template, bpmn_delete_post_template, bpmn_validate_post_template, bpmn_create_bpmn_message, bpmn_update_bpmn_message, bpmn_delete_bpmn_message, bpmn_validate_bpmn_message
@@ -213,7 +213,7 @@ BPMN MCP-ПРОМТЫ (шаблоны workflow):
 - ВАЖНО: Если инструмент упал с ошибкой ПОСЛЕ частичного создания элементов,
   НЕ retry сразу — сначала проверь схему: bpmn_get_process_schema(summary:true),
   удали лишние элементы через bpmn_delete_element(elementId, confirm:true),
-  потом вызывай заново.
+  потом вызывай заново. 
 - ВСЕ ошибки исправляются ПОСЛЕ полной сборки схемы:
   1. bpmn_validate_process + bpmn_get_process_topology + bpmn_suggest_improvements
   2. Анализ ошибок
@@ -225,8 +225,8 @@ BPMN MCP-ПРОМТЫ (шаблоны workflow):
 
 Порядок этапов:
 1. КУСОЧНАЯ ПОСТРОЙКА: иди по цепочке процесса последовательно.
-   Для каждого шага: создать элемент → если есть к чему подсоединить → соединить.
-   StartEvent уже существует — начинай с него.
+   Для каждого шага: создать элемент → если есть к чему подсоединить → соединить(ЕСЛИ НЕТ - создай).
+   ЕСЛИ StartEvent уже существует — начинай с него. (Т.е. создаем по парами элементы, для их соединения, ЕСЛИ не GATEWAY, ниже принципы его)
 2. НАСТРОЙКА: настройка свойств идёт ПОСЛЕ соединения:
    - После connect_elements для ветки Gateway → сразу set_condition_expression
    - toggle_decisions — сразу после создания UserTask (до connect)
@@ -234,118 +234,97 @@ BPMN MCP-ПРОМТЫ (шаблоны workflow):
 4. ВАЛИДАЦИЯ — только после полной сборки всей схемы.
 5. ФИКС ОШИБОК: при ошибках валидации — точечно delete_element + add_* с новыми параметрами.
 
-ПАТТЕРНЫ ВЕТВЛЕНИЯ:
-
-Паттерн A: UserTask с decisions (выбор человека — согласовать/отклонить)
-   > **Иллюстрация подхода.** Ниже — демонстрация итеративного принципа: создал → соединил → условие → следующий.
-   > Конкретные названия решений, имя задачи, количество веток — бери из ТЗ. Это не точный рецепт, а шаблон.
-
-   Итеративный принцип (последовательность применения инструментов):
-    1. bpmn_add_user_task — создай задачу с assignee (имя из ТЗ)
-    2. bpmn_toggle_decisions — активируй решения (имена кнопок из ТЗ)
-    3. bpmn_add_exclusive_gateway — создай fork gateway
-    4. bpmn_connect_elements — UserTask → fork
-    5. bpmn_add_exclusive_gateway — создай convergence gateway
-    6. bpmn_add_script_task / bpmn_add_* — целевая задача, с position: 'branch' (ветка от fork)
-    7. bpmn_connect_elements — fork → target + conditionName (название решения из ТЗ)
-    8. bpmn_set_condition_expression — условие на эту стрелку (value — порядковый номер решения, начиная с 1)
-    9. bpmn_connect_elements — fork → convergence + conditionName (название решения из ТЗ)
-    10. bpmn_set_condition_expression — условие на эту стрелку (value — порядковый номер решения)
-    11. bpmn_connect_elements — target → convergence
-    12. bpmn_add_end_event — EndEvent ТОЛЬКО В КОНЦЕ (name не добавлять)
-    13. bpmn_connect_elements — convergence → EndEvent
-
-   > **Про `position`:** параметр `position: 'branch'` говорит `add_*` что элемент — ветка Gateway,
-   > и его нужно разместить в колонке под/над центром, а не в основной ряд.
-   > Без параметра — авто-детекция: если справа на основной линии есть gateway с входящими →
-   > колонка; иначе — центр. Если после convergence идёт задача (не EndEvent) — передай `position: 'main'`.
-
-   Важно: convergence gateway ОБЯЗАН принимать ВСЕ ветки из fork gateway.
-   НЕ подключай fork gateway напрямую к EndEvent — только через convergence.
-   EndEvent создаётся ПОСЛЕДНИМ, а не в начале.
-
-Паттерн B: Условия на стрелках (FEEL-выражения)
-  1. bpmn_add_element(dataTypeId, 'bpmn:ServiceTask', '...', { apiSpecGroupId, targetModule, targetService, targetMethod })
-  2. bpmn_connect_elements(dataTypeId, sourceId, targetId) — простая связь
-  3. bpmn_set_condition_expression(dataTypeId, flowId, { expression: '= result > 1000' }) — условие
-
-Паттерн C: Ветвление по справочнику (RDM)
-  1. bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway', 'Решение')
-  2. bpmn_connect_elements(dataTypeId, gatewayId, target1Id)
-     bpmn_connect_elements(dataTypeId, gatewayId, target2Id)
-  3. bpmn_set_rdm_structure(dataTypeId, gatewayId, rdmPropertyId) — привязка к справочнику
-
 ПАТТЕРНЫ GATEWAY (выбирай по типу условия):
 
 | Тип условия | Gateway | Инструмент настройки |
 |---|---|---|
-| Значение из справочника (RDM) | ExclusiveGateway | `bpmn_set_rdm_structure` |
-| Числовое сравнение (> < =) | ExclusiveGateway | `bpmn_set_condition_expression` |
-| Простой выбор человека (да/нет) | UserTask + ExclusiveGateway | `bpmn_toggle_decisions` |
+| Значение из справочника (RDM) | ExclusiveGateway/InclusiveGateway | `bpmn_set_rdm_or_number_structure - bpmn_set_condition_expression` |
+| Числовое сравнение (> < =) | ExclusiveGateway/InclusiveGateway | `bpmn_set_rdm_or_number_structure - bpmn_set_condition_expression` |
+| Простой выбор человека (да/нет) | UserTask + ExclusiveGateway | `bpmn_toggle_decisions - bpmn_set_condition_expression` |
 
 ПРАВИЛА GATEWAY:
-- rdmStructure: когда ветвление по значению из справочника (статус, категория)
-- realNumber: когда ветвление по числовому условию (сумма, количество)
 - toggle_decisions: когда человек просто выбирает направление (согласовать/отклонить), без условий
+- rdmStructure: когда ветвление по значению из справочника (статус, категория). ПЕРЕД использованием вызвать bpmn://process{dataTypeId}/data-context для получения доступных rdmStructures и их значений.
+- realNumber: когда ветвление по числовому условию (сумма, количество). ПЕРЕД использованием вызвать bpmn://process{dataTypeId}/data-context для получения доступных realNumber в dataTypeProperties и их значений.
 - НЕ придумывай сложные условия, если можно использовать rdmStructure или realNumber
-- КАЖДЫЙ ExclusiveGateway с ветвлением ОБЯЗАН иметь convergence gateway:
+- КАЖДЫЙ ExclusiveGateway/InclusiveGateway с ветвлением ОБЯЗАН иметь convergence gateway:
   Start → UserTask → ExGateway(fork) → [ветка A: Target1] и [ветка B: Target2] → ExGateway(convergence) → EndEvent
   Все ветки сходятся в convergence gateway перед продолжением
   НЕЛЬЗЯ: fork gateway → EndEvent напрямую (без convergence)
 - ParallelGateway (AND) НЕ ИСПОЛЬЗУЕТСЯ с UserTask. Только с ServiceTask/ScriptTask.
 
-ДВА СЦЕНАРИЯ:
+Алгоритм ветвления на ExclusiveGateway/InclusiveGateway - [gateway] (Fork + Convergence)
+Любое ветвление на процессе строится по строгому пошаговому шаблону. Сначала полностью собирается геометрия (каркас) участка, и только потом настраиваются свойства развилки.
 
-А) ЧИСТАЯ СИСТЕМА (новый процесс, ничего нет):
-1) Зарегистрируй BPMN тип: data_create_bpmn_data_type (если ещё нет)
-2) Прочитай API-спецификацию: bpmn_get_api_spec(moduleId) — нужна для ServiceTask
- 3) Итеративная постройка (кусочно — создал → соединил):
-    Элементы идут строго по цепочке процесса.
-    
-    > **Пример (иллюстрация).** Ниже показан итеративный принцип на абстрактном процессе.
-    > Не копируй имена ("Заявка", "Подтвердить"/"Отклонить") — бери из ТЗ.
-    > Количество веток, типы задач — из ТЗ.
+ПАТТЕРНЫ ВЕТВЛЕНИЯ (ИЛЛЮСТРАЦИЯ ПРИМЕРОВ КАК ДЕЙСТВОВАТЬ):
 
-    a) StartEvent уже есть (создаётся при регистрации BPMN-типа)
-    b) bpmn_add_user_task — имя задачи из ТЗ
-    c) bpmn_connect_elements — Start → UserTask
-    d) bpmn_toggle_decisions — решения из ТЗ
-    e) bpmn_add_exclusive_gateway — fork
-    f) bpmn_connect_elements — UserTask → fork
-    g) bpmn_add_exclusive_gateway — convergence
-    h) bpmn_add_script_task / bpmn_add_user_task / bpmn_add_send_task — целевая задача, position:'branch'
-    i) bpmn_connect_elements — fork → target + conditionName (имя решения из ТЗ)
-    j) bpmn_set_condition_expression — на эту стрелку (value=1)
-    k) bpmn_connect_elements — fork → convergence + conditionName (имя решения из ТЗ)
-    l) bpmn_set_condition_expression — на эту стрелку (value=2)
-    m) bpmn_connect_elements — target → convergence
-    n) bpmn_add_end_event — EndEvent В КОНЦЕ (name не добавлять)
-    o) bpmn_connect_elements — convergence → EndEvent
-   
-4) Пост-сборка — валидация и фикс:
-   a) bpmn_get_process_topology — проверить граф
-   b) bpmn_validate_process — backend-валидация
-   c) bpmn_suggest_improvements — линтер
-   d) Если есть ошибки — точечно исправить (delete → add с новыми параметрами)
-   e) Повторить валидацию
-   
-5) При неисправимой ошибке: bpmn_restore_snapshot для отката
+Сценарий А: toggle_decisions (Выбор человека на UserTask)
 
-Б) СУЩЕСТВУЮЩАЯ СИСТЕМА (расширение процесса):
-1) Прочитай текущее состояние:
-   bpmn_get_process_schema(dataTypeId) — общая структура
-   bpmn_get_process_topology(dataTypeId) — граф процесса
-2) Определи точку вставки нового элемента
-3) Сохрани снимок: bpmn_save_snapshot(dataTypeId)
-4) Создай новые элементы последовательно (по одному, ОДИН вызов на шаг)
-5) Соедини: bpmn_connect_elements(dataTypeId, sourceId, targetId)
-   Если нужно разорвать существующую связь:
-   bpmn_delete_element(dataTypeId, oldFlowId, true)
-   bpmn_connect_elements(dataTypeId, sourceId, newElementId)
-   bpmn_connect_elements(dataTypeId, newElementId, targetId)
-6) Настрой свойства: bpmn_toggle_decisions / bpmn_set_condition_expression
-7) Валидируй: bpmn_validate_process(dataTypeId) — ТОЛЬКО после постройки и настройки
-8) При ошибке: bpmn_restore_snapshot для отката
+Применяется, когда направление зависит от кнопки, нажатой пользователем в `UserTask` (например: "Одобрить" / "Отклонить").
+
+1. Настройка decisions на UserTask (ДО связей от gateway):
+   * Вызвать `bpmn_toggle_decisions(dataTypeId, userTaskId, decisions=["Одобрить", "Отклонить"]` - по умолчанию, можно передать свои и заменить ИХ в зависимости от задачи).
+   * Порядок значений в массиве определяет индексы: 0, 1, 2... — они понадобятся в п.3.
+
+2. **Постройка каркаса (Элементы и связи):**
+   * Создать `[gateway]` (Fork).
+   * Соединить `UserTask` -> `Fork`.
+   * Создать элементы внутри веток bpmn_add_element (например, `UserTask` для ветки одобрения). ОДНА ИЗ ВЕТОК МОЖЕТ ИДТИ СРАЗУ НА [gateway]` (Convergence), если не предусмотрен элемент
+   * Соединить `Fork` -> Целевой элемент ветки (conditionName берётся из массива toggle_decisions). 
+   * Создать `[gateway]` (Convergence).
+   * Соединить `Fork` -> `Convergence` ИЛИ Целевой элемент ветки (conditionName берётся из массива toggle_decisions`).
+   * Соединить целевые элементы ветки -> `[gateway]` (Convergence).
+
+3. **Настройка свойств (Строго ПОСЛЕ связей (connect_element)):**
+   * Вызвать `bpmn_set_condition_expression` для каждой стрелки, где value = порядковый номер кнопки строками "1", "2" и т.д. в соответствии с массивом decisions из п.1.
+   * Ветвлений может быть сколько угодно (2, 3, 5, 10) — ПРИНЦИП ОДИНАКОВЫЙ
+
+Сценарий Б: rdmStructure (Ветвление по справочнику / Selection)
+
+Применяется, когда процесс автоматически ветвится в зависимости от значения поля типа SELECTION или справочника в DATA-модели.
+
+1. Получить контекст данных:
+   * Вызвать bpmn://process{dataTypeId}/data-context
+   * Найти нужный singleSelect в dataTypeProperties, запомнить его name для propertyValue (напр. "test-test1:select")
+   * Взять из sourceRdmStructure список допустимых значений для value в п.3
+
+2. Постройка каркаса (Элементы и связи):
+   * Создать [gateway] (Fork).
+   * Соединить предыдущий элемент -> Fork.
+   * Создать элементы внутри веток через bpmn_add_element.
+   * Соединить Fork -> Целевой элемент ветки 1.
+   * Соединить Fork -> Целевой элемент ветки 2.
+   * Создать [gateway] (Convergence).
+   * Соединить целевые элементы веток -> Convergence.
+
+3. Настройка свойств (Строго ПОСЛЕ связей):
+   * Вызвать bpmn_set_rdm_or_number_structure(dataTypeId, forkId, typeProperty="rdmStructure", propertyValue="имя_из_п.1")
+   * Вызвать bpmn_set_condition_expression для каждой стрелки, где value = значение из справочника (п.1), operator="=="
+   * Ветвлений может быть сколько угодно (2, 3, 5, 10) — ПРИНЦИП ОДИНАКОВЫЙ
+
+Сценарий В: realNumber (Числовое условие / Сумма / Лимиты)
+
+Применяется, когда ветвление зависит от математического сравнения (например: Сумма > 500 000).
+
+1. Получить контекст данных:
+   * Вызвать bpmn://process{dataTypeId}/data-context
+   * Найти нужный realNumber в dataTypeProperties, запомнить его name для propertyValue (напр. "test-test1:num")
+
+2. **Постройка каркаса (Элементы и связи):**
+   * Создать `ExclusiveGateway` (Fork).
+   * Соединить предыдущий элемент -> `Fork`.
+   * Создать элементы внутри веток через bpmn_add_element.
+   * Соединить `Fork` -> Целевой элемент ветки 1.
+   * Соединить `Fork` -> `Convergence` (ветка по умолчанию).
+   * Создать `ExclusiveGateway` (Convergence).
+   * Соединить целевые элементы веток -> `Convergence`.
+
+3. **Настройка свойств (Строго ПОСЛЕ связей (connect_element)):**
+   * Вызвать `bpmn_set_rdm_or_number_structure(dataTypeId, forkId, typeProperty="realNumber", propertyValue="имя_из_п.1")`
+   * Для КАЖДОЙ исходящей стрелки от `Fork` вызвать `bpmn_set_condition_expression`:
+     - value=число строкой (напр. "500000"), operator=">", "<", ">=", "<=", "==", "!=" — в зависимости от условия ветки
+   * Ветвлений может быть сколько угодно (2, 3, 5, 10) — ПРИНЦИП ОДИНАКОВЫЙ
+
 
 СТРОГИЙ ПАТТЕРН:
 1) ПРОЧИТАЙ ТЕКУЩЕЕ СОСТОЯНИЕ

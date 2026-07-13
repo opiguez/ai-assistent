@@ -9,11 +9,10 @@ export const SetRdmOrNumberStructureSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных (модуля/процесса)'),
   elementId: z.string().describe('ID Exclusive/Inclusive Gateway на схеме'),
   typeProperty: z.enum(['realNumber', 'rdmStructure']),
-  propertyValue: z
-    .string()
-    .describe(
-      'Имя(name) переменной SELECT(ссылается на справочник) (напр. "test-test1:select")',
-    ),
+  propertyValue: z.string().describe(
+    `Имя(name) переменной: для rdmStructure — SELECT (ссылка на справочник, напр. "test-test1:select"), 
+      для realNumber — имя числовой переменной из dataTypeProperties.realNumber (напр. "test-test1:num")`,
+  ),
 });
 
 export async function handleSetRdmOrNumberStructure(
@@ -89,11 +88,11 @@ export const setRdmAndNumberStructureTools = [
   defineTool(
     'bpmn_set_rdm_or_number_structure',
     {
-      title: 'Set RDM Structure',
+      title: 'Set RDM/Number Structure',
       description: `Назначает RDM/RealNumber Structure (DataTypeProperty) на Exclusive/Inclusive Gateway. Привязывает Gateway к конкретному RDM/RealNumber свойству для ветвления по значениям.
 Доступные данные из контекста (bpmn://process/{dataTypeId}/data-context):
-  - dataTypeProperties.singleSelect → typeProperty='rdmStructure', propertyValue=field.key (где sourceRdmStructure задан)
-  - dataTypeProperties.realNumber → typeProperty='realNumber', propertyValue=field.key`,
+  - dataTypeProperties.singleSelect → typeProperty='rdmStructure', propertyValue=field.name (напр. "test-test1:select")
+  - dataTypeProperties.realNumber → typeProperty='realNumber', propertyValue=field.name (напр. "test-test1:num")`,
       inputSchema: SetRdmOrNumberStructureSchema,
     },
     handleSetRdmOrNumberStructure,

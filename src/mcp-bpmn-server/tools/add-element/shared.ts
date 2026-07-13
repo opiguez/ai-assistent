@@ -84,13 +84,19 @@ export function calculatePosition(
 
   if (position === 'branch') {
     const mainRowGateways = Object.entries(model)
-      .filter(([_, e]: [string, any]) =>
-        e?.elementType?.includes('Gateway') &&
-        e?.bpmndi?.bounds &&
-        Math.abs(e.bpmndi.bounds.y + e.bpmndi.bounds.height / 2 - mainCenterY) < ROW_HEIGHT / 2
+      .filter(
+        ([_, e]: [string, any]) =>
+          e?.elementType?.includes('Gateway') &&
+          e?.bpmndi?.bounds &&
+          Math.abs(
+            e.bpmndi.bounds.y + e.bpmndi.bounds.height / 2 - mainCenterY,
+          ) <
+            ROW_HEIGHT / 2,
       )
       .map(([id, e]: [string, any]) => ({ id, bounds: e.bpmndi.bounds }))
-      .sort((a, b) => b.bounds.x + b.bounds.width - a.bounds.x - a.bounds.width);
+      .sort(
+        (a, b) => b.bounds.x + b.bounds.width - a.bounds.x - a.bounds.width,
+      );
 
     if (mainRowGateways.length > 0) {
       const gw = mainRowGateways[0];
@@ -141,14 +147,17 @@ export function calculatePosition(
     (e: any) =>
       e?.elementType?.includes('Gateway') &&
       e?.bpmndi?.bounds &&
-      Math.abs(e.bpmndi.bounds.y + e.bpmndi.bounds.height / 2 - mainRowY) < ROW_HEIGHT / 2,
+      Math.abs(e.bpmndi.bounds.y + e.bpmndi.bounds.height / 2 - mainRowY) <
+        ROW_HEIGHT / 2,
   );
 
   // Считаем входящие стрелки для каждого gateway
   const gwWithIncomingCount = gatewayWithIncoming.map((gw: any) => {
     const gwId =
       Object.entries(model).find(
-        ([_, e]: [string, any]) => e?.bpmndi?.bounds?.x === gw.bpmndi.bounds.x && e?.bpmndi?.bounds?.y === gw.bpmndi.bounds.y,
+        ([_, e]: [string, any]) =>
+          e?.bpmndi?.bounds?.x === gw.bpmndi.bounds.x &&
+          e?.bpmndi?.bounds?.y === gw.bpmndi.bounds.y,
       )?.[0] || '';
     const incoming = Object.values(model).filter(
       (f: any) => f.elementType === 'bpmn:SequenceFlow' && f.targetRef === gwId,
@@ -278,6 +287,7 @@ export function successResponse(data: Record<string, any>) {
 }
 
 export function errorResponse(message: string) {
+  console.log(`[ERROR RESPONSE] ${message}`);
   return {
     content: [
       {
