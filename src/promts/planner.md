@@ -155,8 +155,8 @@ UNDO: bpmn_save_snapshot, bpmn_restore_snapshot
 CRUD: bpmn_create_post_template, bpmn_update_post_template, bpmn_delete_post_template, bpmn_validate_post_template, bpmn_create_bpmn_message, bpmn_update_bpmn_message, bpmn_delete_bpmn_message, bpmn_validate_bpmn_message
 
 BPMN РЕСУРСЫ (чтение через MCP):
-- bpmn://process/{dataTypeId}/state — текущее состояние процесса (элементы, связи, custom model)
-- bpmn://process/{dataTypeId}/data-context — контекст данных (dataTypeProperties, rdmStructures, шаблоны, группы)
+- bpmn://process{dataTypeId}/state — текущее состояние процесса (элементы, связи, custom model)
+- bpmn://process{dataTypeId}/data-context — контекст данных (dataTypeProperties, rdmStructures, шаблоны, группы)
 - bpmn://catalog/elements — справочник элементов палитры (типы, свойства, ограничения)
 - bpmn://catalog/rules — правила валидации и типовые конфигурации
 - bpmn://catalog/validation-errors — каталог ошибок валидации с сообщениями и действиями по исправлению

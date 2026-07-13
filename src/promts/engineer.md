@@ -25,7 +25,8 @@
 4. УМНАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ И ПАРАЛЛЕЛЬНОСТЬ:
    - ЗАВИСИМЫЕ ШАГИ: Не пытайся угадать ID до того, как инструмент отработал. Сначала создай родительский объект, дождись ответа с его ID, и только на СЛЕДУЮЩЕМ шаге создавай сущности внутри него.
    - НЕЗАВИСИМЫЕ ШАГИ: Ты можешь вызывать несколько независимых инструментов ОДНОВРЕМЕННО за один шаг (например, создать сразу 5 разных полей внутри одной и той же таблицы).
-   - BPMN ЭЛЕМЕНТЫ: Создавай BPMN элементы ПОСЛЕДОВАТЕЛЬНО (по одному на шаг). Позиция нового элемента зависит от предыдущих — параллельное создание ведёт к наложению и потере элементов.
+    - BPMN ЭЛЕМЕНТЫ: Создавай BPMN элементы ПОСЛЕДОВАТЕЛЬНО (по одному на шаг). Позиция нового элемента зависит от предыдущих — параллельное создание ведёт к наложению и потере элементов.
+    - BPMN СВЯЗИ И УСЛОВИЯ: bpmn_connect_elements, bpmn_set_condition_expression — ТОЛЬКО последовательно, НИКОГДА не параллельно. Каждый connect читает state.model, модифицирует и сохраняет decor. Параллельный вызов затрёт decor предыдущей связи.
 
 5. displayName, name И description ОБЯЗАТЕЛЬНЫ:
    - При вызове любого create-инструмента (data_create_module, data_create_data_type, data_create_bpmn_data_type, data_create_*_field, data_create_reference_data_*) ВСЕГДА передавай параметры:
@@ -182,8 +183,8 @@ UNDO: bpmn_save_snapshot, bpmn_restore_snapshot
 CRUD: bpmn_create_post_template, bpmn_update_post_template, bpmn_delete_post_template, bpmn_validate_post_template, bpmn_create_bpmn_message, bpmn_update_bpmn_message, bpmn_delete_bpmn_message, bpmn_validate_bpmn_message
 
 BPMN РЕСУРСЫ (чтение через MCP):
-- bpmn://process/{dataTypeId}/state — текущее состояние процесса (элементы, связи, custom model, валидация)
-- bpmn://process/{dataTypeId}/data-context — контекст данных (dataTypeProperties, rdmStructures, шаблоны, группы)
+- bpmn://process{dataTypeId}/state — текущее состояние процесса (элементы, связи, custom model, валидация)
+- bpmn://process{dataTypeId}/data-context — контекст данных (dataTypeProperties, rdmStructures, шаблоны, группы)
 - bpmn://catalog/elements — справочник элементов палитры (типы, свойства, ограничения)
 - bpmn://catalog/rules — правила валидации и типовые конфигурации
 - bpmn://catalog/validation-errors — каталог ошибок валидации с сообщениями и действиями по исправлению

@@ -31,6 +31,14 @@ function snap(val: number): number {
   return Math.round(val / 10) * 10;
 }
 
+function getMainCenterY(
+  allBounds: { x: number; y: number; width: number; height: number }[],
+): number {
+  if (allBounds.length === 0) return 200;
+  const leftmost = allBounds.reduce((min, b) => (b.x < min.x ? b : min));
+  return leftmost.y + leftmost.height / 2;
+}
+
 export function calculatePosition(
   model: Record<string, Record<string, any>>,
   elementType: string,
@@ -50,17 +58,18 @@ export function calculatePosition(
 
   const BASE_GAP = 120;
   const START_X = 100;
-  const CANVAS_CENTER_Y = 200;
-  const ROW_HEIGHT = 130;
+  const ROW_HEIGHT = 150;
 
   const allBounds = Object.values(model)
     .filter((e) => e?.bpmndi?.bounds)
     .map((e) => e.bpmndi.bounds);
 
+  const mainCenterY = getMainCenterY(allBounds);
+
   if (allBounds.length === 0) {
     return {
       x: START_X,
-      y: snap(CANVAS_CENTER_Y - size.height / 2),
+      y: snap(mainCenterY - size.height / 2),
     };
   }
 
@@ -69,7 +78,7 @@ export function calculatePosition(
     const maxX = Math.max(...allBounds.map((b) => b.x + b.width));
     return {
       x: snap(maxX + BASE_GAP),
-      y: snap(CANVAS_CENTER_Y - size.height / 2),
+      y: snap(mainCenterY - size.height / 2),
     };
   }
 
@@ -78,7 +87,7 @@ export function calculatePosition(
       .filter(([_, e]: [string, any]) =>
         e?.elementType?.includes('Gateway') &&
         e?.bpmndi?.bounds &&
-        Math.abs(e.bpmndi.bounds.y + e.bpmndi.bounds.height / 2 - CANVAS_CENTER_Y) < ROW_HEIGHT / 2
+        Math.abs(e.bpmndi.bounds.y + e.bpmndi.bounds.height / 2 - mainCenterY) < ROW_HEIGHT / 2
       )
       .map(([id, e]: [string, any]) => ({ id, bounds: e.bpmndi.bounds }))
       .sort((a, b) => b.bounds.x + b.bounds.width - a.bounds.x - a.bounds.width);
@@ -86,7 +95,7 @@ export function calculatePosition(
     if (mainRowGateways.length > 0) {
       const gw = mainRowGateways[0];
       const columnX = snap(gw.bounds.x + gw.bounds.width + BASE_GAP);
-      const centerY = snap(CANVAS_CENTER_Y - size.height / 2);
+      const centerY = snap(mainCenterY - size.height / 2);
       const ySet = new Set(
         allBounds
           .filter((b) => Math.abs(b.x + b.width / 2 - columnX) < 60)
@@ -113,7 +122,7 @@ export function calculatePosition(
     const maxX = Math.max(...allBounds.map((b) => b.x + b.width));
     return {
       x: snap(maxX + BASE_GAP),
-      y: snap(CANVAS_CENTER_Y - size.height / 2),
+      y: snap(mainCenterY - size.height / 2),
     };
   }
 
@@ -122,12 +131,12 @@ export function calculatePosition(
     const maxX = Math.max(...allBounds.map((b) => b.x + b.width));
     return {
       x: snap(maxX + BASE_GAP),
-      y: snap(CANVAS_CENTER_Y - size.height / 2),
+      y: snap(mainCenterY - size.height / 2),
     };
   }
 
   // Анализ Gateways: считаем входящие SequenceFlow для каждого
-  const mainRowY = CANVAS_CENTER_Y;
+  const mainRowY = mainCenterY;
   const gatewayWithIncoming = Object.values(model).filter(
     (e: any) =>
       e?.elementType?.includes('Gateway') &&
@@ -164,7 +173,7 @@ export function calculatePosition(
         rightmost.gw.bpmndi.bounds.width +
         BASE_GAP,
     );
-    const centerY = snap(CANVAS_CENTER_Y - size.height / 2);
+    const centerY = snap(mainCenterY - size.height / 2);
 
     const ySet = new Set(
       allBounds
@@ -195,7 +204,7 @@ export function calculatePosition(
   const maxX = Math.max(...allBounds.map((b) => b.x + b.width));
   return {
     x: snap(maxX + BASE_GAP),
-    y: snap(CANVAS_CENTER_Y - size.height / 2),
+    y: snap(mainCenterY - size.height / 2),
   };
 }
 
