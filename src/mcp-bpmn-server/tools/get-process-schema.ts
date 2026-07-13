@@ -1,6 +1,4 @@
 import { z } from 'zod';
-import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
-import { bpmnXmlService } from '../services/bpmn-xml.service.js';
 import { getProcessSnapshot } from '../services/process-snapshot.service.js';
 import { defineTool } from '../../shared/utils/base.js';
 import { errorResponse, successResponse } from './add-element/shared.js';
@@ -22,7 +20,9 @@ export async function handleGetProcessSchema(
   args: z.infer<typeof GetProcessSchemaSchema>,
 ) {
   try {
-    const { state, elements, connections } = await getProcessSnapshot(args.dataTypeId);
+    const { state, elements, connections } = await getProcessSnapshot(
+      args.dataTypeId,
+    );
 
     if (args.summary) {
       const summaryElements = elements.map((el) => ({

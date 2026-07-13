@@ -182,8 +182,8 @@ UNDO: bpmn_save_snapshot, bpmn_restore_snapshot
 CRUD: bpmn_create_post_template, bpmn_update_post_template, bpmn_delete_post_template, bpmn_validate_post_template, bpmn_create_bpmn_message, bpmn_update_bpmn_message, bpmn_delete_bpmn_message, bpmn_validate_bpmn_message
 
 BPMN РЕСУРСЫ (чтение через MCP):
-- bpmn://process{dataTypeId}/state — текущее состояние процесса (элементы, связи, custom model, валидация)
-- bpmn://process{dataTypeId}/data-context — контекст данных (dataTypeProperties, rdmStructures, шаблоны, группы)
+- bpmn://process{dataTypeId}/state — полное состояние процесса: элементы, связи, ВСЯ custom model, ошибки валидации. Использовать когда bpmn_get_process_schema недостаточно (нужна вся модель, поиск по всем свойствам, отладка после сбоя).
+- bpmn://process{dataTypeId}/data-context — контекст данных. Вызвать ОДИН раз в начале сессии и использовать полученные данные (dataTypeProperties, rdmStructures, шаблоны, группы) для всех дальнейших шагов, если НЕ БЫЛО вызовов DATA инструментов
 - bpmn://catalog/elements — справочник элементов палитры (типы, свойства, ограничения)
 - bpmn://catalog/rules — правила валидации и типовые конфигурации
 - bpmn://catalog/validation-errors — каталог ошибок валидации с сообщениями и действиями по исправлению
@@ -284,7 +284,7 @@ BPMN MCP-ПРОМТЫ (шаблоны workflow):
 Применяется, когда процесс автоматически ветвится в зависимости от значения поля типа SELECTION или справочника в DATA-модели.
 
 1. Получить контекст данных:
-   * Вызвать bpmn://process{dataTypeId}/data-context
+   * В начале сессии уже получен bpmn://process{dataTypeId}/data-context. Использовать данные из него.
    * Найти нужный singleSelect в dataTypeProperties, запомнить его name для propertyValue (напр. "test-test1:select")
    * Взять из sourceRdmStructure список допустимых значений для value в п.3
 
@@ -307,7 +307,7 @@ BPMN MCP-ПРОМТЫ (шаблоны workflow):
 Применяется, когда ветвление зависит от математического сравнения (например: Сумма > 500 000).
 
 1. Получить контекст данных:
-   * Вызвать bpmn://process{dataTypeId}/data-context
+   * В начале сессии уже получен bpmn://process{dataTypeId}/data-context. Использовать данные из него.
    * Найти нужный realNumber в dataTypeProperties, запомнить его name для propertyValue (напр. "test-test1:num")
 
 2. **Постройка каркаса (Элементы и связи):**
