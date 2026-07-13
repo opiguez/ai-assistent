@@ -47,6 +47,12 @@ export const AddServiceTaskSchema = z.object({
     .describe(
       'Количество потоков исполнения (передается в camunda:inputParameter "threadCount")',
     ),
+  position: z
+    .enum(['main', 'branch'])
+    .optional()
+    .describe(
+      'Позиция: main — основной ряд (центр Y), branch — ветка Gateway (колонка со сдвигом Y)',
+    ),
 });
 
 export async function handleAddServiceTask(
@@ -114,7 +120,7 @@ export async function handleAddServiceTask(
 
     bpmnElement.set('extensionElements', extensionElements);
 
-    const pos = calculatePosition(state.model, 'bpmn:ServiceTask');
+    const pos = calculatePosition(state.model, 'bpmn:ServiceTask', undefined, args.position);
     const size = ELEMENT_SIZES['bpmn:ServiceTask'] || {
       width: 100,
       height: 80,

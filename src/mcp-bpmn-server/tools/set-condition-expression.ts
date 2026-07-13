@@ -132,7 +132,7 @@ export async function handleSetConditionExpression(
             `Ветка шлюза с названием "${currentFlowName}" не найдена среди выходящих линий шлюза "${sourceId}". Убедитесь, что вы правильно соединили элементы.`,
           );
         }
-
+        isJavaScript = false;
         expressionText = `\${${sourceId}==${buttonIndex}}`;
       } else if (propType === 'rdmStructure') {
         // КЕЙС 2: RDM Справочник -> JUEL: ${test_test1_select=='1'}

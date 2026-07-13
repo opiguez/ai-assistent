@@ -13,6 +13,12 @@ import {
 const AddIntermediateCatchEventSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных'),
   name: z.string().max(255).optional().describe('Имя события'),
+  position: z
+    .enum(['main', 'branch'])
+    .optional()
+    .describe(
+      'Позиция: main — основной ряд (центр Y), branch — ветка Gateway (колонка со сдвигом Y)',
+    ),
 });
 
 export async function handleAddIntermediateCatchEvent(
@@ -30,7 +36,7 @@ export async function handleAddIntermediateCatchEvent(
       return errorResponse('Не удалось создать IntermediateCatchEvent в XML');
     }
 
-    const pos = calculatePosition(state.model, 'bpmn:IntermediateCatchEvent');
+    const pos = calculatePosition(state.model, 'bpmn:IntermediateCatchEvent', undefined, args.position);
     const size = ELEMENT_SIZES['bpmn:IntermediateCatchEvent'];
 
     bpmnXmlService.addShapeToDiagram(

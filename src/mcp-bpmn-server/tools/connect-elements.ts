@@ -196,6 +196,8 @@ export async function handleConnectElements(
     newModel[result.flowId] = {
       elementType: 'bpmn:SequenceFlow',
       name: args.conditionName || '',
+      sourceRef: args.sourceId,
+      targetRef: args.targetId,
       require: [],
       produce: [],
       bpmndi: {
@@ -234,12 +236,18 @@ export async function handleConnectElements(
     if (!saveResult.success)
       return errorResponse(saveResult.error || 'Ошибка сохранения');
 
-    return successResponse({
+    const responsePayload: Record<string, any> = {
       flowId: result.flowId,
       source: args.sourceId,
       target: args.targetId,
-      message: `Связь успешно создана. Линия названа: "${args.conditionName || 'без имени'}".`,
-    });
+      message: `Связь успешно создана. Линия названа: "${args.conditionName || 'без имени'}". Flow ID: ${result.flowId}.`,
+    };
+
+    if (isDecisionsContext) {
+      responsePayload.nextStep = `Для установки технического conditionExpression вызови bpmn_set_condition_expression с connectionId="${result.flowId}" и value=<порядковый номер кнопки (1, 2, ...)>`;
+    }
+
+    return successResponse(responsePayload);
   } catch (e: any) {
     return errorResponse(e?.message || 'Внутренняя ошибка создания связи');
   }
@@ -250,8 +258,9 @@ export const connectElementsTools = [
     'bpmn_connect_elements',
     {
       title: 'Connect BPMN Elements',
-      description: `Создаёт SequenceFlow между двумя BPMN элементами. Для условий используй формат \${gatewayId==numericId} (напр. \${Gateway_1==2}). Для лейблов на стрелках используй conditionName.
-При decisionsEnabled у UserTask: связывай UserTask → ExclusiveGateway, затем из шлюза к целевым задачам. Условия на стрелках Decisions настраиваются автоматически.`,
+      description: `Создаёт SequenceFlow между двумя BPMN элементами. Для лейблов на стрелках используй conditionName.
+При decisionsEnabled у UserTask: связывай UserTask → ExclusiveGateway, затем из шлюза к целевым задачам.
+ВАЖНО: conditionExpression в XML НЕ устанавливается автоматически. После соединения каждой ветки шлюза decisions обязательно вызови bpmn_set_condition_expression(connectionId=..., value="1"), где value — порядковый номер кнопки (1, 2, 3...).`,
       inputSchema: ConnectElementsSchema,
     },
     handleConnectElements,

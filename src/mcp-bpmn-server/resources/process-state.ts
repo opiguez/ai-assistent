@@ -5,7 +5,7 @@ import { getProcessSnapshot } from '../services/process-snapshot.service.js';
 const resources = [
   {
     name: 'process-state' as const,
-    uri: 'bpmn://process/{dataTypeId}/state' as const,
+    uri: 'bpmn://process{dataTypeId}/state' as const,
     config: {
       title: 'BPMN Process State',
       description:
@@ -35,7 +35,8 @@ const resources = [
           };
         }
 
-        const { state, elements, connections } = await getProcessSnapshot(dataTypeId);
+        const { state, elements, connections } =
+          await getProcessSnapshot(dataTypeId);
 
         let valid = false;
 

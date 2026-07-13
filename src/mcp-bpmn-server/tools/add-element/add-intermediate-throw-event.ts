@@ -13,6 +13,12 @@ import {
 const AddIntermediateThrowEventSchema = z.object({
   dataTypeId: z.string().describe('ID BPMN типа данных'),
   name: z.string().max(255).optional().describe('Имя события'),
+  position: z
+    .enum(['main', 'branch'])
+    .optional()
+    .describe(
+      'Позиция: main — основной ряд (центр Y), branch — ветка Gateway (колонка со сдвигом Y)',
+    ),
 });
 
 export async function handleAddIntermediateThrowEvent(
@@ -30,7 +36,7 @@ export async function handleAddIntermediateThrowEvent(
       return errorResponse('Не удалось создать IntermediateThrowEvent в XML');
     }
 
-    const pos = calculatePosition(state.model, 'bpmn:IntermediateThrowEvent');
+    const pos = calculatePosition(state.model, 'bpmn:IntermediateThrowEvent', undefined, args.position);
     const size = ELEMENT_SIZES['bpmn:IntermediateThrowEvent'];
 
     bpmnXmlService.addShapeToDiagram(

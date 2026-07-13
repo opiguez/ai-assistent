@@ -11,7 +11,7 @@ import { bpmnSchemaService } from '../services/bpmn-schema.service.js';
 const resources = [
   {
     name: 'data-context' as const,
-    uri: 'bpmn://process/{dataTypeId}/data-context' as const,
+    uri: 'bpmn://process{dataTypeId}/data-context' as const,
     config: {
       title: 'BPMN Data Context',
       mimeType: 'application/json',

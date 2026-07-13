@@ -35,6 +35,7 @@ export function calculatePosition(
   model: Record<string, Record<string, any>>,
   elementType: string,
   attachedToRef?: string,
+  position?: 'main' | 'branch',
 ): { x: number; y: number } {
   if (
     elementType === 'bpmn:BoundaryEvent' &&
@@ -47,15 +48,15 @@ export function calculatePosition(
 
   const size = ELEMENT_SIZES[elementType];
 
-  const BASE_GAP = 120; // Хороший просторный отступ
-  const START_X = 100; // Начало холста
-  const CANVAS_CENTER_Y = 200; // Единая горизонтальная линия центра холста
+  const BASE_GAP = 120;
+  const START_X = 100;
+  const CANVAS_CENTER_Y = 200;
+  const ROW_HEIGHT = 130;
 
   const allBounds = Object.values(model)
     .filter((e) => e?.bpmndi?.bounds)
     .map((e) => e.bpmndi.bounds);
 
-  //Если холст пустой, ставим первый элемент (StartEvent) по центру
   if (allBounds.length === 0) {
     return {
       x: START_X,
@@ -63,18 +64,138 @@ export function calculatePosition(
     };
   }
 
-  // БЕСКОНЕЧНЫЙ ХОЛСТ: Ищем самый правый край среди ВСЕХ элементов и шагаем вправо
+  // Явный запрос: main — центр Y, branch — колонка от правого gateway
+  if (position === 'main') {
+    const maxX = Math.max(...allBounds.map((b) => b.x + b.width));
+    return {
+      x: snap(maxX + BASE_GAP),
+      y: snap(CANVAS_CENTER_Y - size.height / 2),
+    };
+  }
+
+  if (position === 'branch') {
+    const mainRowGateways = Object.entries(model)
+      .filter(([_, e]: [string, any]) =>
+        e?.elementType?.includes('Gateway') &&
+        e?.bpmndi?.bounds &&
+        Math.abs(e.bpmndi.bounds.y + e.bpmndi.bounds.height / 2 - CANVAS_CENTER_Y) < ROW_HEIGHT / 2
+      )
+      .map(([id, e]: [string, any]) => ({ id, bounds: e.bpmndi.bounds }))
+      .sort((a, b) => b.bounds.x + b.bounds.width - a.bounds.x - a.bounds.width);
+
+    if (mainRowGateways.length > 0) {
+      const gw = mainRowGateways[0];
+      const columnX = snap(gw.bounds.x + gw.bounds.width + BASE_GAP);
+      const centerY = snap(CANVAS_CENTER_Y - size.height / 2);
+      const ySet = new Set(
+        allBounds
+          .filter((b) => Math.abs(b.x + b.width / 2 - columnX) < 60)
+          .map((b) => snap(b.y)),
+      );
+      ySet.add(centerY);
+      const firstUp = snap(centerY - ROW_HEIGHT);
+      if (!ySet.has(firstUp)) return { x: columnX, y: firstUp };
+      const firstDown = snap(centerY + ROW_HEIGHT);
+      if (!ySet.has(firstDown)) return { x: columnX, y: firstDown };
+      let rowIndex = 2;
+      while (true) {
+        const upper = snap(centerY - rowIndex * ROW_HEIGHT);
+        const lower = snap(centerY + rowIndex * ROW_HEIGHT);
+        if (!ySet.has(upper)) return { x: columnX, y: upper };
+        if (!ySet.has(lower)) return { x: columnX, y: lower };
+        rowIndex++;
+      }
+    }
+  }
+
+  // EndEvent — всегда в центр Y
+  if (elementType === 'bpmn:EndEvent') {
+    const maxX = Math.max(...allBounds.map((b) => b.x + b.width));
+    return {
+      x: snap(maxX + BASE_GAP),
+      y: snap(CANVAS_CENTER_Y - size.height / 2),
+    };
+  }
+
+  // Gateway — всегда в центр Y
+  if (elementType.includes('Gateway')) {
+    const maxX = Math.max(...allBounds.map((b) => b.x + b.width));
+    return {
+      x: snap(maxX + BASE_GAP),
+      y: snap(CANVAS_CENTER_Y - size.height / 2),
+    };
+  }
+
+  // Анализ Gateways: считаем входящие SequenceFlow для каждого
+  const mainRowY = CANVAS_CENTER_Y;
+  const gatewayWithIncoming = Object.values(model).filter(
+    (e: any) =>
+      e?.elementType?.includes('Gateway') &&
+      e?.bpmndi?.bounds &&
+      Math.abs(e.bpmndi.bounds.y + e.bpmndi.bounds.height / 2 - mainRowY) < ROW_HEIGHT / 2,
+  );
+
+  // Считаем входящие стрелки для каждого gateway
+  const gwWithIncomingCount = gatewayWithIncoming.map((gw: any) => {
+    const gwId =
+      Object.entries(model).find(
+        ([_, e]: [string, any]) => e?.bpmndi?.bounds?.x === gw.bpmndi.bounds.x && e?.bpmndi?.bounds?.y === gw.bpmndi.bounds.y,
+      )?.[0] || '';
+    const incoming = Object.values(model).filter(
+      (f: any) => f.elementType === 'bpmn:SequenceFlow' && f.targetRef === gwId,
+    ).length;
+    return { gw, id: gwId, incoming };
+  });
+
+  // Самый правый gateway на главном ряду с входящими связями
+  const rightmost = gwWithIncomingCount
+    .filter((g) => g.incoming >= 1)
+    .sort(
+      (a, b) =>
+        b.gw.bpmndi.bounds.x +
+        b.gw.bpmndi.bounds.width -
+        (a.gw.bpmndi.bounds.x + a.gw.bpmndi.bounds.width),
+    )[0];
+
+  if (rightmost) {
+    // Колонка: все ветки на X = gateway.right + gap
+    const columnX = snap(
+      rightmost.gw.bpmndi.bounds.x +
+        rightmost.gw.bpmndi.bounds.width +
+        BASE_GAP,
+    );
+    const centerY = snap(CANVAS_CENTER_Y - size.height / 2);
+
+    const ySet = new Set(
+      allBounds
+        .filter((b) => Math.abs(b.x + b.width / 2 - columnX) < 60)
+        .map((b) => snap(b.y)),
+    );
+    ySet.add(centerY);
+
+    const firstUp = snap(centerY - ROW_HEIGHT);
+    if (!ySet.has(firstUp)) {
+      return { x: columnX, y: firstUp };
+    }
+    const firstDown = snap(centerY + ROW_HEIGHT);
+    if (!ySet.has(firstDown)) {
+      return { x: columnX, y: firstDown };
+    }
+    let rowIndex = 2;
+    while (true) {
+      const upper = snap(centerY - rowIndex * ROW_HEIGHT);
+      const lower = snap(centerY + rowIndex * ROW_HEIGHT);
+      if (!ySet.has(upper)) return { x: columnX, y: upper };
+      if (!ySet.has(lower)) return { x: columnX, y: lower };
+      rowIndex++;
+    }
+  }
+
+  // Последовательный ряд (центр Y)
   const maxX = Math.max(...allBounds.map((b) => b.x + b.width));
-  const newX = maxX + BASE_GAP;
-
-  // Расчет Y: сначала находим идеальный верхний край,
-  // а затем округляем его так, чтобы центр остался максимально близко к оси
-  const idealY = CANVAS_CENTER_Y - size.height / 2;
-  const newY = snap(idealY);
-
   return {
-    x: snap(newX),
-    y: newY,
+    x: snap(maxX + BASE_GAP),
+    y: snap(CANVAS_CENTER_Y - size.height / 2),
   };
 }
 

@@ -49,11 +49,11 @@ export default function registerCreateProcessPrompt(server: McpServer) {
 #### Шаг 3: Подготовка
 Прочитай API-спецификацию: \`bpmn_get_api_spec\` — нужна для ServiceTask (получи apiSpecGroupId).
 
-#### Шаг 4: Создание скелета
-Создай базовую структуру процесса:
-1. \`bpmn_add_element\` с dataTypeId="${dataTypeId}", elementType="bpmn:StartEvent", name="Start"
-2. \`bpmn_add_element\` с dataTypeId="${dataTypeId}", elementType="bpmn:EndEvent", name="End"
-3. \`bpmn_connect_elements\` с sourceId=<StartEvent ID>, targetId=<EndEvent ID>
+#### Шаг 4: Итеративная постройка
+StartEvent уже существует (создаётся при регистрации BPMN-типа). Строим кусочно:
+- создай элемент → соедини с предыдущим → создай следующий → соедини
+- EndEvent — В САМОМ КОНЦЕ (после всех элементов и веток), name не добавлять
+- Ошибки при построении игнорируй — схему достраивай полностью, фикс после валидации
 
 #### Шаг 5: Добавление элементов по описанию
 Для каждого элемента вызови \`bpmn_add_element\` с dataTypeId и elementType — он вернёт redirect на специализированный \`bpmn_add_*\`, следуй ему:
@@ -75,10 +75,28 @@ export default function registerCreateProcessPrompt(server: McpServer) {
 Вызови \`bpmn_connect_elements\` для создания SequenceFlow между элементами.
 Сначала создай основной поток, затем ветвления.
 
+#### Шаг 6а — Workflow для решений (Decisions) — строгая последовательность:
+Если в процессе есть UserTask с решениями (decisions), соблюдай строгий порядок:
+1. \`bpmn_add_user_task\` — создай задачу с assignee (имя из ТЗ)
+2. \`bpmn_toggle_decisions\` — активируй режим решений (имена кнопок из ТЗ)
+3. \`bpmn_add_exclusive_gateway\` — создай шлюз ветвления
+4. \`bpmn_connect_elements\` — UserTask → Gateway
+5. \`bpmn_add_exclusive_gateway\` — создай convergence gateway
+6. \`bpmn_add_*\` — задача для ветки, передай position:"branch"
+7. \`bpmn_connect_elements\` — Gateway → Task с conditionName (имя решения из ТЗ)
+8. \`bpmn_set_condition_expression\` (connectionId стрелки_7, value="1") — условие на первую ветку
+9. \`bpmn_connect_elements\` — Gateway → convergence с conditionName (имя решения из ТЗ)
+10. \`bpmn_set_condition_expression\` (connectionId стрелки_9, value="2") — условие на вторую ветку
+11. \`bpmn_connect_elements\` — Task → convergence
+12. \`bpmn_add_end_event\` — EndEvent В КОНЦЕ (name не добавлять)
+13. \`bpmn_connect_elements\` — convergence → EndEvent
+
+> \`position\` определяет размещение: "branch" — колонка от gateway (ветка), "main" — центр Y (основной ряд). Без параметра — авто-детекция по модели.
+
 #### Шаг 7: Настройка свойств
 Для каждого элемента настрой свойства:
-- UserTask decisions: \`bpmn_toggle_decisions\` (устанавливает флаг enabled, ветки создаются отдельно через \`bpmn_connect_elements\`)
-- Condition на стрелке: \`bpmn_set_condition_expression\`
+- UserTask decisions: \`bpmn_toggle_decisions\` (устанавливает флаг enabled, ветки создаются отдельно через \`bpmn_connect_elements\`; затем обязательно вызови \`bpmn_set_condition_expression\` на каждой стрелке от шлюза)
+- Condition на стрелке: \`bpmn_set_condition_expression\` — ВАЖНО: всегда вызывай после \`bpmn_connect_elements\` для каждой ветки шлюза
 - Gateway RDM/Number: \`bpmn_set_rdm_or_number_structure\`
 - Message Event: \`bpmn_set_message_event\`
 - Простые поля (name, isCancelEvent, isDeleteEvent, isDearchiveEvent, messageId, eventName): \`bpmn_update_element_property\`

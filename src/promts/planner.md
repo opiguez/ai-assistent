@@ -178,21 +178,32 @@ BPMN MCP-ПРОМТЫ (шаблоны для инженера):
 ПАТТЕРНЫ ВЕТВЛЕНИЯ:
 
 Паттерн A: UserTask с decisions (выбор человека — согласовать/отклонить)
-  1. bpmn_add_element(dataTypeId, 'bpmn:UserTask', 'Заявка')
-  2. bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway') ← fork gateway (решение)
-  3. bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway') ← convergence gateway (слияние)
-  4. Добавь целевые элементы (UserTask/ServiceTask/EndEvent)
-  5. Соедини:
-     bpmn_connect_elements(dataTypeId, userTaskId, forkGatewayId)
-     bpmn_connect_elements(dataTypeId, forkGatewayId, target1Id, { conditionName: "Подтвердить" })
-     bpmn_connect_elements(dataTypeId, forkGatewayId, target2Id, { conditionName: "Отклонить" })
-     bpmn_connect_elements(dataTypeId, target1Id, convergenceGatewayId)
-     bpmn_connect_elements(dataTypeId, target2Id, convergenceGatewayId)
-     bpmn_connect_elements(dataTypeId, convergenceGatewayId, endEventId)
-  6. bpmn_toggle_decisions(dataTypeId, forkGatewayId, true) ← только флаг
+   > **Иллюстрация подхода.** Ниже — демонстрация итеративного принципа: создал → соединил → условие → следующий.
+   > Конкретные названия решений, имя задачи, количество веток — бери из ТЗ. Это не точный рецепт, а шаблон.
 
-  Важно: convergence gateway ОБЯЗАН принимать ВСЕ ветки из fork gateway.
-  НЕ подключай fork gateway напрямую к EndEvent — только через convergence.
+   Итеративный принцип (последовательность применения инструментов):
+    1. bpmn_add_user_task — создай задачу с assignee (имя из ТЗ)
+    2. bpmn_toggle_decisions — активируй решения (имена кнопок из ТЗ)
+    3. bpmn_add_exclusive_gateway — создай fork gateway
+    4. bpmn_connect_elements — UserTask → fork
+    5. bpmn_add_exclusive_gateway — создай convergence gateway
+    6. bpmn_add_script_task / bpmn_add_* — целевая задача, с position: 'branch' (ветка от fork)
+    7. bpmn_connect_elements — fork → target + conditionName (название решения из ТЗ)
+    8. bpmn_set_condition_expression — условие на эту стрелку (value — порядковый номер решения, начиная с 1)
+    9. bpmn_connect_elements — fork → convergence + conditionName (название решения из ТЗ)
+    10. bpmn_set_condition_expression — условие на эту стрелку (value — порядковый номер решения)
+    11. bpmn_connect_elements — target → convergence
+    12. bpmn_add_end_event — EndEvent ТОЛЬКО В КОНЦЕ (name не добавлять)
+    13. bpmn_connect_elements — convergence → EndEvent
+
+   > **Про `position`:** параметр `position: 'branch'` говорит `add_*` что элемент — ветка Gateway,
+   > и его нужно разместить в колонке под/над центром, а не в основной ряд.
+   > Без параметра — авто-детекция: если справа на основной линии есть gateway с входящими →
+   > колонка; иначе — центр. Если после convergence идёт задача (не EndEvent) — передай `position: 'main'`.
+
+   Важно: convergence gateway ОБЯЗАН принимать ВСЕ ветки из fork gateway.
+   НЕ подключай fork gateway напрямую к EndEvent — только через convergence.
+   EndEvent создаётся ПОСЛЕДНИМ, а не в начале.
 
 Паттерн B: Условия на стрелках (FEEL-выражения)
   1. bpmn_add_element(dataTypeId, 'bpmn:ServiceTask', '...', { apiSpecGroupId, targetModule, targetService, targetMethod })
@@ -223,38 +234,58 @@ BPMN MCP-ПРОМТЫ (шаблоны для инженера):
   Все ветки сходятся в convergence gateway перед продолжением
   НЕЛЬЗЯ: fork gateway → EndEvent напрямую (без convergence)
 
-СТРОГИЙ ПАТТЕРН СОЗДАНИЯ:
-1. СНАЧАЛА создай ВСЕ элементы (Tasks, Gateways, Events)
-2. ПОТОМ соединяй их через bpmn_connect_elements
-3. ЕЩЁ ПОТОМ настраивай свойства (toggle_decisions, condition_expression, rdm_structure)
-4. ПОСЛЕДНИМ — валидация
+СТРОГИЙ ПАТТЕРН СОЗДАНИЯ (итеративный, кусочно):
+Постройка и соединение идут ВМЕСТЕ — создал элемент → соединил с предыдущим → создал следующий → соединил.
+
+Порядок этапов:
+1. КУСОЧНАЯ ПОСТРОЙКА: иди по цепочке процесса последовательно.
+   Для каждого шага: создать элемент → если есть к чему подсоединить → соединить.
+   StartEvent уже существует — начинай с него.
+2. НАСТРОЙКА: настройка свойств идёт ПОСЛЕ соединения:
+   - После connect_elements для ветки Gateway → сразу set_condition_expression
+   - toggle_decisions — сразу после создания UserTask (до connect)
+3. EndEvent — В САМОМ КОНЦЕ, после всех веток и convergence gateway.
+4. ВАЛИДАЦИЯ — только после полной сборки всей схемы.
+5. ФИКС ОШИБОК: при ошибках валидации — точечно delete_element + add_* с новыми параметрами.
 
 ДВА СЦЕНАРИЯ РАБОТЫ С BPMN:
 
 А) ЧИСТАЯ СИСТЕМА (процесс ещё не создан):
 - Шаг 1 (DATA): Зарегистрировать BPMN тип через data_create_bpmn_data_type
 - Шаг 2 (BPMN): Прочитать API-спецификацию: bpmn_get_api_spec(moduleId) — нужна для ServiceTask
-- Шаг 3 (BPMN): Создать скелет:
-  bpmn_add_element(dataTypeId, 'bpmn:StartEvent', 'Старт')
-  bpmn_add_element(dataTypeId, 'bpmn:EndEvent', 'Конец')
-  bpmn_connect_elements(dataTypeId, startId, endId)
-- Шаг 4 (BPMN): Создать элементы последовательно (по одному, ОДИН вызов на шаг):
-  bpmn_add_element(dataTypeId, 'bpmn:UserTask', 'Имя', { assignee: { type: 'owner' } })
-  → дождаться ответа, запомнить userTaskId
-  bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway') ← fork gateway (решение)
-  → дождаться ответа, запомнить forkGatewayId
-  bpmn_add_element(dataTypeId, 'bpmn:ExclusiveGateway') ← convergence gateway (слияние)
-  → дождаться ответа, запомнить convergenceGatewayId
-  bpmn_add_element(dataTypeId, 'bpmn:EndEvent')
-- Шаг 5 (BPMN): Соединить элементы:
-  bpmn_connect_elements(dataTypeId, userTaskId, forkGatewayId)
-  bpmn_connect_elements(dataTypeId, forkGatewayId, nextElementId, { conditionName: "Подтвердить" })
-  bpmn_connect_elements(dataTypeId, forkGatewayId, convergenceGatewayId, { conditionName: "Отклонить" })
-  bpmn_connect_elements(dataTypeId, nextElementId, convergenceGatewayId)
-  bpmn_connect_elements(dataTypeId, convergenceGatewayId, endEventId)
-- Шаг 6 (BPMN): Настроить свойства (ТОЛЬКО после постройки):
-  bpmn_toggle_decisions(dataTypeId, forkGatewayId, true)
-- Шаг 7 (BPMN): Валидация — ТОЛЬКО после постройки и настройки
+- Шаг 3 (BPMN): Итеративная постройка (кусочно — создал → соединил):
+  Элементы идут строго по цепочке процесса, каждый шаг:
+    создать элемент → если есть к чему подсоединить → соединить
+  
+  > **Пример (иллюстрация).** Ниже показан итеративный принцип на абстрактном процессе.
+  > Не копируй имена ("Заявка", "Подтвердить"/"Отклонить") — бери из ТЗ.
+  > Количество веток, типы задач — из ТЗ.
+
+    a) StartEvent уже есть (создаётся при регистрации BPMN-типа)
+    b) bpmn_add_user_task — имя задачи из ТЗ
+    c) bpmn_connect_elements — Start → UserTask
+    d) bpmn_toggle_decisions — решения из ТЗ
+    e) bpmn_add_exclusive_gateway — fork
+    f) bpmn_connect_elements — UserTask → fork
+    g) bpmn_add_exclusive_gateway — convergence
+    h) bpmn_add_script_task / bpmn_add_user_task / bpmn_add_send_task — целевая задача, position:'branch'
+    i) bpmn_connect_elements — fork → target + conditionName (имя решения из ТЗ)
+    j) bpmn_set_condition_expression — на эту стрелку (value=1)
+    k) bpmn_connect_elements — fork → convergence + conditionName (имя решения из ТЗ)
+    l) bpmn_set_condition_expression — на эту стрелку (value=2)
+    m) bpmn_connect_elements — target → convergence
+    n) bpmn_add_end_event — EndEvent В КОНЦЕ (name не добавлять)
+    o) bpmn_connect_elements — convergence → EndEvent
+    
+  ВАЖНО: StartEvent уже есть при создании BPMN-типа, не создавай его повторно.
+  EndEvent — в самом конце, после всех веток.
+  
+- Шаг 4 (BPMN): Пост-сборка — валидация и фикс:
+  a) bpmn_get_process_topology — проверить граф
+  b) bpmn_validate_process — backend-валидация
+  c) bpmn_suggest_improvements — линтер
+  d) Если есть ошибки — точечно исправить (delete → add с новыми параметрами)
+  e) Повторить валидацию
 
 Б) СУЩЕСТВУЮЩАЯ СИСТЕМА (расширение процесса):
 - Шаг 1 (BPMN): Прочитать текущее состояние bpmn_get_process_schema + bpmn_get_process_topology
@@ -270,6 +301,15 @@ BPMN MCP-ПРОМТЫ (шаблоны для инженера):
 Не пытайся исправить ошибки валидации до того, как процесс построен.
 Сначала: скелет → элементы → связи → настройка свойств.
 Потом: валидация → исправление ошибок → повторная валидация.
+
+ПРАВИЛО ПРО ОШИБКИ ПРИ ПОСТРОЕНИИ:
+- Ошибки при создании элементов/связей — ИГНОРИРУЙ (не останавливайся, не пиши пользователю)
+- Продолжай собирать схему дальше: бери следующую задачу из очереди
+- ВСЕ ошибки исправляются ПОСЛЕ полной сборки схемы:
+  1. bpmn_validate_process + bpmn_get_process_topology + bpmn_suggest_improvements
+  2. Анализ ошибок
+  3. Точечный фикс: bpmn_delete_element (с confirm:true) → bpmn_add_* с новыми параметрами
+  4. Повторная валидация
 
 ---
 

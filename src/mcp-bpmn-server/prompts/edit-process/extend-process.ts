@@ -81,10 +81,21 @@ ${stepSaveSnapshot(dataTypeId)}
 #### Шаг 7: Настройка свойств
 Настрой свойства нового элемента:
 - \`bpmn_toggle_decisions\` — UserTask decisions (только флаг, ветки создаются через \`bpmn_connect_elements\`)
-- \`bpmn_set_condition_expression\` — условия на SequenceFlow
+- \`bpmn_set_condition_expression\` — условия на SequenceFlow. ВАЖНО: всегда вызывай ПОСЛЕ \`bpmn_connect_elements\` для каждой ветки шлюза
 - \`bpmn_set_rdm_or_number_structure\` — ветвление по справочнику/числу
 - \`bpmn_set_message_event\` — настройка Message Event
 - \`bpmn_update_element_property\` — простые поля (name, флаги)
+
+**Workflow для решений (Decisions) — строгая последовательность:**
+Если добавляешь UserTask с решениями:
+1. \`bpmn_add_user_task\` — создай задачу
+2. \`bpmn_toggle_decisions\` — активируй режим решений (имена кнопок)
+3. \`bpmn_add_exclusive_gateway\` — создай шлюз ветвления
+4. \`bpmn_connect_elements\` — UserTask → Gateway
+5. \`bpmn_connect_elements\` — Gateway → Task1 (conditionName="Кнопка1")
+6. \`bpmn_connect_elements\` — Gateway → Task2 (conditionName="Кнопка2")
+7. \`bpmn_set_condition_expression\` (connectionId=flow_5, value="1")
+8. \`bpmn_set_condition_expression\` (connectionId=flow_6, value="2")
 
 ⚠️ **Ограничение:** \`bpmn_update_element_property\` меняет только простые поля: name, isCancelEvent, isDeleteEvent, isDearchiveEvent, messageId, eventName. Для смены API-метода ServiceTask, шаблона SendTask, исполнителя UserTask, скрипта ScriptTask — удалите элемент (\`bpmn_delete_element\`) и создайте заново через \`bpmn_add_*\`.
 

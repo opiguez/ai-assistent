@@ -525,16 +525,24 @@ class BpmnXmlService {
     expressionText: string,
     language: string = 'javascript',
   ): boolean {
+    let condition = null;
     const flow = parsed.elementsById[flowId];
     if (!flow) return false;
 
     const flowEl = flow as any;
 
-    const condition = this.moddle.create('bpmn:FormalExpression', {
-      body: expressionText,
-      'xsi:type': 'bpmn:tFormalExpression',
-      language: language,
-    });
+    if (!language) {
+      condition = this.moddle.create('bpmn:FormalExpression', {
+        body: expressionText,
+        'xsi:type': 'bpmn:tFormalExpression',
+      });
+    } else {
+      condition = this.moddle.create('bpmn:FormalExpression', {
+        body: expressionText,
+        'xsi:type': 'bpmn:tFormalExpression',
+        language: language,
+      });
+    }
 
     flowEl.conditionExpression = condition;
     return true;

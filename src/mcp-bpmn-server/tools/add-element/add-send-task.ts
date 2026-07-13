@@ -29,6 +29,12 @@ export const AddSendTaskSchema = z.object({
     .describe(
       "ID шаблона письма: postTemplate.id из data-context",
     ),
+  position: z
+    .enum(['main', 'branch'])
+    .optional()
+    .describe(
+      'Позиция: main — основной ряд (центр Y), branch — ветка Gateway (колонка со сдвигом Y)',
+    ),
 });
 
 function transformRecipients(
@@ -161,7 +167,7 @@ export async function handleAddSendTask(
     }
 
     const size = ELEMENT_SIZES['bpmn:SendTask'];
-    const pos = calculatePosition(state.model, 'bpmn:SendTask');
+    const pos = calculatePosition(state.model, 'bpmn:SendTask', undefined, args.position);
 
     bpmnXmlService.addShapeToDiagram(
       state.parsed,

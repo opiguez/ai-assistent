@@ -22,7 +22,7 @@ export const AddUserTaskSchema = z.object({
         .default('owner')
 
         .describe(
-          'owner — владелец (автор процесса), user — пользователь, group — группа, variable — переменная типа USER',
+          'owner — владелец - пользователь который идет по процессу, user — пользователь из системы, group — группа из системы, variable — переменная типа USER',
         ),
       value: z
         .string()
@@ -47,6 +47,12 @@ export const AddUserTaskSchema = z.object({
     .array(z.string())
     .optional()
     .describe('Дополнительные require (напр. ["bpmn:common:_owner"])'),
+  position: z
+    .enum(['main', 'branch'])
+    .optional()
+    .describe(
+      'Позиция: main — основной ряд (центр Y), branch — ветка Gateway (колонка со сдвигом Y)',
+    ),
 });
 
 export async function handleAddUserTask(
@@ -72,7 +78,7 @@ export async function handleAddUserTask(
 
     const bpmnElement = result.element;
 
-    const pos = calculatePosition(state.model, 'bpmn:UserTask');
+    const pos = calculatePosition(state.model, 'bpmn:UserTask', undefined, args.position);
     const size = ELEMENT_SIZES['bpmn:UserTask'];
 
     bpmnXmlService.addShapeToDiagram(

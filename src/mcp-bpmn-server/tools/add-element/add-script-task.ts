@@ -42,6 +42,12 @@ export const AddScriptTaskSchema = z.object({
     .describe(
       'Только ВНУТРЕННЕЕ тело скрипта без объявления функции calculate (напр. "return \\"1\\";"). Система сама обернет этот код в функцию.',
     ),
+  position: z
+    .enum(['main', 'branch'])
+    .optional()
+    .describe(
+      'Позиция: main — основной ряд (центр Y), branch — ветка Gateway (колонка со сдвигом Y)',
+    ),
 });
 
 export async function handleAddScriptTask(
@@ -85,7 +91,7 @@ export async function handleAddScriptTask(
     bpmnElement.set('camunda:resultVariable', cleanProduce);
     bpmnElement.set('script', finalScriptBody);
 
-    const pos = calculatePosition(state.model, 'bpmn:ScriptTask');
+    const pos = calculatePosition(state.model, 'bpmn:ScriptTask', undefined, args.position);
     const size = ELEMENT_SIZES['bpmn:ScriptTask'];
 
     bpmnXmlService.addShapeToDiagram(

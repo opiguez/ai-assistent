@@ -17,7 +17,7 @@ export const ToggleDecisionsSchema = z.object({
     .array(z.string())
     .optional()
     .describe(
-      'Список текстовых названий кнопок (лейблов) (напр. ["Одобрить", "Отклонить"]). Сохраняется в custom model для автоматического расчета индексов ветвления.',
+      'Список текстовых названий кнопок (лейблов) (по умолчанию - ["Одобрить", "Отклонить"] - можно использовать, если подходят по смыслу и не передавать). Сохраняется в custom model для автоматического расчета индексов ветвления.',
     ),
 });
 
@@ -90,7 +90,11 @@ export async function handleToggleDecisions(
       decisionsEnabled: args.enabled,
       decisionsUnused: args.enabled ? finalDecisions : null,
       message: args.enabled
-        ? `Режим Decisions успешно активирован для UserTask "${userTaskId}". Задано кнопок: ${JSON.stringify(finalDecisions)}. Используйте инструмент соединения стрелок "bpmn_connect_elements", передавая имена этих кнопок в параметр conditionName для автоматического вычеркивания.`
+        ? `Режим Decisions успешно активирован для UserTask "${userTaskId}". Задано кнопок: ${JSON.stringify(finalDecisions)}. Далее (строгая последовательность):
+1. Создай ExclusiveGateway через bpmn_add_exclusive_gateway
+2. Соедини UserTask → Gateway: bpmn_connect_elements(sourceId="${userTaskId}", targetId=<Gateway_ID>)
+3. Для КАЖДОЙ кнопки соедини Gateway → целевую задачу: bpmn_connect_elements(sourceId=<Gateway_ID>, targetId=<Task_ID>, conditionName="<имя кнопки>")
+4. ВАЖНО: для КАЖДОЙ ветки вызови bpmn_set_condition_expression(connectionId=<Flow_ID>, value="<номер кнопки: 1, 2, ...>") — это установит техническое XML-выражение`
         : `Режим Decisions успешно отключен для UserTask "${userTaskId}". Списки решений очищены.`,
     });
   } catch (e: any) {

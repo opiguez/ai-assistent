@@ -17,6 +17,12 @@ export const AddSubProcessSchema = z.object({
     .max(255)
     .optional()
     .describe('Имя подпроцесса (отображаемый текст)'),
+  position: z
+    .enum(['main', 'branch'])
+    .optional()
+    .describe(
+      'Позиция: main — основной ряд (центр Y), branch — ветка Gateway (колонка со сдвигом Y)',
+    ),
 });
 
 export async function handleAddSubProcess(
@@ -25,7 +31,7 @@ export async function handleAddSubProcess(
   try {
     const state = await bpmnSchemaService.loadAndParseProcess(args.dataTypeId);
 
-    const pos = calculatePosition(state.model, 'bpmn:SubProcess');
+    const pos = calculatePosition(state.model, 'bpmn:SubProcess', undefined, args.position);
     const size = ELEMENT_SIZES['bpmn:SubProcess'];
 
     const subResult = bpmnXmlService.createElement(

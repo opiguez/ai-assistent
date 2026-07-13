@@ -84,7 +84,10 @@ export const addExclusiveGatewayTools = [
     'bpmn_add_exclusive_gateway',
     {
       title: 'Add ExclusiveGateway',
-      description: `Создаёт ExclusiveGateway (XOR). name опционален. После создания настрой шлюз через bpmn_set_rdm_or_number_structure (данные из data-context) или bpmn_toggle_decisions.`,
+      description: `Создаёт ExclusiveGateway (XOR). name опционален.
+После создания:
+- Для ветвления по RDM/Number: настрой шлюз через bpmn_set_rdm_or_number_structure (данные из data-context), затем соедини и вызови bpmn_set_condition_expression
+- Для ветвления по решениям UserTask: настрой decisions на UserTask через bpmn_toggle_decisions (НЕ на этом шлюзе, а на UserTask), затем UserTask → Gateway → задачи через bpmn_connect_elements, и вызови bpmn_set_condition_expression на каждой стрелке от шлюза`,
       inputSchema: AddExclusiveGatewaySchema,
     },
     handleAddExclusiveGateway,
