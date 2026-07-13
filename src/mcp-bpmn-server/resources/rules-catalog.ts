@@ -4,11 +4,7 @@
  * Статический справочник правил валидации и типовых конфигураций.
  */
 import { McpServer } from '@modelcontextprotocol/server';
-import {
-  BPMN_RULES,
-  STRUCTURAL_RULES,
-  ELEMENT_CONFIGURATIONS,
-} from '../knowledge/custom-rules.js';
+import { BPMN_RULES, STRUCTURAL_RULES } from '../knowledge/custom-rules.js';
 
 const resources = [
   {
@@ -25,7 +21,6 @@ const resources = [
         const catalog = {
           rules: BPMN_RULES,
           structuralRules: STRUCTURAL_RULES,
-          typicalConfigurations: ELEMENT_CONFIGURATIONS,
           summary: {
             deletionRules: [
               'bpmn:Process — никогда не удалять',

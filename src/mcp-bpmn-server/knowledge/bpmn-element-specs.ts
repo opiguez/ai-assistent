@@ -135,7 +135,7 @@ export const CUSTOM_MODEL_PROPERTIES = {
   DataTypePropertyValue: {
     description: 'ID свойства типа данных, используемого для Gateway',
   },
-  genericDecisionsEnabled: {
+  decisionsEnabled: {
     description: 'Включены ли generic decisions для UserTask',
     type: 'boolean',
   },
