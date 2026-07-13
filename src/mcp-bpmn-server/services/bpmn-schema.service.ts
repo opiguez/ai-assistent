@@ -69,21 +69,6 @@ interface CacheEntry {
   timestamp: number;
 }
 
-const processCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 60 * 1000; // 60 секунд
-
-function cleanExpiredCache(): void {
-  const now = Date.now();
-  for (const [key, entry] of processCache) {
-    if (now - entry.timestamp > CACHE_TTL_MS) {
-      processCache.delete(key);
-    }
-  }
-}
-
-// Периодическая чистка просроченных записей кэша
-setInterval(cleanExpiredCache, 30_000);
-
 class BpmnSchemaService {
   /**
    * Загружает полные данные BPMN процесса по dataTypeId.
@@ -368,16 +353,8 @@ class BpmnSchemaService {
   /**
    * Загружает и парсит BPMN процесс.
    * Возвращает состояние: parsed XML + custom model.
-   * Использует in-memory cache (TTL 60 сек).
    */
   async loadAndParseProcess(dataTypeId: string): Promise<BpmnProcessState> {
-    cleanExpiredCache();
-
-    const cached = processCache.get(dataTypeId);
-    if (cached) {
-      return cached.state;
-    }
-
     const data = await this.loadProcessData(dataTypeId);
 
     let parsed = {
@@ -398,8 +375,6 @@ class BpmnSchemaService {
     }
 
     const state = { parsed, model, data };
-
-    processCache.set(dataTypeId, { state, timestamp: Date.now() });
 
     return state;
   }
@@ -425,9 +400,6 @@ class BpmnSchemaService {
         .get();
 
       const validationResult = JSON.parse(res as string);
-
-      // Инвалидация кэша после сохранения
-      processCache.delete(input.dataTypeId);
 
       return {
         success: true,

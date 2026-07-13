@@ -62,7 +62,8 @@ export async function handleToggleDecisions(
     }
 
     const defaultDecisions = ['Подтвердить', 'Отклонить'];
-    const finalDecisions = args.decisions || defaultDecisions;
+    const finalDecisions =
+      args.decisions !== undefined ? args.decisions : defaultDecisions;
 
     newModel[userTaskId] = {
       ...modelProps,

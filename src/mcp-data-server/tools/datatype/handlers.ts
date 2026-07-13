@@ -28,7 +28,10 @@ const handleCreateDataType = async (args: CreateDataTypeArgs) => {
           lifecyclePath = `/modules/${moduleData.name}/lifecycles/${moduleData.lifecycles[0].name}`;
         }
       } catch (e) {
-        return error(e, `Не удалось зарезолвить lifecycle для модуля ${args.parentId}`);
+        return error(
+          e,
+          `Не удалось зарезолвить lifecycle для модуля ${args.parentId}`,
+        );
       }
       if (!lifecyclePath) {
         return error(
@@ -148,28 +151,31 @@ export const datatypeTools: ToolDef[] = [
     },
     async (args) => {
       try {
-        const res = await rabisClient.chain.query.dataType({ id: args.id }).get({
-          id: true,
-          name: true,
-          displayName: true,
-          description: true,
-          canHaveChildren: false,
-          versionable: true,
-          properties: {
+        const res = await rabisClient.chain.query
+          .dataType({ id: args.id })
+          .get({
             id: true,
             name: true,
             displayName: true,
+            description: true,
+            canHaveChildren: false,
+            versionable: true,
+            stateMachine: true,
             properties: {
               id: true,
-              key: true,
               name: true,
               displayName: true,
-              propertyType: { propertyTypeEnum: true },
-              required: true,
-              readonly: true,
+              properties: {
+                id: true,
+                key: true,
+                name: true,
+                displayName: true,
+                propertyType: { propertyTypeEnum: true },
+                required: true,
+                readonly: true,
+              },
             },
-          },
-        });
+          });
         return successList([res], 'Тип данных получен');
       } catch (e) {
         return error(e, 'Ошибка получения типа данных');
@@ -181,13 +187,22 @@ export const datatypeTools: ToolDef[] = [
     {
       title: 'Get All DataTypes',
       description: 'Возвращает список всех Тип данных.',
-      inputSchema: z.object({ parentId: z.string().describe('ID родительского модуля') }),
+      inputSchema: z.object({
+        parentId: z.string().describe('ID родительского модуля'),
+      }),
     },
     async (args) => {
       try {
-        const res = await rabisClient.chain.query.module({ id: args.parentId }).get({
-          dataTypes: { id: true, name: true, displayName: true, description: true },
-        });
+        const res = await rabisClient.chain.query
+          .module({ id: args.parentId })
+          .get({
+            dataTypes: {
+              id: true,
+              name: true,
+              displayName: true,
+              description: true,
+            },
+          });
         return successList(res.dataTypes || [], 'Список типов данных получен');
       } catch (e) {
         return error(e, 'Ошибка получения списка типов данных');
@@ -204,9 +219,13 @@ export const datatypeTools: ToolDef[] = [
     async (args) => {
       try {
         const localizedArgs = { ...args };
-        if (localizedArgs.displayName) localizedArgs.displayName = toLocalizedJson(args.displayName);
-        if (localizedArgs.description) localizedArgs.description = toLocalizedJson(args.description);
-        const res = await rabisClient.chain.mutation.updateDataType({ dataType: localizedArgs }).get({ id: true, name: true });
+        if (localizedArgs.displayName)
+          localizedArgs.displayName = toLocalizedJson(args.displayName);
+        if (localizedArgs.description)
+          localizedArgs.description = toLocalizedJson(args.description);
+        const res = await rabisClient.chain.mutation
+          .updateDataType({ dataType: localizedArgs })
+          .get({ id: true, name: true });
         return success(res.id, 'Тип данных обновлён');
       } catch (e) {
         return error(e, 'Ошибка обновления типа данных');
