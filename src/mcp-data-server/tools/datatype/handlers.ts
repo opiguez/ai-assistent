@@ -114,6 +114,9 @@ const handleGetDataTypeFields = async (args: GetDataTypeFieldsArgs) => {
             propertyType: { propertyTypeEnum: true },
             required: true,
             readonly: true,
+            on_DataPropertyDecimal: { formula: true },
+            on_DataPropertySelection: { formula: true },
+            on_DataPropertyString: { formula: true },
           },
         },
       });
@@ -162,19 +165,22 @@ export const datatypeTools: ToolDef[] = [
             versionable: true,
             stateMachine: true,
             properties: {
-              id: true,
-              name: true,
-              displayName: true,
-              properties: {
                 id: true,
-                key: true,
                 name: true,
                 displayName: true,
-                propertyType: { propertyTypeEnum: true },
-                required: true,
-                readonly: true,
+                properties: {
+                  id: true,
+                  key: true,
+                  name: true,
+                  displayName: true,
+                  propertyType: { propertyTypeEnum: true },
+                  required: true,
+                  readonly: true,
+                  on_DataPropertyDecimal: { formula: true },
+                  on_DataPropertySelection: { formula: true },
+                  on_DataPropertyString: { formula: true },
+                },
               },
-            },
           });
         return successList([res], 'Тип данных получен');
       } catch (e) {

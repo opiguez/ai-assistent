@@ -70,6 +70,26 @@ UPDATE: data_update_data_type, data_update_workspace
 DELETE: data_delete_module, data_delete_data_type, data_delete_field
 PUBLISHING: data_disable_publishing, data_enable_publishing, data_publish, data_get_validation_results
 
+## МОДУЛЬ _rdm — ПРАВИЛА
+
+Модуль `_rdm` (Управление справочниками) — системный модуль.
+
+**РАЗРЕШЕНО в `_rdm`:**
+- `data_create_reference_data_group(parentId: "/modules/_rdm/workspaces/_rdm_workspace", ...)`
+- `data_create_reference_data_type(parentId: ID_группы, ...)`
+- `data_create_*_field(parentId: ID_справочника, ...)` — добавление полей к справочнику
+- `data_update_*_field(id: ID_справочника/properties/имя_поля, ...)` — обновление полей справочника
+
+**ЗАПРЕЩЕНО в `_rdm`:**
+- `data_create_data_type(parentId: "/modules/_rdm", ...)` — НЕ вызывай
+- `data_create_bpmn_data_type(parentId: "/modules/_rdm", ...)` — НЕ вызывай
+- `data_create_*_field(parentId: "/modules/_rdm/data-types/_rdm_group", ...)` — НЕ вызывай (группа не имеет полей)
+- `data_create_workspace(parentId: "/modules/_rdm", ...)` — НЕ вызывай
+
+**Чтение полей справочника:**
+- `data_get_reference_data_type(id: ID_справочника)` — возвращает справочник С полями
+- НЕ ИСПОЛЬЗУЙ `data_get_data_type_fields` для справочников — он не работает с ReferenceDataType
+
 ПРАВИЛА ДЛЯ СЛОЯ DATA:
 
 1. ТРИ НЕЗАВИСИМЫЕ ОСИ ПРИ СОЗДАНИИ СУЩНОСТИ:

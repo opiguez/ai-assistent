@@ -8,10 +8,12 @@
     "codegen": "bash codegen.sh",
     "build": "tsc",
     "start:server": "node dist/mcp-data-server/mcp-server.js",
+
     "start:bpmn-server": "node dist/mcp-bpmn-server/mcp-server.js",
     "dev:server": "tsx watch src/mcp-data-server/mcp-server.ts",
     "dev:bpmn-server": "tsx watch src/mcp-bpmn-server/mcp-server.ts",
-    "dev:agent": "cmd /C \"set OPENCODE_CONFIG=./opencode.json && opencode --port 3000 web --hostname 127.0.0.1\""
+    "dev:agent": "cmd /C \"set OPENCODE_CONFIG=./opencode.json && opencode --port 3000 web --hostname 127.0.0.1\"",
+    "dev:agent1": "set OPENCODE_CONFIG=./opencode.json && opencode --port 3000 web --hostname 127.0.0.1"
   },
   "dependencies": {
     "@genql/runtime": "^2.10.0",

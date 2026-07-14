@@ -87,7 +87,23 @@
    displayName и description для групп и справочников передавай как plain-строку (инженер обернёт в JSON с локалями).
    description может быть `null` (пустое описание).
 
-6. CHILDREN TYPES (КОГДА ТИП СОЗДАЁТСЯ ВНУТРИ ДРУГОГО):
+6. МОДУЛЬ _rdm — СПРАВОЧНИКИ + ПОЛЯ ТОЛЬКО ДЛЯ СПРАВОЧНИКОВ:
+   Модуль `_rdm` (Управление справочниками) поддерживает:
+   - **ReferenceDataGroup + ReferenceData Type** — создание справочников
+   - **Fields** — добавление полей ТОЛЬКО к ReferenceDataType
+     (`_rdm_type`), НЕ к ReferenceDataGroup (`_rdm_group`)
+
+   ЗАПРЕЩЕНО в `_rdm`:
+   - DataTypes (обычные или BPMN) — их структура фиксирована
+   - Fields для ReferenceDataGroup — группа не имеет собственных полей
+
+   При работе с полями справочника:
+   - Чтение полей: `data_get_reference_data_type(id: ID_справочника)`
+   - Создание полей: `data_create_*_field(parentId: ID_справочника, ...)`
+   - Обновление полей: `data_update_*_field(id: ID_справочника/properties/имя_поля, ...)`
+   - ID справочника: `/modules/_rdm/reference-data-types/{name}` (например, `storeNds`)
+
+7. CHILDREN TYPES (КОГДА ТИП СОЗДАЁТСЯ ВНУТРИ ДРУГОГО):
 
    Тип всегда принадлежит модулю и привязан к workspace. Два варианта размещения:
    - В workspace модуля — самостоятельный тип, доступен для создания в модуле

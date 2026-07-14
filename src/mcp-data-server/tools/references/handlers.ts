@@ -36,8 +36,10 @@ type UpdateRefGroupArgs = z.infer<typeof UpdateReferenceDataGroupSchema>;
 const handleUpdateRefGroup = async (args: UpdateRefGroupArgs) => {
   try {
     const localized = { ...args };
-    if (localized.displayName) localized.displayName = toLocalizedJson(args.displayName);
-    if (localized.description) localized.description = toLocalizedJson(args.description);
+    if (localized.displayName)
+      localized.displayName = toLocalizedJson(args.displayName);
+    if (localized.description)
+      localized.description = toLocalizedJson(args.description);
     const res = await rabisClient.chain.mutation
       .updateReferenceDataGroup({
         referenceDataGroup: localized,
@@ -77,8 +79,10 @@ type UpdateRefDataTypeArgs = z.infer<typeof UpdateReferenceDataTypeSchema>;
 const handleUpdateRefDataType = async (args: UpdateRefDataTypeArgs) => {
   try {
     const localized = { ...args };
-    if (localized.displayName) localized.displayName = toLocalizedJson(args.displayName);
-    if (localized.description) localized.description = toLocalizedJson(args.description);
+    if (localized.displayName)
+      localized.displayName = toLocalizedJson(args.displayName);
+    if (localized.description)
+      localized.description = toLocalizedJson(args.description);
     const res = await rabisClient.chain.mutation
       .updateReferenceDataType({
         referenceDataType: localized,
@@ -113,6 +117,16 @@ const handleGetRefDataType = async (args: { id: string }) => {
         displayName: true,
         description: true,
         isDateSpecific: true,
+        properties: {
+          id: true,
+          displayName: true,
+          name: true,
+          properties: {
+            id: true,
+            displayName: true,
+            name: true,
+          },
+        },
       });
     return successList([res], 'Справочник получен');
   } catch (e) {
