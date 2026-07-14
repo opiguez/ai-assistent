@@ -23,22 +23,20 @@
       "agents": ["plan-execute", "build-execute"],
       "allowedTools": [
         "data_*",
-        "bpmn_*",
-        "save_tasks_queue",
-        "complete_current_task"
+        "bpmn_*"
       ],
-      "prompt": "{file:./src/promts/orchestrator.md}"
+      "prompt": "{file:./src/prompts/orchestrator.md}"
     },
     "plan-execute": {
       "description": "Веб-Архитектор. Декомпозиция ТЗ в очередь задач",
       "mode": "subagent",
-      "prompt": "{file:./src/promts/planner.md}",
+      "prompt": "{file:./src/prompts/planner.md}",
       "allowedTools": ["data_*", "bpmn_*", "save_tasks_queue"]
     },
     "build-execute": {
       "description": "Веб-Инженер. Выполняет задачи из очереди по HTTP",
       "mode": "subagent",
-      "prompt": "{file:./src/promts/engineer.md}",
+      "prompt": "{file:./src/prompts/engineer.md}",
       "allowedTools": ["data_*", "bpmn_*", "complete_current_task"]
     }
   },
